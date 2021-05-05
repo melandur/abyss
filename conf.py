@@ -1,5 +1,7 @@
 params = {
-    'user': {'dataset_store_path': r'C:\Users\melandur\Desktop\mo'},
+    'project': {'name': 'test',
+                'dataset_store_path': r'C:\Users\melandur\Desktop\mo',
+                'result_store_path': r'C:\Users\melandur\Desktop\mo\logs'},
 
     'data': {'dataset': 'DecathlonDataset',  # 'MedNISTDataset', 'DecathlonDataset', 'CrossValidation', 'CustomDataset'
              'challenge': 'Task01_BrainTumour',  # only need for decathlon:   'Task01_BrainTumour', 'Task02_Heart', 'Task03_Liver0', 'Task04_Hippocampus', 'Task05_Prostate', 'Task06_Lung', 'Task07_Pancreas', 'Task08_HepaticVessel', 'Task09_Spleen', 'Task10_Colon'

@@ -52,8 +52,6 @@ class Net(pytorch_lightning.LightningModule):
                                                n_classes=params['training']['n_classes'])
         self.post_label = transforms.AsDiscrete(to_onehot=False,
                                                 n_classes=params['training']['n_classes'])
-        self.best_val_dice = 0
-        self.best_val_epoch = 0
 
     def forward(self, x):
         return self._model(x)
@@ -64,9 +62,9 @@ class Net(pytorch_lightning.LightningModule):
     def prepare_data(self):
         # set up the correct data path
         train_images = sorted(glob.glob(
-            os.path.join(params['user']['dataset_store_path'], params['data']['challenge'], 'imagesTr', '*.nii.gz')))
+            os.path.join(params['project']['dataset_store_path'], params['data']['challenge'], 'imagesTr', '*.nii.gz')))
         train_labels = sorted(glob.glob(
-            os.path.join(params['user']['dataset_store_path'], params['data']['challenge'], 'labelsTr', '*.nii.gz')))
+            os.path.join(params['project']['dataset_store_path'], params['data']['challenge'], 'labelsTr', '*.nii.gz')))
         data_dicts = [{'image': image_name, 'label': label_name}
                       for image_name, label_name in zip(train_images, train_labels)]
         train_files, val_files = data_dicts[:-9], data_dicts[-9:]
@@ -163,8 +161,7 @@ class Net(pytorch_lightning.LightningModule):
         images, labels = batch['image'], batch['label']
         output = self.forward(images)
         loss = self.loss_function(output, labels)
-        tensorboard_logs = {'train_loss': loss.item()}
-        self.log('log', tensorboard_logs)
+        self.log('train_loss', loss.item())
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -178,6 +175,7 @@ class Net(pytorch_lightning.LightningModule):
         value = metrics.compute_meandice(y_pred=outputs,
                                          y=labels,
                                          include_background=False)
+        print(value, loss)
         self.log('val_loss', loss)
         self.log('val_dice', value)
 
@@ -189,13 +187,5 @@ class Net(pytorch_lightning.LightningModule):
             num_items += len(output['val_dice'])
         mean_val_dice = torch.tensor(val_dice / (num_items + 1e-4))
         mean_val_loss = torch.tensor(val_loss / (num_items + 1e-4))
-        tensorboard_logs = {'val_dice': mean_val_dice,
-                            'val_loss': mean_val_loss}
-        if mean_val_dice > self.best_val_dice:
-            self.best_val_dice = mean_val_dice
-            self.best_val_epoch = self.current_epoch
-        print(f'current epoch: {self.current_epoch} '
-              f'current mean dice: {mean_val_dice:.4f}'
-              f'\nbest mean dice: {self.best_val_dice:.4f} '
-              f'at epoch: {self.best_val_epoch}')
-        self.log('log', tensorboard_logs)
+        self.log('val_dice',  mean_val_dice)
+        self.log('val_loss', mean_val_loss)
