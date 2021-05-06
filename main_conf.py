@@ -1,0 +1,40 @@
+import sys
+
+params = {
+    'project': {'name': 'test',
+                'dataset_store_path': r'C:\Users\melandur\Desktop\mo',
+                'result_store_path': r'C:\Users\melandur\Desktop\mo\logs'},
+
+    'data': {'dataset': 'DecathlonDataset',  # 'MedNISTDataset', 'DecathlonDataset', 'CrossValidation', 'CustomDataset'
+             'challenge': 'Task01_BrainTumour',
+             # only need for decathlon:   'Task01_BrainTumour', 'Task02_Heart', 'Task03_Liver0', 'Task04_Hippocampus', 'Task05_Prostate', 'Task06_Lung', 'Task07_Pancreas', 'Task08_HepaticVessel', 'Task09_Spleen', 'Task10_Colon'
+             'seed': 42,
+             'val_frac': 0.2,
+             'test_frac': 0.2,
+             'use_cache': False,  # goes heavy on memory
+             'cache_max': sys.maxsize,
+             'cache_rate': 0.0,  # set 0 to reduce memory consumption
+             'num_workers': 4
+         },
+
+    'pre_processing': {},
+    'post_processing': {},
+
+    'augmentation': {},
+
+    'training': {
+        'seed': 42,
+        'epochs': 30,  # tbd
+        'trained_epochs': None,
+        'batch_size': 1,  # tbd
+        'optimizer': 'Adam',  # Adam, SGD
+        'learning_rate': 1e-3,  # tbd
+        'betas': (0.9, 0.999),  # tbd
+        'eps': 1e-8,
+        'weight_decay': 1e-5,  # tbd
+        'amsgrad': True,
+        'dropout': 0.5,  # tbd
+        'criterion': ['MSE_mean'],
+        'num_workers': 8,
+        'n_classes': 3},
+}

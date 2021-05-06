@@ -3,21 +3,22 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
-from conf import params
+from main_conf import params
 from src.net import Net
 
 if __name__ == '__main__':
-    net = Net()
 
-    # Define logger, TBoard, MLflow, Comet, Neptune, WandB
+
+    # Define logger: TBoard, MLflow, Comet, Neptune, WandB
     logger = TensorBoardLogger(save_dir=params['project']['result_store_path'])
 
     # Define callbacks
     checkpoint_callback = ModelCheckpoint(dirpath=params['project']['result_store_path'],
                                           filename=params['project']['name'])
+
     early_stop_callback = EarlyStopping(monitor='val_loss',
                                         min_delta=0.00,
-                                        patience=3,
+                                        patience=0,
                                         verbose=False,
                                         mode='max')
 
@@ -83,4 +84,5 @@ if __name__ == '__main__':
     )
 
     # train
+    net = Net()
     trainer.fit(net)

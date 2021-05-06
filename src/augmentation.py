@@ -45,11 +45,11 @@ train_transform = Compose(
 
         # TODO: Define your data augmentation below:
 
-        # RandSpatialCropd(keys=['image', 'label'], roi_size=[128, 128, 64], random_size=False),
-        # RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=0),
+        RandSpatialCropd(keys=['image', 'label'], roi_size=[128, 128, 64], random_size=False),
+        RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=0),
         NormalizeIntensityd(keys='image', nonzero=True, channel_wise=True),
-        # RandScaleIntensityd(keys='image', factors=0.1, prob=0.5),
-        # RandShiftIntensityd(keys='image', offsets=0.1, prob=0.5),
+        RandScaleIntensityd(keys='image', factors=0.1, prob=0.5),
+        RandShiftIntensityd(keys='image', offsets=0.1, prob=0.5),
         ToTensord(keys=['image', 'label'])
     ]
 )
@@ -63,23 +63,23 @@ val_transform = Compose(
                  pixdim=(1.0, 1.0, 1.0),
                  mode=('bilinear', 'nearest')),
         Orientationd(keys=['image', 'label'], axcodes='RAS'),
-        # CenterSpatialCropd(keys=['image', 'label'], roi_size=[128, 128, 64]),
+        CenterSpatialCropd(keys=['image', 'label'], roi_size=[128, 128, 64]),
         NormalizeIntensityd(keys='image', nonzero=True, channel_wise=True),
         ToTensord(keys=['image', 'label'])
     ]
 )
 
-# test_transform = Compose(
-#     [
-#         LoadImaged(keys=['image', 'label']),
-#         AsChannelFirstd(keys='image'),
-#         ConvertToMultiChannelBasedOnBratsClassesd(keys='label'),
-#         Spacingd(keys=['image', 'label'],
-#                  pixdim=(1.0, 1.0, 1.0),
-#                  mode=('bilinear', 'nearest')),
-#         Orientationd(keys=['image', 'label'], axcodes='RAS'),
-#         # CenterSpatialCropd(keys=['image', 'label'], roi_size=[128, 128, 64]),
-#         NormalizeIntensityd(keys='image', nonzero=True, channel_wise=True),
-#         ToTensord(keys=['image', 'label'])
-#     ]
-# )
+test_transform = Compose(
+    [
+        LoadImaged(keys=['image', 'label']),
+        AsChannelFirstd(keys='image'),
+        ConvertToMultiChannelBasedOnBratsClassesd(keys='label'),
+        Spacingd(keys=['image', 'label'],
+                 pixdim=(1.0, 1.0, 1.0),
+                 mode=('bilinear', 'nearest')),
+        Orientationd(keys=['image', 'label'], axcodes='RAS'),
+        CenterSpatialCropd(keys=['image', 'label'], roi_size=[128, 128, 64]),
+        NormalizeIntensityd(keys='image', nonzero=True, channel_wise=True),
+        ToTensord(keys=['image', 'label'])
+    ]
+)

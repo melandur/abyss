@@ -6,47 +6,20 @@ import pytorch_lightning
 import matplotlib.pyplot as plt
 from monai import data, inferers, losses, metrics, transforms, utils
 
-from conf import params
+from main_conf import params
 from src.net_architecture import net_architecture
-
-
-# TODO: Highly specific class, move to transform
-class ConvertToMultiChannelBasedOnBratsClassesd(transforms.MapTransform):
-    '''
-    Convert labels to multi channels based on brats classes:
-    label 1 is the peritumoral edema
-    label 2 is the GD-enhancing tumor
-    label 3 is the necrotic and non-enhancing tumor core
-    The possible classes are TC (Tumor core), WT (Whole tumor)
-    and ET (Enhancing tumor).
-
-    '''
-
-    def __call__(self, data):
-        d = dict(data)
-        for key in self.keys:
-            result = []
-            # merge label 2 and label 3 to construct TC
-            result.append(np.logical_or(d[key] == 2, d[key] == 3))
-            # merge labels 1, 2 and 3 to construct WT
-            result.append(
-                np.logical_or(
-                    np.logical_or(d[key] == 2, d[key] == 3), d[key] == 1
-                )
-            )
-            # label 2 is ET
-            result.append(d[key] == 2)
-            d[key] = np.stack(result, axis=0).astype(np.float32)
-        return d
+from src.augmentation import train_transform, val_transform
 
 
 class Net(pytorch_lightning.LightningModule):
     def __init__(self):
         super().__init__()
         self._model = net_architecture
+        # TODO: Native multi loss
         self.loss_function = losses.DiceLoss(to_onehot_y=False,
                                              sigmoid=True,
                                              squared_pred=True)
+
         self.post_pred = transforms.AsDiscrete(argmax=True,
                                                to_onehot=True,
                                                n_classes=params['training']['n_classes'])
@@ -56,60 +29,20 @@ class Net(pytorch_lightning.LightningModule):
     def forward(self, x):
         return self._model(x)
 
-    def configure_callbacks(self):
-        """Here goes the early stopping"""
-
     def prepare_data(self):
-        # set up the correct data path
-        train_images = sorted(glob.glob(
-            os.path.join(params['project']['dataset_store_path'], params['data']['challenge'], 'imagesTr', '*.nii.gz')))
-        train_labels = sorted(glob.glob(
-            os.path.join(params['project']['dataset_store_path'], params['data']['challenge'], 'labelsTr', '*.nii.gz')))
+        data_path = os.path.join(params['project']['dataset_store_path'], params['data']['challenge'])
+        train_images = sorted(glob.glob(os.path.join(data_path, 'imagesTr', '*.nii.gz')))
+        train_labels = sorted(glob.glob(os.path.join(data_path, 'labelsTr', '*.nii.gz')))
         data_dicts = [{'image': image_name, 'label': label_name}
                       for image_name, label_name in zip(train_images, train_labels)]
+
+        # TODO: Hardcoded stuff
         train_files, val_files = data_dicts[:-9], data_dicts[-9:]
-        #
+
         # set deterministic training for reproducibility
         utils.set_determinism(seed=params['data']['seed'])
 
-        # define the data transforms
-        # TODO: Add your data augmentation check out monai.transforms
-        train_transform = transforms.Compose(
-            [
-                # load 4 Nifti images and stack them together
-                transforms.LoadImaged(keys=['image', 'label']),
-                transforms.AsChannelFirstd(keys='image'),
-                ConvertToMultiChannelBasedOnBratsClassesd(keys='label'),
-                transforms.Spacingd(keys=['image', 'label'],
-                                    pixdim=(1.5, 1.5, 2.0),
-                                    mode=('bilinear', 'nearest')),
-                transforms.Orientationd(keys=['image', 'label'], axcodes='RAS'),
-                transforms.RandSpatialCropd(keys=['image', 'label'], roi_size=[128, 128, 64], random_size=False),
-                transforms.RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=0),
-                transforms.NormalizeIntensityd(keys='image', nonzero=True, channel_wise=True),
-                transforms.RandScaleIntensityd(keys='image', factors=0.1, prob=0.5),
-                transforms.RandShiftIntensityd(keys='image', offsets=0.1, prob=0.5),
-                transforms.ToTensord(keys=['image', 'label']),
-            ]
-        )
-
-        val_transform = transforms.Compose(
-            [
-                transforms.LoadImaged(keys=['image', 'label']),
-                transforms.AsChannelFirstd(keys='image'),
-                ConvertToMultiChannelBasedOnBratsClassesd(keys='label'),
-                transforms.Spacingd(keys=['image', 'label'],
-                                    pixdim=(1.5, 1.5, 2.0),
-                                    mode=('bilinear', 'nearest')),
-                transforms.Orientationd(keys=['image', 'label'], axcodes='RAS'),
-                transforms.CenterSpatialCropd(keys=['image', 'label'], roi_size=[128, 128, 64]),
-                transforms.NormalizeIntensityd(keys='image', nonzero=True, channel_wise=True),
-                transforms.ToTensord(keys=['image', 'label']),
-            ]
-        )
-
         if params['data']['use_cache']:
-            # we use cached datasets - these are 10x faster than regular datasets
             self.train_ds = data.CacheDataset(data=train_files,
                                               transform=train_transform,
                                               cache_rate=params['data']['cache_rate'],
@@ -138,8 +71,8 @@ class Net(pytorch_lightning.LightningModule):
         return val_loader
 
     def configure_optimizers(self):
+        optimizer = None
         if 'Adam' in params['training']['optimizer']:
-
             optimizer = torch.optim.Adam(params=self._model.parameters(),
                                          lr=params['training']['learning_rate'],
                                          betas=params['training']['betas'],
@@ -152,9 +85,7 @@ class Net(pytorch_lightning.LightningModule):
                                         lr=params['training']['learning_rate'],
                                         weight_decay=params['training']['weight_decay'])
 
-        else:
-            print('Invalid optimizer settings in conf.py: training, optimizer')
-            exit(1)
+        assert optimizer is not None, 'Invalid optimizer settings in conf.py: training, optimizer'
         return optimizer
 
     def training_step(self, batch, batch_idx):
@@ -175,7 +106,6 @@ class Net(pytorch_lightning.LightningModule):
         value = metrics.compute_meandice(y_pred=outputs,
                                          y=labels,
                                          include_background=False)
-        print(value, loss)
         self.log('val_loss', loss)
         self.log('val_dice', value)
 
