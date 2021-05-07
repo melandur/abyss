@@ -1,5 +1,6 @@
 import os
-from src.utils import NestedDefaultDict, check_instance
+from loguru import logger as log
+from src.utils import NestedDefaultDict, assure_instance_type
 
 
 class DataSetInitPathScan:
@@ -7,21 +8,32 @@ class DataSetInitPathScan:
 
     def __init__(self, data_set_path, label_search_tags, label_file_type, image_search_tags, image_file_type):
         self.data_set_path = data_set_path
-        self.label_search_tags = check_instance(label_search_tags)
-        self.label_file_type = check_instance(label_file_type)
-        self.image_search_tags = check_instance(image_search_tags)
-        self.image_file_type = check_instance(image_file_type)
+        self.label_search_tags = assure_instance_type(label_search_tags, list)
+        self.label_file_type = assure_instance_type(label_file_type, list)
+        self.image_search_tags = assure_instance_type(image_search_tags, list)
+        self.image_file_type = assure_instance_type(image_file_type, list)
         self.data_path_store = NestedDefaultDict()
 
-        self.scan_folder()
+        log.info(f'Init: {self.__class__.__name__}')
+
+        if self.check_folder_path(data_set_path):
+            self.scan_folder()
 
     @staticmethod
     def get_case_name(file_name):
         """Extracts specific case name from file name"""
         # TODO: Depends heavily on the naming of your data set
         case_name = '_'.join(file_name.split('_')[:-1])
-        # print(case_name)
+        log.debug(f'case_name: {case_name} | file_name: {file_name}')
         return case_name
+
+    @staticmethod
+    def check_folder_path(folder_path):
+        """True if string is not empty or None"""
+        state = False
+        if os.path.isdir(folder_path):
+            state = True
+        return state
 
     def check_file_search_tag_label(self, file_name):
         """True if label search tag is in file name"""

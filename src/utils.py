@@ -9,7 +9,8 @@ class NestedDefaultDict(defaultdict):
         return repr(dict(self))
 
 
-def check_instance(data, check_type=list):
+def assure_instance_type(data, check_type=list):
+    """Checks and corrects instance type"""
     if not isinstance(data, check_type):
         data = type(data)
     return data

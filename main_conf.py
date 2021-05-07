@@ -1,6 +1,9 @@
 import sys
 
 params = {
+
+    'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO', 'WARN'
+
     'project': {'name': 'BratsExp1',
                 'dataset_store_path': r'C:\Users\melandur\Desktop\mo',
                 'result_store_path': r'C:\Users\melandur\Desktop\mo\logs'},
@@ -12,10 +15,8 @@ params = {
         'image_search_tags': ['t1', 't1ce', 'flair', 't2'],
         'image_file_type': ['.nii.gz'],
 
-        'dataset': 'DecathlonDataset',
-        # 'MedNISTDataset', 'DecathlonDataset', 'CrossValidation', 'CustomDataset'
-        'challenge': 'Task01_BrainTumour',
-        # only need for decathlon:   'Task01_BrainTumour', 'Task02_Heart', 'Task03_Liver0', 'Task04_Hippocampus', 'Task05_Prostate', 'Task06_Lung', 'Task07_Pancreas', 'Task08_HepaticVessel', 'Task09_Spleen', 'Task10_Colon'
+        'pull_dataset': 'DecathlonDataset',  # 'MedNISTDataset', 'DecathlonDataset', 'CrossValidation'
+        'challenge': 'Task01_BrainTumour',  # only need for decathlon:   'Task01_BrainTumour', 'Task02_Heart', 'Task03_Liver0', 'Task04_Hippocampus', 'Task05_Prostate', 'Task06_Lung', 'Task07_Pancreas', 'Task08_HepaticVessel', 'Task09_Spleen', 'Task10_Colon'
         'seed': 42,
         'val_frac': 0.2,
         'test_frac': 0.2,

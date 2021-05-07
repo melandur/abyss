@@ -1,6 +1,8 @@
+import os
 from monai.apps import MedNISTDataset, DecathlonDataset, CrossValidation
 
 from main_conf import params
+
 
 def pull_data_set():
     os.makedirs(params['project']['dataset_store_path'], exist_ok=True)
