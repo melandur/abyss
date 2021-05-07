@@ -8,16 +8,16 @@ from src.utils import NestedDefaultDict, assure_instance_type
 class DataSetInitPathScan:
     """Creates a nested dictionary, which holds keys:case_names, values: label and image paths"""
 
-    def __init__(self, data_set_path, label_search_tags, label_file_type, image_search_tags, image_file_type):
-        self.data_set_path = data_set_path
-        self.label_search_tags = assure_instance_type(label_search_tags, list)
-        self.label_file_type = assure_instance_type(label_file_type, list)
-        self.image_search_tags = assure_instance_type(image_search_tags, dict)
-        self.image_file_type = assure_instance_type(image_file_type, list)
+    def __init__(self, params):
+        self.dataset_path = params['dataset']['folder_path']
+        self.label_search_tags = assure_instance_type(params['dataset']['label_search_tags'], list)
+        self.label_file_type = assure_instance_type(params['dataset']['label_file_type'], list)
+        self.image_search_tags = assure_instance_type(params['dataset']['image_search_tags'], dict)
+        self.image_file_type = assure_instance_type(params['dataset']['image_file_type'], list)
         self.data_path_store = NestedDefaultDict()
         log.info(f'Init: {self.__class__.__name__}')
 
-        if self.check_folder_path(data_set_path):
+        if self.check_folder_path(self.dataset_path):
             self.scan_folder()
 
     @staticmethod
@@ -77,7 +77,7 @@ class DataSetInitPathScan:
     @log.catch
     def scan_folder(self):
         """Walk through the data set folder and assigns file paths to the nested dict"""
-        for root, dirs, files in os.walk(self.data_set_path):
+        for root, dirs, files in os.walk(self.dataset_path):
             for file in files:
                 file_path = os.path.join(root, file)
                 if os.path.isfile(file_path):
@@ -90,7 +90,7 @@ class DataSetInitPathScan:
 
     @log.catch
     def show_dict_findings(self):
-        log.debug(f'Data set scan found: {json.dumps(self.data_path_store, indent=4)}')
+        log.trace(f'Dataset scan found: {json.dumps(self.data_path_store, indent=4)}')
 
         count_labels = 0
         count_images = {}
@@ -111,14 +111,4 @@ class DataSetInitPathScan:
                       'Labels': count_labels,
                       'Images': count_images}
 
-        log.info(f'Found: {json.dumps(stats_dict, indent=4)}')
-
-
-if __name__ == '__main__':
-    dl = DataSetInitPathScan(
-        data_set_path=r'C:\Users\melandur\Desktop\MICCAI_BraTS_2019_Data_Training\MICCAI_BraTS_2019_Data_Training\HGG',
-        label_search_tags=['seg'],
-        label_file_type=['.nii.gz'],
-        image_search_tags=['t1', 't1ce', 'flair', 't2'],
-        image_file_type=['.nii.gz'])
-
+        log.info(f'Dataset scan overview: {json.dumps(stats_dict, indent=4)}')
