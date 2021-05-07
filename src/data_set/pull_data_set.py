@@ -1,10 +1,8 @@
-import os
 from monai.apps import MedNISTDataset, DecathlonDataset, CrossValidation
 
 from main_conf import params
 
-
-def get_data_set():
+def pull_data_set():
     os.makedirs(params['project']['dataset_store_path'], exist_ok=True)
     dataset = params['data']['dataset']
 
@@ -72,7 +70,3 @@ def get_data_set():
     else:
         print("Invalid dataset settings in conf.py: params['data']['dataset']")
         exit(1)
-
-
-if __name__ == '__main__':
-    print(1)

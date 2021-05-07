@@ -1,14 +1,12 @@
 import os
 import glob
 import torch
-import numpy as np
 import pytorch_lightning
-import matplotlib.pyplot as plt
 from monai import data, inferers, losses, metrics, transforms, utils
 
 from main_conf import params
-from src.net_architecture import net_architecture
-from src.augmentation import train_transform, val_transform
+from src.training.net_architecture import net_architecture
+from src.training.augmentation import train_transform, val_transform
 
 
 class Net(pytorch_lightning.LightningModule):

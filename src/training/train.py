@@ -4,7 +4,7 @@ from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 from main_conf import params
-from src.net import Net
+from src.training.net import Net
 
 if __name__ == '__main__':
 
