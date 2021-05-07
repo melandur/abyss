@@ -2,7 +2,7 @@ import sys
 
 params = {
 
-    'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO', 'WARN'
+    'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO', 'ERROR'
 
     'project': {'name': 'BratsExp1',
                 'dataset_store_path': r'C:\Users\melandur\Desktop\mo',
@@ -10,9 +10,12 @@ params = {
 
     'dataset': {
         'folder_path': r'C:\Users\melandur\Desktop\MICCAI_BraTS_2019_Data_Training\MICCAI_BraTS_2019_Data_Training\HGG',
-        'label_search_tags': ['seg'],
+        'label_search_tags': ['seg.'],
         'label_file_type': ['.nii.gz'],
-        'image_search_tags': ['t1', 't1ce', 'flair', 't2'],
+        'image_search_tags': {'t1': ['t1.'],
+                              't1ce': ['t1ce.'],
+                              'flair': ['flair.'],
+                              't2': ['t2.']},
         'image_file_type': ['.nii.gz'],
 
         'pull_dataset': 'DecathlonDataset',  # 'MedNISTDataset', 'DecathlonDataset', 'CrossValidation'
