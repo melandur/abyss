@@ -1,16 +1,15 @@
 import os
 import shutil
 import numpy as np
-
 from loguru import logger as log
 
 
 class PreProcessing:
     """Whatever your data needs"""
 
-    def __init__(self, params, data_path_store):
+    def __init__(self, params):
         self.params = params
-        self.data_path_store = data_path_store
+        self.data_path_store = params['tmp']['data_path_store']
         np.random.seed(params['dataset']['seed'])
 
         self.train_set_cases = None
@@ -22,7 +21,7 @@ class PreProcessing:
 
     def create_folder_structure(self):
         """Create folder structure to store the data after the pre-processing"""
-        for folder in ['imageTr', 'labelTr', 'imageTs', 'labelTs']:
+        for folder in ['imagesTr', 'labelsTr', 'imagesTs', 'labelsTs']:
             folder_path = os.path.join(self.params['project']['dataset_store_path'], folder)
             os.makedirs(folder_path, exist_ok=True)
 
@@ -50,16 +49,21 @@ class PreProcessing:
 
         def copy_helper(src, split_folder):
             file_name = os.path.basename(src)
-            shutil.copy2(src, os.path.join(self.params['project']['dataset_store_path'], split_folder, file_name))
+            try:
+                shutil.copy2(src, os.path.join(self.params['project']['dataset_store_path'], split_folder, file_name))
+            except Exception as e:
+                log.warning(e)
 
         log.info('Copies data for train test split')
         for case_name in self.data_path_store.keys():
             if case_name in self.train_set_cases:
-                copy_helper(self.data_path_store[case_name]['label'], 'labelTr')
+                copy_helper(self.data_path_store[case_name]['label'], 'labelsTr')
                 for image_tag in self.data_path_store[case_name]['image']:
-                    copy_helper(self.data_path_store[case_name]['image'][image_tag], 'imageTr')
+                    copy_helper(self.data_path_store[case_name]['image'][image_tag], 'imagesTr')
 
             if case_name in self.test_set_cases:
-                copy_helper(self.data_path_store[case_name]['label'], 'labelTs')
+                copy_helper(self.data_path_store[case_name]['label'], 'labelsTs')
                 for image_tag in self.data_path_store[case_name]['image']:
-                    copy_helper(self.data_path_store[case_name]['image'][image_tag], 'imageTs')
+                    copy_helper(self.data_path_store[case_name]['image'][image_tag], 'imagesTs')
+
+

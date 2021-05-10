@@ -1,11 +1,12 @@
 import os
-import glob
 import torch
 import pytorch_lightning
+import matplotlib.pyplot as plt
+from loguru import logger as log
 from monai import data, inferers, losses, metrics, transforms, utils
 
 from src.training.net_architecture import net_architecture
-from src.training.augmentation import train_transform, val_transform
+from src.training.data_augmentation import DataAugmentation
 
 
 class Net(pytorch_lightning.LightningModule):
@@ -14,7 +15,7 @@ class Net(pytorch_lightning.LightningModule):
         self.params = params
 
         self._model = net_architecture
-        # TODO: Native multi loss
+        # TODO: Make native a multiloss available
         self.loss_function = losses.DiceLoss(to_onehot_y=False,
                                              sigmoid=True,
                                              squared_pred=True)
@@ -29,31 +30,41 @@ class Net(pytorch_lightning.LightningModule):
         return self._model(x)
 
     def prepare_data(self):
-        data_path = os.path.join(self.params['project']['dataset_store_path'])
-        train_images = sorted(glob.glob(os.path.join(data_path, 'imagesTr', '*.nii.gz')))
-        train_labels = sorted(glob.glob(os.path.join(data_path, 'labelsTr', '*.nii.gz')))
-        data_dicts = [{'image': image_name, 'label': label_name}
-                      for image_name, label_name in zip(train_images, train_labels)]
+        train_files = self.params['tmp']['train_data_path_store']
+        val_files = self.params['tmp']['val_data_path_store']
+        utils.set_determinism(seed=self.params['dataset']['seed'])  # set training deterministic
 
-        # TODO: Hardcoded stuff
-        train_files, val_files = data_dicts[:-9], data_dicts[-9:]
-
-        # set deterministic training for reproducibility
-        utils.set_determinism(seed=self.params['dataset']['seed'])
-
+        da = DataAugmentation(self.params)
         if self.params['dataset']['use_cache']:
             self.train_ds = data.CacheDataset(data=train_files,
-                                              transform=train_transform,
+                                              transform=da.train_transform,
                                               cache_rate=self.params['dataset']['cache_rate'],
                                               num_workers=self.params['dataset']['num_workers'])
 
             self.val_ds = data.CacheDataset(data=val_files,
-                                            transform=val_transform,
+                                            transform=da.val_transform,
                                             cache_rate=self.params['dataset']['cache_rate'],
                                             num_workers=self.params['dataset']['num_workers'])
         else:
-            self.train_ds = data.Dataset(data=train_files, transform=train_transform)
-            self.val_ds = data.Dataset(data=val_files, transform=val_transform)
+            self.train_ds = data.Dataset(data=train_files, transform=da.train_transform)
+            self.val_ds = data.Dataset(data=val_files, transform=da.val_transform)
+
+        # # pick one image from DecathlonDataset to visualize and check the 4 channels
+        # print(f"image shape: {self.val_ds[0]['image'].shape}")
+        # plt.figure("image", (24, 6))
+        # for i in range(4):
+        #     plt.subplot(1, 4, i + 1)
+        #     plt.title(f"image channel {i}")
+        #     plt.imshow(self.val_ds[1]["image"][i, :, :, 20].detach().cpu(), cmap="gray")
+        # plt.show()
+        # # also visualize the 3 channels label corresponding to this image
+        # print(f"label shape: {self.val_ds[0]['label'].shape}")
+        # plt.figure("label", (18, 6))
+        # for i in range(3):
+        #     plt.subplot(1, 3, i + 1)
+        #     plt.title(f"label channel {i}")
+        #     plt.imshow(self.val_ds[0]["label"][i, :, :, 20].detach().cpu())
+        # plt.show()
 
     def train_dataloader(self):
         train_loader = torch.utils.data.DataLoader(self.train_ds,
@@ -84,7 +95,7 @@ class Net(pytorch_lightning.LightningModule):
                                         lr=self.params['training']['learning_rate'],
                                         weight_decay=self.params['training']['weight_decay'])
 
-        assert optimizer is not None, 'Invalid optimizer settings in conf.py: training, optimizer'
+        assert optimizer is not None, log.warning('Invalid optimizer settings in conf.py: training, optimizer')
         return optimizer
 
     def training_step(self, batch, batch_idx):

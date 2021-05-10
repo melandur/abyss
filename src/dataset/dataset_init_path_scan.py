@@ -1,5 +1,6 @@
 import os
 import json
+import numpy as np
 from loguru import logger as log
 
 from src.utils import NestedDefaultDict, assure_instance_type
@@ -9,12 +10,15 @@ class DataSetInitPathScan:
     """Creates a nested dictionary, which holds keys:case_names, values: label and image paths"""
 
     def __init__(self, params):
-        self.dataset_path = params['dataset']['folder_path']
+        self.params = params
+        self.dataset_path = params['project']['dataset_store_path']
         self.label_search_tags = assure_instance_type(params['dataset']['label_search_tags'], list)
         self.label_file_type = assure_instance_type(params['dataset']['label_file_type'], list)
         self.image_search_tags = assure_instance_type(params['dataset']['image_search_tags'], dict)
         self.image_file_type = assure_instance_type(params['dataset']['image_file_type'], list)
+
         self.data_path_store = NestedDefaultDict()
+        np.random.seed(params['dataset']['seed'])
         log.info(f'Init: {self.__class__.__name__}')
 
         if self.check_folder_path(self.dataset_path):
@@ -86,10 +90,13 @@ class DataSetInitPathScan:
                     if self.check_file_search_tag_image(file) and self.check_file_type_image(file):
                         found_tag = self.get_file_search_tag_image(file)
                         self.data_path_store[self.get_case_name(file)]['image'][found_tag] = file_path
+
+        self.params['tmp']['data_path_store'] = self.data_path_store
         self.show_dict_findings()
 
     @log.catch
     def show_dict_findings(self):
+        """Summaries and shows the findings"""
         log.trace(f'Dataset scan found: {json.dumps(self.data_path_store, indent=4)}')
 
         count_labels = 0

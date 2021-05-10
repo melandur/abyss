@@ -10,14 +10,17 @@ class ConfigManager:
             self.params = {
                 'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO', 'ERROR'
 
-                'pipeline_steps': {'dataset': True,
-                                   'pre_processing': True,
+                'pipeline_steps': {'dataset': False,
+                                   'pre_processing': False,
                                    'training': True,
-                                   'post_processing': True},
+                                   'post_processing': True
+                                   },
 
                 'project': {'name': 'BratsExp1',
                             'dataset_store_path': r'C:\Users\melandur\Desktop\mo\my_test',
-                            'result_store_path': r'C:\Users\melandur\Desktop\mo\logs'},
+                            'result_store_path': r'C:\Users\melandur\Desktop\mo\logs',
+                            'augmentation_store_path': r'C:\Users\melandur\Desktop\mo\my_test\aug',
+                            },
 
                 'dataset': {
                     'folder_path': r'C:\Users\melandur\Desktop\MICCAI_BraTS_2019_Data_Training\MICCAI_BraTS_2019_Data_Training\HGG',
@@ -38,7 +41,7 @@ class ConfigManager:
                     'use_cache': False,  # goes heavy on memory
                     'cache_max': sys.maxsize,
                     'cache_rate': 0.0,  # set 0 to reduce memory consumption
-                    'num_workers': 4
+                    'num_workers': 8
                 },
 
                 'pre_processing': {},
@@ -60,7 +63,16 @@ class ConfigManager:
                     'dropout': 0.5,  # tbd
                     'criterion': ['MSE_mean'],
                     'num_workers': 8,
-                    'n_classes': 3},
+                    'n_classes': 3
+                },
+
+                'tmp': {
+                    'data_path_store': dict,
+                    'train_data_path_store': dict,
+                    'val_data_path_store': dict,
+                    'test_data_path_store': dict,
+                }
+
             }
         else:
-            self.params = json.load(load_conf_file)
+            self.params = json.load(load_conf_file_path)
