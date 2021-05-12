@@ -138,6 +138,8 @@ class TrainDataSetPathScan:
         self.params['tmp']['train_data_path_store'] = self.train_data_path_store
         self.params['tmp']['val_data_path_store'] = self.val_data_path_store
 
+        print(self.train_data_path_store)
+
 
 if __name__ == '__main__':
     import sys

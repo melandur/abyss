@@ -18,10 +18,10 @@ class Training:
                                               filename=params['project']['name'])
 
         early_stop_callback = EarlyStopping(monitor='val_loss',
-                                            min_delta=0.00,
-                                            patience=0,
-                                            verbose=False,
-                                            mode='max')
+                                            min_delta=params['training']['early_stop']['min_delta'],
+                                            patience=params['training']['early_stop']['patience'],
+                                            verbose=params['training']['early_stop']['verbose'],
+                                            mode=params['training']['early_stop']['mode'])
 
         # Used defined train seed
         if params['training']['seed']:

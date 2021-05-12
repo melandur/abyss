@@ -10,28 +10,31 @@ class ConfigManager:
             self.params = {
                 'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO', 'ERROR'
 
-                'pipeline_steps': {'dataset': False,
-                                   'pre_processing': False,
-                                   'training': True,
-                                   'post_processing': True
-                                   },
+                'pipeline_steps': {
+                    'dataset': True,
+                    'pre_processing': False,
+                    'training': False,
+                    'post_processing': False
+                },
 
-                'project': {'name': 'BratsExp1',
-                            'dataset_store_path': r'C:\Users\melandur\Desktop\mo\my_test',
-                            'result_store_path': r'C:\Users\melandur\Desktop\mo\logs',
-                            'augmentation_store_path': r'C:\Users\melandur\Desktop\mo\my_test\aug',
-                            },
+                'project': {
+                    'name': 'BratsExp1',
+                    'dataset_store_path': r'C:\Users\melandur\Desktop\mo\my_test',
+                    'result_store_path': r'C:\Users\melandur\Desktop\mo\logs',
+                    'augmentation_store_path': r'C:\Users\melandur\Desktop\mo\my_test\aug',
+                },
 
                 'dataset': {
                     'folder_path': r'C:\Users\melandur\Desktop\MICCAI_BraTS_2019_Data_Training\MICCAI_BraTS_2019_Data_Training\HGG',
                     'label_search_tags': ['seg.'],
                     'label_file_type': ['.nii.gz'],
-                    'image_search_tags': {'t1': ['t1.'],
-                                          't1ce': ['t1ce.'],
-                                          'flair': ['flair.'],
-                                          't2': ['t2.']},
+                    'image_search_tags': {
+                        't1': ['t1.'],
+                        't1ce': ['t1ce.'],
+                        'flair': ['flair.'],
+                        't2': ['t2.']},
                     'image_file_type': ['.nii.gz'],
-
+                    'concatenate_image_files': True,
                     'pull_dataset': 'DecathlonDataset',  # 'MedNISTDataset', 'DecathlonDataset', 'CrossValidation'
                     'challenge': 'Task01_BrainTumour',
                     # only need for decathlon:   'Task01_BrainTumour', 'Task02_Heart', 'Task03_Liver0', 'Task04_Hippocampus', 'Task05_Prostate', 'Task06_Lung', 'Task07_Pancreas', 'Task08_HepaticVessel', 'Task09_Spleen', 'Task10_Colon'
@@ -63,7 +66,13 @@ class ConfigManager:
                     'dropout': 0.5,  # tbd
                     'criterion': ['MSE_mean'],
                     'num_workers': 8,
-                    'n_classes': 3
+                    'n_classes': 3,
+                    'early_stop': {
+                        'min_delta': 0.0,
+                        'patience': 0,
+                        'verbose': False,
+                        'mode': 'max'
+                    }
                 },
 
                 'tmp': {
@@ -71,6 +80,7 @@ class ConfigManager:
                     'train_data_path_store': dict,
                     'val_data_path_store': dict,
                     'test_data_path_store': dict,
+                    'copy_manager_': dict,
                 }
 
             }

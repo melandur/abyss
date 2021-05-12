@@ -1,12 +1,10 @@
 import os
 from monai.apps import MedNISTDataset, DecathlonDataset, CrossValidation
 
-from main_conf import params
 
-
-def pull_data_set():
+def pull_data_set(params):
     os.makedirs(params['project']['dataset_store_path'], exist_ok=True)
-    dataset = params['data']['dataset']
+    dataset = params['dataset']['pull_dataset']
 
     if 'MedNISTDataset' in dataset:
         print(f'using: {dataset}')
@@ -14,61 +12,66 @@ def pull_data_set():
             root_dir=params['project']['dataset_store_path'],
             section='training',
             download=True,
-            seed=params['data']['seed'],
-            val_frac=params['data']['val_frac'],
-            test_frac=params['data']['test_frac'],
-            num_workers=params['data']['num_workers']
+            seed=params['dataset']['seed'],
+            val_frac=params['dataset']['val_frac'],
+            test_frac=params['dataset']['test_frac'],
+            num_workers=params['dataset']['num_workers']
         )
 
     elif 'DecathlonDataset' in dataset:
-        print(f'using: {dataset}, {params["data"]["challenge"]}')
+        print(f'using: {dataset}, {params["dataset"]["challenge"]}')
 
         DecathlonDataset(
             root_dir=params['project']['dataset_store_path'],
-            task=params['data']['challenge'],
+            task=params['dataset']['challenge'],
             section='training',
             download=True,
-            seed=params['data']['seed'],
-            val_frac=params['data']['val_frac'],
-            cache_num=params['data']['cache_max'],
-            cache_rate=params['data']['cache_rate'],
-            num_workers=params['data']['num_workers']
+            seed=params['dataset']['seed'],
+            val_frac=params['dataset']['val_frac'],
+            cache_num=params['dataset']['cache_max'],
+            cache_rate=params['dataset']['cache_rate'],
+            num_workers=params['dataset']['num_workers']
         )
 
         DecathlonDataset(
             root_dir=params['project']['dataset_store_path'],
-            task=params['data']['challenge'],
+            task=params['dataset']['challenge'],
             section='validation',
             download=False,
-            num_workers=params['data']['num_workers']
+            num_workers=params['dataset']['num_workers']
         )
 
         DecathlonDataset(
             transform=(),
             root_dir=params['project']['dataset_store_path'],
-            task=params['data']['challenge'],
+            task=params['dataset']['challenge'],
             section='test',
             download=True,
-            cache_num=params['data']['cache_max'],
-            cache_rate=params['data']['cache_rate'],
-            num_workers=params['data']['num_workers']
+            cache_num=params['dataset']['cache_max'],
+            cache_rate=params['dataset']['cache_rate'],
+            num_workers=params['dataset']['num_workers']
         )
 
     elif 'CrossValidation' in dataset:
         print(f'using: {dataset}')
         CrossValidation(
             root_dir=params['project']['dataset_store_path'],
-            task=params['data']['challenge'],
+            task=params['dataset']['challenge'],
             section='training',
             download=True,
-            num_workers=params['data']['num_workers'],
-            cache_num=params['data']['cache_num']
+            num_workers=params['dataset']['num_workers'],
+            cache_num=params['dataset']['cache_num']
         )
 
-    elif 'CustomDataset' in params['data']['dataset']:
-        print(f'using: {dataset}')
-        # TODO: Need some code, split data into imageTr, imageTs, labelTr, labelTs. Stored as nii.gz
+    # elif 'CustomDataset' in params['dataset']['dataset']:
+    #     print(f'using: {dataset}')
+    #     TODO: Need some code, split data into imageTr, imageTs, labelTr, labelTs. Stored as nii.gz
 
-    else:
-        print("Invalid dataset settings in conf.py: params['data']['dataset']")
-        exit(1)
+    # else:
+        # print("Invalid dataset settings in conf.py: params['data']['dataset']")
+        # exit(1)
+
+if __name__ == '__main__':
+    from main_conf import ConfigManager
+    params = ConfigManager().params
+    pull_data_set(params)
