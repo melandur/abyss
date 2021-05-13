@@ -20,7 +20,7 @@ class PreProcessing:
         self.create_folder_structure()
 
         self.create_src_dst_dict()
-        self.train_test_split_by_case_names()
+        # self.train_test_split_by_case_names()
         # self.execute_train_test_split()
         # if self.params['dataset']['concatenate_image_files']:
             # self.concatenate_image_files()
@@ -56,8 +56,10 @@ class PreProcessing:
             'dst_path': None,
         }
 
-        print(self.data_path_store)
-        # for case_name in self.data_path_store['labels'].keys():
+        # print(self.data_path_store)
+        for case_name in self.data_path_store.keys():
+            print(self.data_path_store[case_name]['image'])
+            print(case_name)
         #     print(case_name)
             # copy_file_manager_dict['src_path']['case'] = self.data_path_store[case_name]['label']
             # copy_file_manager_dict

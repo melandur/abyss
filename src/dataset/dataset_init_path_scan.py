@@ -3,7 +3,7 @@ import json
 import numpy as np
 from loguru import logger as log
 
-from src.utils import NestedDefaultDict, assure_instance_type
+from src.utilities.utils import NestedDefaultDict, assure_instance_type
 
 
 class DataSetInitPathScan:
@@ -86,10 +86,10 @@ class DataSetInitPathScan:
                 file_path = os.path.join(root, file)
                 if os.path.isfile(file_path):
                     if self.check_file_search_tag_label(file) and self.check_file_type_label(file):
-                        self.data_path_store[self.get_case_name(file)]['label'] = file_path
+                        self.data_path_store['label'][self.get_case_name(file)] = file_path
                     if self.check_file_search_tag_image(file) and self.check_file_type_image(file):
                         found_tag = self.get_file_search_tag_image(file)
-                        self.data_path_store[self.get_case_name(file)]['image'][found_tag] = file_path
+                        self.data_path_store['image'][self.get_case_name(file)][found_tag] = file_path
 
         self.params['tmp']['data_path_store'] = self.data_path_store
         self.show_dict_findings()
@@ -104,18 +104,21 @@ class DataSetInitPathScan:
         for image_tag in self.image_search_tags.keys():
             count_images[image_tag] = 0
 
-        for case in self.data_path_store.keys():
-            for label, label_path in self.data_path_store[case].items():
-                if 'label' == label:
-                    if os.path.isfile(label_path):
-                        count_labels += 1
-
-            for image_tag, image_path in self.data_path_store[case]['image'].items():
+        for case in self.data_path_store['image'].keys():
+            for image_tag, image_path in self.data_path_store['image'][case].items():
                 if os.path.isfile(image_path):
                     count_images[image_tag] += 1
 
-        stats_dict = {'Total cases': len(self.data_path_store.keys()),
+        for label, label_path in self.data_path_store['label'].items():
+            if os.path.isfile(label_path):
+                count_labels += 1
+
+        stats_dict = {'Total cases': len(self.data_path_store['image'].keys()),
                       'Labels': count_labels,
                       'Images': count_images}
 
         log.info(f'Dataset scan overview: {json.dumps(stats_dict, indent=4)}')
+
+
+if __name__ == '__main__':
+    ds = DataSetInitPathScan()

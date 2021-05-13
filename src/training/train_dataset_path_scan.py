@@ -2,7 +2,7 @@ import os
 import numpy as np
 from loguru import logger as log
 
-from src.utils import NestedDefaultDict, assure_instance_type
+from src.utilities.utils import NestedDefaultDict, assure_instance_type
 
 
 class TrainDataSetPathScan:

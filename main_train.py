@@ -21,7 +21,7 @@ if __name__ == '__main__':
     if params['pipeline_steps']['pre_processing']:
         log.info('Started with pre-processing:')
         DataSetInitPathScan(params)
-        PreProcessing(params)
+        # PreProcessing(params)
 
     if params['pipeline_steps']['training']:
         log.info('Started with training:')
