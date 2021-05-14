@@ -16,6 +16,11 @@ def check_and_create_folder_structure(params):
     for folder in folders:
         os.makedirs(folder, exist_ok=True)
 
+    # Create subfolders for training dataset
+    for folder in ['imagesTr', 'labelsTr', 'imagesTs', 'labelsTs']:
+        folder_path = os.path.join(params['project']['trainset_store_path'], folder)
+        os.makedirs(folder_path, exist_ok=True)
+
 
 def check_image_search_tag_redundancy(params):
     """Check if there are any redundant search tag per image name"""

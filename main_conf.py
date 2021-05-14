@@ -26,7 +26,7 @@ class ConfigManager:
 
                 'pipeline_steps': {
                     'dataset': True,
-                    'pre_processing': False,
+                    'pre_processing': True,
                     'training': False,
                     'post_processing': False
                 },
