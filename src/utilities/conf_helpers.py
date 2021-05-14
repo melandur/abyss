@@ -7,10 +7,11 @@ from loguru import logger as log
 def check_and_create_folder_structure(params):
     """Check and create folders if they are missing"""
     folders = [
-        params['project']['dataset_store_path'],
+        params['project']['structured_dataset_store_path'],
+        params['project']['preprocessed_dataset_store_path'],
+        params['project']['trainset_store_path'],
         params['project']['result_store_path'],
         params['project']['augmentation_store_path'],
-        params['dataset']['folder_path']
     ]
     for folder in folders:
         os.makedirs(folder, exist_ok=True)

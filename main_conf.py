@@ -1,5 +1,8 @@
+import os
 import sys
 import json
+
+from src.utilities.utils import NestedDefaultDict
 
 from src.utilities.conf_helpers import \
     check_and_create_folder_structure,\
@@ -12,25 +15,35 @@ class ConfigManager:
 
     def __init__(self, load_conf_file_path=None):
         if not load_conf_file_path:
+
+            project_name = 'BratsExp1'
+            experiment_name = 'test'
+            project_base_path = r'C:\Users\melandur\Desktop\mo\my_test'
+            dataset_folder_path = r'C:\Users\melandur\Desktop\MICCAI_BraTS_2019_Data_Training\MICCAI_BraTS_2019_Data_Training\HGG'
+
             self.params = {
-                'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO', 'ERROR'
+                'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
 
                 'pipeline_steps': {
                     'dataset': True,
-                    'pre_processing': True,
+                    'pre_processing': False,
                     'training': False,
                     'post_processing': False
                 },
 
                 'project': {
-                    'name': 'BratsExp1',
-                    'dataset_store_path': r'C:\Users\melandur\Desktop\mo\my_test',
-                    'result_store_path': r'C:\Users\melandur\Desktop\mo\logs',
-                    'augmentation_store_path': r'C:\Users\melandur\Desktop\mo\my_test\aug',
+                    'name': project_name,
+                    'experiment_name': experiment_name,
+                    'base_path': project_base_path,
+                    'structured_dataset_store_path': os.path.join(project_base_path, project_name, experiment_name, 'structured_dataset'),
+                    'preprocessed_dataset_store_path': os.path.join(project_base_path, project_name, experiment_name, 'pre_processed_dataset'),
+                    'trainset_store_path': os.path.join(project_base_path, project_name, experiment_name, 'trainset'),
+                    'result_store_path': os.path.join(project_base_path, project_name, experiment_name, 'results'),
+                    'augmentation_store_path': os.path.join(project_base_path, project_name, experiment_name, 'aug_plots'),
                 },
 
                 'dataset': {
-                    'folder_path': r'C:\Users\melandur\Desktop\MICCAI_BraTS_2019_Data_Training\MICCAI_BraTS_2019_Data_Training\HGG',
+                    'folder_path': dataset_folder_path,
                     'label_search_tags': ['seg.'],
                     'label_file_type': ['.nii.gz'],
                     'image_search_tags': {
@@ -81,11 +94,11 @@ class ConfigManager:
                 },
 
                 'tmp': {
-                    'data_path_store': dict,
-                    'train_data_path_store': dict,
-                    'val_data_path_store': dict,
-                    'test_data_path_store': dict,
-                    'copy_manager_': dict,
+                    'structured_dataset_paths': NestedDefaultDict(),
+                    'preprocessed_dataset_paths': NestedDefaultDict(),
+                    'train_dataset_paths': NestedDefaultDict(),
+                    'val_dataset_paths': NestedDefaultDict(),
+                    'test_dataset_paths': NestedDefaultDict(),
                 }
             }
         else:

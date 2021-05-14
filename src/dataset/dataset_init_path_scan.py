@@ -1,5 +1,6 @@
 import os
 import json
+import shutil
 import numpy as np
 from loguru import logger as log
 
@@ -11,7 +12,7 @@ class DataSetInitPathScan:
 
     def __init__(self, params):
         self.params = params
-        self.dataset_path = params['project']['dataset_store_path']
+        self.dataset_folder_path = params['dataset']['folder_path']
         self.label_search_tags = assure_instance_type(params['dataset']['label_search_tags'], list)
         self.label_file_type = assure_instance_type(params['dataset']['label_file_type'], list)
         self.image_search_tags = assure_instance_type(params['dataset']['image_search_tags'], dict)
@@ -21,8 +22,10 @@ class DataSetInitPathScan:
         np.random.seed(params['dataset']['seed'])
         log.info(f'Init: {self.__class__.__name__}')
 
-        if self.check_folder_path(self.dataset_path):
+        if self.check_folder_path(self.dataset_folder_path):
             self.scan_folder()
+            self.show_dict_findings()
+            self.create_structured_dataset()
 
     @staticmethod
     def get_case_name(file_name):
@@ -81,7 +84,7 @@ class DataSetInitPathScan:
     @log.catch
     def scan_folder(self):
         """Walk through the data set folder and assigns file paths to the nested dict"""
-        for root, dirs, files in os.walk(self.dataset_path):
+        for root, dirs, files in os.walk(self.dataset_folder_path):
             for file in files:
                 file_path = os.path.join(root, file)
                 if os.path.isfile(file_path):
@@ -91,8 +94,36 @@ class DataSetInitPathScan:
                         found_tag = self.get_file_search_tag_image(file)
                         self.data_path_store['image'][self.get_case_name(file)][found_tag] = file_path
 
-        self.params['tmp']['data_path_store'] = self.data_path_store
-        self.show_dict_findings()
+    @log.catch
+    def create_structured_dataset(self):
+        """Copies the found file to an image/label folder for further pre-processing"""
+
+        def copy_helper(src, folder_name, case_name, tag_name):
+            """Copy and renames files by their case and tag name, keeps file extension, returns the new file path"""
+            file_name = os.path.basename(src)
+            file_extension = file_name.split(os.extsep, 1)[1]
+            new_file_name = f'{case_name}_{tag_name}.{file_extension}'
+            dst_file_path = os.path.join(self.params['project']['structured_dataset_store_path'], folder_name, new_file_name)
+            os.makedirs(os.path.dirname(dst_file_path), exist_ok=True)
+            shutil.copy2(src=src, dst=dst_file_path)
+            return dst_file_path
+
+        # copy files from original dataset to structured dataset and create file path dict
+        log.info('Copying original dataset into structured dataset')
+        for case_name in self.data_path_store['image'].keys():
+            for tag_name in self.image_search_tags.keys():  # copy images
+                self.params['tmp']['structured_dataset_paths']['image'][case_name][tag_name] = copy_helper(
+                    src=self.data_path_store['image'][case_name][tag_name],
+                    folder_name='image',
+                    case_name=case_name,
+                    tag_name=tag_name)
+
+            # copy labels
+            self.params['tmp']['structured_dataset_paths']['label'][case_name] = copy_helper(
+                src=self.data_path_store['label'][case_name],
+                folder_name='label',
+                case_name=case_name,
+                tag_name='seg')
 
     @log.catch
     def show_dict_findings(self):

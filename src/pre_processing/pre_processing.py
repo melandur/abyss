@@ -56,10 +56,11 @@ class PreProcessing:
             'dst_path': None,
         }
 
-        # print(self.data_path_store)
-        for case_name in self.data_path_store.keys():
-            print(self.data_path_store[case_name]['image'])
-            print(case_name)
+        for case_name in self.data_path_store['image'].keys():
+            pass
+
+            # print(self.data_path_store[case_name]['image'])
+            # print(case_name)
         #     print(case_name)
             # copy_file_manager_dict['src_path']['case'] = self.data_path_store[case_name]['label']
             # copy_file_manager_dict
