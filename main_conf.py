@@ -25,7 +25,7 @@ class ConfigManager:
                 'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
 
                 'pipeline_steps': {
-                    'dataset': True,
+                    'dataset': False,
                     'pre_processing': True,
                     'training': False,
                     'post_processing': False
