@@ -18,15 +18,15 @@ class ConfigManager:
 
             project_name = 'BratsExp1'
             experiment_name = 'test'
-            project_base_path = r'C:\Users\melandur\Desktop\mo\my_test'
-            dataset_folder_path = r'C:\Users\melandur\Desktop\MICCAI_BraTS_2019_Data_Training\MICCAI_BraTS_2019_Data_Training\HGG'
+            project_base_path = '/home/melandur/Downloads/test'
+            dataset_folder_path = '/home/melandur/Desktop/Brats17TrainingData/LGG'
 
             self.params = {
                 'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
 
                 'pipeline_steps': {
-                    'dataset': False,
-                    'pre_processing': True,
+                    'dataset': True,
+                    'pre_processing': False,
                     'training': False,
                     'post_processing': False
                 },
@@ -50,7 +50,7 @@ class ConfigManager:
                         't1': ['t1.'],
                         't1ce': ['t1ce.'],
                         'flair': ['flair.'],
-                        't2': ['t2']},
+                        't2': ['t2.']},
                     'image_file_type': ['.nii.gz'],
                     'concatenate_image_files': True,
                     'pull_dataset': 'DecathlonDataset',  # 'MedNISTDataset', 'DecathlonDataset', 'CrossValidation'

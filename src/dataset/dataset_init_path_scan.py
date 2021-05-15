@@ -32,6 +32,9 @@ class DataSetInitPathScan:
         """Extracts specific case name from file name"""
         # TODO: Depends heavily on the naming of your data set
         case_name = '_'.join(file_name.split('_')[:-1])
+        bad_chars = ['#', '<', '>', '$', '%', '!', '&', '*', "'", '"', '{', '}', '/', ':', '@', '+', '.']
+        for bad_char in bad_chars:
+            assert case_name.count(bad_char) == 0, (log.error(f'{file_name} contains bad char: "{bad_char}"'), exit(1))
         log.debug(f'case_name: {case_name} | file_name: {file_name}')
         return case_name
 
@@ -98,6 +101,7 @@ class DataSetInitPathScan:
     def create_structured_dataset(self):
         """Copies the found file to an image/label folder for further pre-processing"""
 
+        @log.catch
         def copy_helper(src, folder_name, case_name, tag_name):
             """Copy and renames files by their case and tag name, keeps file extension, returns the new file path"""
             file_name = os.path.basename(src)
