@@ -4,6 +4,7 @@ import shutil
 import numpy as np
 from loguru import logger as log
 
+from src.utilities.conf_helpers import store_conf_file
 from src.utilities.utils import NestedDefaultDict, assure_instance_type
 
 
@@ -24,6 +25,7 @@ class DataSetInitPathScan:
 
         if self.check_folder_path(self.dataset_folder_path):
             self.scan_folder()
+            self.check_for_missing_files()
             self.show_dict_findings()
             self.create_structured_dataset()
 
@@ -34,7 +36,8 @@ class DataSetInitPathScan:
         case_name = '_'.join(file_name.split('_')[:-1])
         bad_chars = ['#', '<', '>', '$', '%', '!', '&', '*', "'", '"', '{', '}', '/', ':', '@', '+', '.']
         for bad_char in bad_chars:
-            assert case_name.count(bad_char) == 0, (log.error(f'{file_name} contains bad char: "{bad_char}"'), exit(1))
+            assert case_name.count(bad_char) == 0, \
+                (log.error(f'Filename: {file_name} contains bad char: "{bad_char}"'), exit(1))
         log.debug(f'case_name: {case_name} | file_name: {file_name}')
         return case_name
 
@@ -98,16 +101,28 @@ class DataSetInitPathScan:
                         self.data_path_store['image'][self.get_case_name(file)][found_tag] = file_path
 
     @log.catch
+    def check_for_missing_files(self):
+        """Check if there are any image/label files are missing"""
+        for case_name in self.data_path_store['image'].keys():
+            for tag_name in self.image_search_tags.keys():
+                assert isinstance(self.data_path_store['image'][case_name][tag_name], str), \
+                    (log.error(f'No {tag_name} file found for {case_name}, check file and search image tags'), exit(1))
+            assert isinstance(self.data_path_store['label'][case_name], str), \
+                (log.error(f'No seg file found for {case_name}, check file and label earch tags'), exit(1))
+
+    @log.catch
     def create_structured_dataset(self):
         """Copies the found file to an image/label folder for further pre-processing"""
 
         @log.catch
         def copy_helper(src, folder_name, case_name, tag_name):
             """Copy and renames files by their case and tag name, keeps file extension, returns the new file path"""
+            # if isinstance(src, str) and os.path.isfile(src):
             file_name = os.path.basename(src)
             file_extension = file_name.split(os.extsep, 1)[1]
             new_file_name = f'{case_name}_{tag_name}.{file_extension}'
-            dst_file_path = os.path.join(self.params['project']['structured_dataset_store_path'], folder_name, new_file_name)
+            dst_file_path = os.path.join(self.params['project']['structured_dataset_store_path'], folder_name,
+                                         new_file_name)
             os.makedirs(os.path.dirname(dst_file_path), exist_ok=True)
             shutil.copy2(src=src, dst=dst_file_path)
             return dst_file_path
@@ -128,6 +143,8 @@ class DataSetInitPathScan:
                 folder_name='label',
                 case_name=case_name,
                 tag_name='seg')
+
+        store_conf_file(self.params)
 
     @log.catch
     def show_dict_findings(self):

@@ -7,7 +7,8 @@ from src.utilities.utils import NestedDefaultDict
 from src.utilities.conf_helpers import \
     check_and_create_folder_structure,\
     check_image_search_tag_redundancy, \
-    check_image_search_tag_uniqueness
+    check_image_search_tag_uniqueness, \
+    store_conf_file
 
 
 class ConfigManager:
@@ -18,8 +19,8 @@ class ConfigManager:
 
             project_name = 'BratsExp1'
             experiment_name = 'test'
-            project_base_path = '/home/melandur/Downloads/test'
-            dataset_folder_path = '/home/melandur/Desktop/Brats17TrainingData/LGG'
+            project_base_path = r'C:\Users\melandur\Downloads\mytest'
+            dataset_folder_path = r'C:\Users\melandur\Desktop\test_v2'
 
             self.params = {
                 'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
@@ -48,7 +49,7 @@ class ConfigManager:
                     'label_file_type': ['.nii.gz'],
                     'image_search_tags': {
                         't1': ['t1.'],
-                        't1ce': ['t1ce.'],
+                        't1ce': ['t1c.'],
                         'flair': ['flair.'],
                         't2': ['t2.']},
                     'image_file_type': ['.nii.gz'],
@@ -107,6 +108,7 @@ class ConfigManager:
         check_image_search_tag_redundancy(self.params)
         check_image_search_tag_uniqueness(self.params)
         check_and_create_folder_structure(self.params)
+        store_conf_file(self.params)
 
 
 if __name__ == '__main__':

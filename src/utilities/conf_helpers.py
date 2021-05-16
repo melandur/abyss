@@ -1,4 +1,5 @@
 import os
+import json
 from copy import deepcopy
 from collections import Counter
 from loguru import logger as log
@@ -43,3 +44,12 @@ def check_image_search_tag_uniqueness(params):
             log.error(f'The image search tag {vague_tag} is not expressive/unique enough. '
                       f'Try to add additional information to the search tag like "_", "."')
             exit(1)
+
+
+def store_conf_file(params):
+    """Export used conf params as json to the project folder"""
+    conf_path = os.path.join(params['project']['base_path'], params['project']['name'],
+                             params['project']['experiment_name'], 'conf.json')
+
+    with open(conf_path, 'w+') as f:
+        f.write(json.dumps(params, indent=4))
