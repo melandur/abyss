@@ -4,23 +4,22 @@ import shutil
 import numpy as np
 from loguru import logger as log
 
-from src.utilities.conf_helpers import store_conf_file
 from src.utilities.utils import NestedDefaultDict, assure_instance_type
 
 
 class DataSetInitPathScan:
     """Creates a nested dictionary, which holds keys:case_names, values: label and image paths"""
 
-    def __init__(self, params):
-        self.params = params
-        self.dataset_folder_path = params['dataset']['folder_path']
-        self.label_search_tags = assure_instance_type(params['dataset']['label_search_tags'], list)
-        self.label_file_type = assure_instance_type(params['dataset']['label_file_type'], list)
-        self.image_search_tags = assure_instance_type(params['dataset']['image_search_tags'], dict)
-        self.image_file_type = assure_instance_type(params['dataset']['image_file_type'], list)
+    def __init__(self, cm):
+        self.params = cm.params
+        self.dataset_folder_path = cm.params['dataset']['folder_path']
+        self.label_search_tags = assure_instance_type(cm.params['dataset']['label_search_tags'], list)
+        self.label_file_type = assure_instance_type(cm.params['dataset']['label_file_type'], list)
+        self.image_search_tags = assure_instance_type(cm.params['dataset']['image_search_tags'], dict)
+        self.image_file_type = assure_instance_type(cm.params['dataset']['image_file_type'], list)
 
         self.data_path_store = NestedDefaultDict()
-        np.random.seed(params['dataset']['seed'])
+        np.random.seed(cm.params['dataset']['seed'])
         log.info(f'Init: {self.__class__.__name__}')
 
         if self.check_folder_path(self.dataset_folder_path):
@@ -144,7 +143,7 @@ class DataSetInitPathScan:
                 case_name=case_name,
                 tag_name='seg')
 
-        store_conf_file(self.params)
+        # st(self.params)
 
     @log.catch
     def show_dict_findings(self):

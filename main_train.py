@@ -10,26 +10,27 @@ from src.training.training import Training
 
 if __name__ == '__main__':
 
-    params = ConfigManager(load_conf_file_path=None).params
+    cm = ConfigManager()
+    cm.load_config_file(file_path=None)
 
     log.remove()  # fresh start
-    log.add(sys.stderr, level=params['logger']['level'])
+    log.add(sys.stderr, level=cm.params['logger']['level'])
 
-    if params['pipeline_steps']['dataset']:
+    if cm.params['pipeline_steps']['dataset']:
         log.info('Started with dataset preparation:')
-        DataSetInitPathScan(params)
+        DataSetInitPathScan(cm)
         # StructureDataSet(params)
 
-    if params['pipeline_steps']['pre_processing']:
+    if cm.params['pipeline_steps']['pre_processing']:
         log.info('Started with pre-processing:')
-        PreProcessing(params)
+        PreProcessing(cm)
 
-    if params['pipeline_steps']['training']:
+    if cm.params['pipeline_steps']['training']:
         log.info('Started with training:')
-        TrainDataSetPathScan(params)
-        Training(params)
+        TrainDataSetPathScan(cm)
+        Training(cm)
 
-    if params['pipeline_steps']['post_processing']:
+    if cm.params['pipeline_steps']['post_processing']:
         log.info('Started with post-processing:')
 
 
