@@ -9,10 +9,11 @@ from src.pre_processing.helpers import ConcatenateImages
 class PreProcessing:
     """Whatever your data needs"""
 
-    def __init__(self, params):
-        self.params = params
-        self.structured_dataset_paths = params['tmp']['structured_dataset_paths']
-        np.random.seed(params['dataset']['seed'])
+    def __init__(self, cm):
+        self.cm = cm
+        self.params = cm.params
+        self.structured_dataset_paths = cm.path_memory['structured_dataset_paths']
+        np.random.seed(cm.params['dataset']['seed'])
 
         self.train_set_cases = None
         self.test_set_cases = None

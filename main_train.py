@@ -1,4 +1,3 @@
-import sys
 from loguru import logger as log
 
 from main_conf import ConfigManager
@@ -12,9 +11,6 @@ if __name__ == '__main__':
 
     cm = ConfigManager()
     cm.load_config_file(file_path=None)
-
-    log.remove()  # fresh start
-    log.add(sys.stderr, level=cm.params['logger']['level'])
 
     if cm.params['pipeline_steps']['dataset']:
         log.info('Started with dataset preparation:')

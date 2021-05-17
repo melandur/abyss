@@ -13,6 +13,3 @@ class DataPathMemory:
             'val_dataset_paths': NestedDefaultDict(),
             'test_dataset_paths': NestedDefaultDict(),
         }
-
-
-

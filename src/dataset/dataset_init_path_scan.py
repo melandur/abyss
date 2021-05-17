@@ -11,7 +11,9 @@ class DataSetInitPathScan:
     """Creates a nested dictionary, which holds keys:case_names, values: label and image paths"""
 
     def __init__(self, cm):
+        self.cm = cm
         self.params = cm.params
+        self.path_memory = cm.path_memory
         self.dataset_folder_path = cm.params['dataset']['folder_path']
         self.label_search_tags = assure_instance_type(cm.params['dataset']['label_search_tags'], list)
         self.label_file_type = assure_instance_type(cm.params['dataset']['label_file_type'], list)
@@ -130,20 +132,20 @@ class DataSetInitPathScan:
         log.info('Copying original dataset into structured dataset')
         for case_name in self.data_path_store['image'].keys():
             for tag_name in self.image_search_tags.keys():  # copy images
-                self.params['tmp']['structured_dataset_paths']['image'][case_name][tag_name] = copy_helper(
+                self.path_memory['structured_dataset_paths']['image'][case_name][tag_name] = copy_helper(
                     src=self.data_path_store['image'][case_name][tag_name],
                     folder_name='image',
                     case_name=case_name,
                     tag_name=tag_name)
 
             # copy labels
-            self.params['tmp']['structured_dataset_paths']['label'][case_name] = copy_helper(
+            self.path_memory['structured_dataset_paths']['label'][case_name] = copy_helper(
                 src=self.data_path_store['label'][case_name],
                 folder_name='label',
                 case_name=case_name,
                 tag_name='seg')
 
-        # st(self.params)
+        self.cm.store_path_memory_file()
 
     @log.catch
     def show_dict_findings(self):
