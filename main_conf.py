@@ -14,22 +14,33 @@ from src.utilities.conf_helpers import \
 class ConfigManager:
     """The pipelines control center, most parameters can be found here"""
 
-    def __init__(self):
-        project_name = 'BratsExp1'
-        experiment_name = 'test'
-        project_base_path = r'C:\Users\melandur\Downloads\mytest'
-        dataset_folder_path = r'C:\Users\melandur\Desktop\test_v2'
+    def __init__(self, load_config_file_path=None):
+        self.project_name = 'BratsExp1'
+        self.experiment_name = 'test1'
+        self.project_base_path = r'C:\Users\melandur\Downloads\mytest'
+        self.dataset_folder_path = r'C:\Users\melandur\Desktop\test_v2'
 
-        self.params = ConfigFile(project_name, experiment_name, project_base_path, dataset_folder_path).params
+        if load_config_file_path is None:
+            self.params = ConfigFile(self.project_name,
+                                     self.experiment_name,
+                                     self.project_base_path,
+                                     self.dataset_folder_path).params
+
+        elif isinstance(load_config_file_path, str) and os.path.isfile(load_config_file_path):
+            self.load_config_file(load_config_file_path)
+            self.overwrite_loaded_project_paths()
+        else:
+            log.error(f'Was not able to load config file from file path: {load_config_file_path}'), exit(1)
+
         self.path_memory = DataPathMemory().path_memory
 
         log.remove()  # fresh start
         log.add(sys.stderr, level=self.params['logger']['level'])
 
+        # Some minor dict check
         check_image_search_tag_redundancy(self.params)
         check_image_search_tag_uniqueness(self.params)
         check_and_create_folder_structure(self.params)
-
         self.store_config_file()
 
     @log.catch
@@ -39,6 +50,17 @@ class ConfigManager:
         with open(file_path, 'w+') as f:
             f.write(json.dumps(self.params, indent=4))
         log.debug(f'Config file has been stored to {file_path}')
+
+    @log.catch
+    def overwrite_loaded_project_paths(self):
+        """Overwrites the loaded config project paths to assure that the config file works inter machine"""
+        experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
+        self.params['project']['structured_dataset_store_path'] = os.path.join(experiment_path, 'structured_dataset')
+        self.params['project']['preprocessed_dataset_store_path'] = os.path.join(experiment_path, 'pre_processed_dataset')
+        self.params['project']['trainset_store_path'] = os.path.join(experiment_path, 'trainset')
+        self.params['project']['result_store_path'] = os.path.join(experiment_path, 'results')
+        self.params['project']['augmentation_store_path'] = os.path.join(experiment_path, 'aug_plots')
+        self.params['project']['config_store_path'] = os.path.join(experiment_path, 'config_data')
 
     @log.catch
     def load_config_file(self, file_path=None):

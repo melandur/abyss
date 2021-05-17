@@ -109,7 +109,7 @@ class DataSetInitPathScan:
                 assert isinstance(self.data_path_store['image'][case_name][tag_name], str), \
                     (log.error(f'No {tag_name} file found for {case_name}, check file and search image tags'), exit(1))
             assert isinstance(self.data_path_store['label'][case_name], str), \
-                (log.error(f'No seg file found for {case_name}, check file and label earch tags'), exit(1))
+                (log.error(f'No seg file found for {case_name}, check file and label search tags'), exit(1))
 
     @log.catch
     def create_structured_dataset(self):

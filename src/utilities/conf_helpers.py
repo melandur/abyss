@@ -1,5 +1,4 @@
 import os
-import json
 from copy import deepcopy
 from collections import Counter
 from loguru import logger as log

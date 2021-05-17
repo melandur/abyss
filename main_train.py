@@ -9,8 +9,7 @@ from src.training.training import Training
 
 if __name__ == '__main__':
 
-    cm = ConfigManager()
-    cm.load_config_file(file_path=None)
+    cm = ConfigManager(load_config_file_path=None)
 
     if cm.params['pipeline_steps']['dataset']:
         log.info('Started with dataset preparation:')
