@@ -14,7 +14,6 @@ if __name__ == '__main__':
     if cm.params['pipeline_steps']['dataset']:
         log.info('Started with dataset preparation:')
         DataSetInitPathScan(cm)
-        # StructureDataSet(params)
 
     if cm.params['pipeline_steps']['pre_processing']:
         log.info('Started with pre-processing:')

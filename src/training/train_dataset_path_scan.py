@@ -2,25 +2,23 @@ import os
 import numpy as np
 from loguru import logger as log
 
-from src.utilities.utils import NestedDefaultDict, assure_instance_type
+from src.utilities.utils import assure_instance_type
 
 
 class TrainDataSetPathScan:
     """Creates a nested train dictionary, which holds keys:case_names, values: label and image paths"""
 
-    def __init__(self, params):
-        self.params = params
-        self.dataset_path = params['project']['dataset_store_path']
-        self.label_search_tags = assure_instance_type(params['dataset']['label_search_tags'], list)
-        self.label_file_type = assure_instance_type(params['dataset']['label_file_type'], list)
-        self.image_search_tags = assure_instance_type(params['dataset']['image_search_tags'], dict)
-        self.image_file_type = assure_instance_type(params['dataset']['image_file_type'], list)
+    def __init__(self, cm):
+        self.cm = cm
+        self.params = cm.params
+        self.path_memory = cm.path_memory
+        self.dataset_path = cm.params['project']['dataset_store_path']
+        self.label_search_tags = assure_instance_type(cm.params['dataset']['label_search_tags'], list)
+        self.label_file_type = assure_instance_type(cm.params['dataset']['label_file_type'], list)
+        self.image_search_tags = assure_instance_type(cm.params['dataset']['image_search_tags'], dict)
+        self.image_file_type = assure_instance_type(cm.params['dataset']['image_file_type'], list)
 
-        np.random.seed(params['dataset']['seed'])
-        self.train_data_path_store = NestedDefaultDict()
-        self.test_data_path_store = NestedDefaultDict()
-        self.val_data_path_store = NestedDefaultDict()
-
+        np.random.seed(cm.params['dataset']['seed'])
         log.info(f'Init: {self.__class__.__name__}')
 
         if self.check_folder_path(self.dataset_path):
@@ -28,6 +26,7 @@ class TrainDataSetPathScan:
             self.create_train_val_split()
 
     @staticmethod
+    @log.catch
     def get_case_name(file_name):
         """Extracts specific case name from file name"""
         # TODO: Depends heavily on the naming of your data set
@@ -36,6 +35,7 @@ class TrainDataSetPathScan:
         return case_name
 
     @staticmethod
+    @log.catch
     def check_folder_path(folder_path):
         """True if string is not empty or None"""
         state = False
@@ -137,6 +137,45 @@ class TrainDataSetPathScan:
 
         self.params['tmp']['train_data_path_store'] = self.train_data_path_store
         self.params['tmp']['val_data_path_store'] = self.val_data_path_store
+
+
+
+
+
+    def train_test_split_by_case_names(self):
+        """Creates a list with case names for train and test set each"""
+        count_cases = len(list(self.structured_dataset_paths['image'].keys()))
+        test_set_size = int(self.params['dataset']['test_frac'] * count_cases)
+        self.test_set_cases = list(np.random.choice(list(self.structured_dataset_paths['image']),
+                                                    size=test_set_size,
+                                                    replace=False))
+        self.train_set_cases = [x for x in list(self.structured_dataset_paths['image'].keys()) if x not in self.test_set_cases]
+        assert set(self.test_set_cases) != set(self.train_set_cases), log.warning(
+            'Contamination in train & test-set split')
+        log.info(f'Train set case count: {len(self.train_set_cases)}\n Train set case: {self.train_set_cases}')
+        log.info(f'Test set case count: {len(self.test_set_cases)}\n Test set case: {self.test_set_cases}')
+
+    # def execute_train_test_split(self):
+    #     """Copies files to folders: imageTr, labelTr, imageTs, labelTs"""
+    #
+    #     def copy_helper(src, split_folder):
+    #         file_name = os.path.basename(src)
+    #         try:
+    #             shutil.copy2(src, os.path.join(self.params['project']['dataset_store_path'], split_folder, file_name))
+    #         except Exception as e:
+    #             log.warning(e)
+    #
+    #     log.info('Copies data for train test split')
+    #     for case_name in self.data_path_store.keys():
+    #         if case_name in self.train_set_cases:
+    #             copy_helper(self.data_path_store[case_name]['label'], 'labelsTr')
+    #             for image_tag in self.data_path_store[case_name]['image']:
+    #                 copy_helper(self.data_path_store[case_name]['image'][image_tag], 'imagesTr')
+    #
+    #         if case_name in self.test_set_cases:
+    #             copy_helper(self.data_path_store[case_name]['label'], 'labelsTs')
+    #             for image_tag in self.data_path_store[case_name]['image']:
+    #                 copy_helper(self.data_path_store[case_name]['image'][image_tag], 'imagesTs')
 
 
 if __name__ == '__main__':

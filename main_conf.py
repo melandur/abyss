@@ -3,9 +3,9 @@ import sys
 import json
 from loguru import logger as log
 
-from src.utilities.conf_file import ConfigFile
+from src.utilities.config_file import ConfigFile
 from src.utilities.data_path_memory import DataPathMemory
-from src.utilities.conf_helpers import \
+from src.utilities.config_helpers import \
     check_and_create_folder_structure, \
     check_image_search_tag_redundancy, \
     check_image_search_tag_uniqueness
@@ -96,6 +96,16 @@ class ConfigManager:
             exit(1)
         log.trace(f'Loaded memory path file contains: {json.dumps(self.path_memory, indent=4)}')
         log.debug(f'Path memory file has been loaded from {file_path}')
+
+    @log.catch
+    def get_path_memory(self, path_memory_name):
+        """Returns the temporary path_memory if available, otherwise loads path_memory from path_memory.json"""
+        if self.path_memory[path_memory_name]:
+            found_path_memory = self.path_memory[path_memory_name]
+        else:
+            self.load_path_memory_file()
+            found_path_memory = self.path_memory[path_memory_name]
+        return found_path_memory
 
 
 if __name__ == '__main__':

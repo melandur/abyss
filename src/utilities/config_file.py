@@ -9,10 +9,10 @@ class ConfigFile:
         experiment_path = os.path.join(project_base_path, project_name, experiment_name)
 
         self.params = {
-            'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
+            'logger': {'level': 'DEBUG'},  # 'TRACE', 'DEBUG', 'INFO'
 
             'pipeline_steps': {
-                'dataset': True,
+                'dataset': False,
                 'pre_processing': True,
                 'training': False,
                 'post_processing': False
