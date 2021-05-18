@@ -5,6 +5,8 @@ from monai import transforms as tf
 
 class ConcatenateImages(tf.MapTransform):
     """
+    Fully on memory, will break with big data set
+
     Stack images on new channel which is added on the first dimensional position.
     MONAI expects a simple dict. But we like our dicts nested, here we go
     """
