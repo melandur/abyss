@@ -6,7 +6,7 @@ from src.utilities.utils import assure_instance_type
 
 
 class TrainDataSetPathScan:
-    """Creates a nested train dictionary, which holds keys:case_names, values: label and image paths"""
+    """Trainnigs_split"""
 
     def __init__(self, cm):
         self.cm = cm

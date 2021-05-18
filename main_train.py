@@ -3,7 +3,7 @@ from loguru import logger as log
 from main_conf import ConfigManager
 from src.dataset.dataset_init_path_scan import DataSetInitPathScan
 from src.pre_processing.pre_processing import PreProcessing
-from src.training.train_dataset_path_scan import TrainDataSetPathScan
+from src.training.create_datasets import TrainDataSetPathScan
 from src.training.training import Training
 
 

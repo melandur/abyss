@@ -4,6 +4,7 @@ import json
 from loguru import logger as log
 
 from src.utilities.config_file import ConfigFile
+from src.utilities.utils import NestedDefaultDict
 from src.utilities.data_path_memory import DataPathMemory
 from src.utilities.config_helpers import \
     check_and_create_folder_structure, \
@@ -94,6 +95,11 @@ class ConfigManager:
         else:
             log.error(f'Path memory file not found with file path: {file_path}')
             exit(1)
+
+        # python loads the dicts as default dicts, therefore we need to override those with the nested dicts
+        for key in self.path_memory.keys():
+            if not self.path_memory[key]:  # check if value for certain key is empty
+                self.path_memory[key] = NestedDefaultDict()  # override empty dicts with nested dicts
         log.trace(f'Loaded memory path file contains: {json.dumps(self.path_memory, indent=4)}')
         log.debug(f'Path memory file has been loaded from {file_path}')
 

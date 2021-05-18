@@ -13,7 +13,8 @@ class ConfigFile:
 
             'pipeline_steps': {
                 'dataset': False,
-                'pre_processing': True,
+                'pre_processing': False,
+                'create_datasets': False,
                 'training': False,
                 'post_processing': False
             },
