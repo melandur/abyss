@@ -18,7 +18,7 @@ def check_and_create_folder_structure(params):
         os.makedirs(folder, exist_ok=True)
 
     # Create subfolders for training dataset
-    for folder in ['imagesTr', 'labelsTr', 'imagesTs', 'labelsTs']:
+    for folder in ['imagesTr', 'labelsTr', 'imagesVal', 'labelsVal', 'imagesTs', 'labelsTs']:
         folder_path = os.path.join(params['project']['trainset_store_path'], folder)
         os.makedirs(folder_path, exist_ok=True)
 
@@ -28,8 +28,7 @@ def check_image_search_tag_redundancy(params):
     for key, value in params['dataset']['image_search_tags'].items():
         if len(value) != len(set(value)):
             redundant_tag = list((Counter(value) - Counter(list(set(value)))).elements())
-            log.error(f'The image search tag {redundant_tag} appears multiple times for the image name {key}')
-            exit(1)
+            log.error(f'The image search tag {redundant_tag} appears multiple times for the image name {key}'), exit(1)
 
 
 def check_image_search_tag_uniqueness(params):
@@ -42,5 +41,4 @@ def check_image_search_tag_uniqueness(params):
         if [x for x in tmp_tags if x in tag]:
             vague_tag = [x for x in tmp_tags if x in tag]
             log.error(f'The image search tag {vague_tag} is not expressive/unique enough. '
-                      f'Try to add additional information to the search tag like "_", "."')
-            exit(1)
+                      f'Try to add additional information to the search tag like "_", "."'), exit(1)

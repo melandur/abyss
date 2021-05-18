@@ -12,9 +12,9 @@ class ConfigFile:
             'logger': {'level': 'DEBUG'},  # 'TRACE', 'DEBUG', 'INFO'
 
             'pipeline_steps': {
-                'dataset': False,
+                'read_dataset': False,
                 'pre_processing': False,
-                'create_datasets': False,
+                'create_datasets': True,
                 'training': False,
                 'post_processing': False
             },
@@ -41,7 +41,7 @@ class ConfigFile:
                     'flair': ['flair.'],
                     't2': ['t2.']},
                 'image_file_type': ['.nii.gz'],
-                'data_reader': 'NibabelReader', # 'ImageReader', 'ITKReader', 'NibabelReader', 'NumpyReader', 'PILReader', 'WSIReader'
+                'data_reader': 'NibabelReader',  # 'ImageReader', 'ITKReader', 'NibabelReader', 'NumpyReader', 'PILReader', 'WSIReader'
                 'concatenate_image_files': True,
                 'pull_dataset': 'DecathlonDataset',  # 'MedNISTDataset', 'DecathlonDataset', 'CrossValidation'
                 'challenge': 'Task01_BrainTumour',

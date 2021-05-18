@@ -100,6 +100,8 @@ class ConfigManager:
         for key in self.path_memory.keys():
             if not self.path_memory[key]:  # check if value for certain key is empty
                 self.path_memory[key] = NestedDefaultDict()  # override empty dicts with nested dicts
+                self.path_memory[key]['image'] = {}
+                self.path_memory[key]['label'] = {}
         log.trace(f'Loaded memory path file contains: {json.dumps(self.path_memory, indent=4)}')
         log.debug(f'Path memory file has been loaded from {file_path}')
 

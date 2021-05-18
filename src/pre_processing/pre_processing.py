@@ -92,7 +92,7 @@ class PreProcessing:
         if folder_tag == 'image':
             self.cm.path_memory['preprocessed_dataset_paths'][folder_tag][case_name] = file_path
         elif folder_tag == 'label':
-            self.cm.path_memory['preprocessed_dataset_paths'][folder_tag] = file_path
+            self.cm.path_memory['preprocessed_dataset_paths'][folder_tag][case_name] = file_path
         else:
             log.error(f'Folder tag: "{folder_tag}" not found'), exit(1)
 

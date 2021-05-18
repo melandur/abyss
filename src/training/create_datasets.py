@@ -1,181 +1,92 @@
 import os
+import shutil
 import numpy as np
 from loguru import logger as log
 
-from src.utilities.utils import assure_instance_type
 
-
-class TrainDataSetPathScan:
-    """Trainnigs_split"""
+class CreateDatasets:
+    """Create train, val, and test set for training"""
 
     def __init__(self, cm):
         self.cm = cm
         self.params = cm.params
-        self.path_memory = cm.path_memory
-        self.dataset_path = cm.params['project']['dataset_store_path']
-        self.label_search_tags = assure_instance_type(cm.params['dataset']['label_search_tags'], list)
-        self.label_file_type = assure_instance_type(cm.params['dataset']['label_file_type'], list)
-        self.image_search_tags = assure_instance_type(cm.params['dataset']['image_search_tags'], dict)
-        self.image_file_type = assure_instance_type(cm.params['dataset']['image_file_type'], list)
+        self.preprocessed_store_paths = cm.get_path_memory('preprocessed_dataset_paths')
+
+        self.train_set_cases = None
+        self.val_set_cases = None
+        self.test_set_cases = None
 
         np.random.seed(cm.params['dataset']['seed'])
         log.info(f'Init: {self.__class__.__name__}')
 
-        if self.check_folder_path(self.dataset_path):
-            self.scan_folder()
-            self.create_train_val_split()
-
-    @staticmethod
-    @log.catch
-    def get_case_name(file_name):
-        """Extracts specific case name from file name"""
-        # TODO: Depends heavily on the naming of your data set
-        case_name = '_'.join(file_name.split('_')[:-1])
-        log.debug(f'case_name: {case_name} | file_name: {file_name}')
-        return case_name
-
-    @staticmethod
-    @log.catch
-    def check_folder_path(folder_path):
-        """True if string is not empty or None"""
-        state = False
-        if os.path.isdir(folder_path):
-            state = True
-        return state
+        self.train_test_split_by_case_names()
+        self.train_val_split_by_case_names()
+        self.execute_dataset_split()
+        self.cm.store_path_memory_file()
 
     @log.catch
-    def check_file_search_tag_label(self, file_name):
-        """True if label search tag is in file name"""
-        check_search_tag = False
-        if [x for x in self.label_search_tags if x in file_name]:
-            check_search_tag = True
-        return check_search_tag
-
-    @log.catch
-    def check_file_type_label(self, file_name):
-        """True if label file ends with defined file type"""
-        check_file_type = False
-        if [x for x in self.label_file_type if file_name.endswith(x)]:
-            check_file_type = True
-        return check_file_type
-
-    @log.catch
-    def check_file_search_tag_image(self, file_name):
-        """True if image search tag is in file name"""
-        check_search_tag = False
-        if [x for x in [*self.image_search_tags.values()] if x[0] in file_name]:
-            check_search_tag = True
-        return check_search_tag
-
-    @log.catch
-    def check_file_type_image(self, file_name):
-        """True if image file ends with defined file type"""
-        check_file_type = False
-        if [x for x in self.image_file_type if file_name.endswith(x)]:
-            check_file_type = True
-        return check_file_type
-
-    @log.catch
-    def get_file_search_tag_image(self, file_name):
-        """Returns the found search tag for a certain file name"""
-        found_search_tag = [x for x in [*self.image_search_tags.values()] if x[0] in file_name][0]
-        return [k for k, v in self.image_search_tags.items() if v == found_search_tag][0]
-
-    @log.catch
-    def check_if_train_data(self, file_path):
-        state = False
-        if 'imagesTr' in file_path or 'labelsTr' in file_path:
-            state = True
-        return state
-
-    @log.catch
-    def check_if_test_data(self, file_path):
-        state = False
-        if 'imagesTs' in file_path or 'labelsTs' in file_path:
-            state = True
-        return state
-
-    @log.catch
-    def scan_folder(self):
-        """Walk through the data set folder and assigns file paths to the nested dict"""
-        for root, dirs, files in os.walk(self.dataset_path):
-            for file in files:
-                file_path = os.path.join(root, file)
-                if os.path.isfile(file_path):
-                    if self.check_if_train_data(root):
-                        data_store = self.train_data_path_store
-                    elif self.check_if_test_data(root):
-                        data_store = self.test_data_path_store
-                    else:
-                        data_store = None
-                        log.warning('There is a very likely a naming issue in the created train set')
-
-                    if data_store is not None:
-                        if self.check_file_search_tag_label(file) and self.check_file_type_label(file):
-                            data_store['label'][self.get_case_name(file)] = file_path
-                        if self.check_file_search_tag_image(file) and self.check_file_type_image(file):
-                            found_tag = self.get_file_search_tag_image(file)
-                            data_store['image'][self.get_case_name(file)][found_tag] = file_path
-
-        self.params['tmp']['test_data_path_store'] = self.test_data_path_store
-
-    @log.catch
-    def create_train_val_split(self):
-        """Split train data into train and val data"""
-        count_cases = len(list(self.train_data_path_store['image'].keys()))
-        val_set_size = int(self.params['dataset']['val_frac'] * count_cases)
-        val_set_cases = list(np.random.choice(list(self.train_data_path_store['image']),
-                                              size=val_set_size,
-                                              replace=False))
-        val_set_cases = [x for x in list(self.train_data_path_store['image'].keys()) if x not in val_set_cases]
-
-        for case in val_set_cases:
-            self.val_data_path_store['image'][case] = self.train_data_path_store['image'][case]
-            self.train_data_path_store['image'].pop(case)
-            self.val_data_path_store['label'][case] = self.train_data_path_store['label'][case]
-            self.train_data_path_store['label'].pop(case)
-
-        self.params['tmp']['train_data_path_store'] = self.train_data_path_store
-        self.params['tmp']['val_data_path_store'] = self.val_data_path_store
-
-
-
-
-
     def train_test_split_by_case_names(self):
         """Creates a list with case names for train and test set each"""
-        count_cases = len(list(self.structured_dataset_paths['image'].keys()))
+        count_cases = len(list(self.preprocessed_store_paths['image'].keys()))
         test_set_size = int(self.params['dataset']['test_frac'] * count_cases)
-        self.test_set_cases = list(np.random.choice(list(self.structured_dataset_paths['image']),
+        self.test_set_cases = list(np.random.choice(list(self.preprocessed_store_paths['image']),
                                                     size=test_set_size,
                                                     replace=False))
-        self.train_set_cases = [x for x in list(self.structured_dataset_paths['image'].keys()) if x not in self.test_set_cases]
-        assert set(self.test_set_cases) != set(self.train_set_cases), log.warning(
-            'Contamination in train & test-set split')
-        log.info(f'Train set case count: {len(self.train_set_cases)}\n Train set case: {self.train_set_cases}')
-        log.info(f'Test set case count: {len(self.test_set_cases)}\n Test set case: {self.test_set_cases}')
+        self.train_set_cases = [x for x in list(self.preprocessed_store_paths['image'].keys()) if
+                                x not in self.test_set_cases]
+        if set(self.test_set_cases) & set(self.train_set_cases):
+            log.error('Contamination in train & test-set split'), exit(1)
+        log.info(f'Test set, counts: {len(self.test_set_cases)}, cases: {self.test_set_cases}')
 
-    # def execute_train_test_split(self):
-    #     """Copies files to folders: imageTr, labelTr, imageTs, labelTs"""
-    #
-    #     def copy_helper(src, split_folder):
-    #         file_name = os.path.basename(src)
-    #         try:
-    #             shutil.copy2(src, os.path.join(self.params['project']['dataset_store_path'], split_folder, file_name))
-    #         except Exception as e:
-    #             log.warning(e)
-    #
-    #     log.info('Copies data for train test split')
-    #     for case_name in self.data_path_store.keys():
-    #         if case_name in self.train_set_cases:
-    #             copy_helper(self.data_path_store[case_name]['label'], 'labelsTr')
-    #             for image_tag in self.data_path_store[case_name]['image']:
-    #                 copy_helper(self.data_path_store[case_name]['image'][image_tag], 'imagesTr')
-    #
-    #         if case_name in self.test_set_cases:
-    #             copy_helper(self.data_path_store[case_name]['label'], 'labelsTs')
-    #             for image_tag in self.data_path_store[case_name]['image']:
-    #                 copy_helper(self.data_path_store[case_name]['image'][image_tag], 'imagesTs')
+    @log.catch
+    def train_val_split_by_case_names(self):
+        """Split train data into train and val data"""
+        count_cases = len(self.train_set_cases)
+        val_set_size = int(self.params['dataset']['val_frac'] * count_cases)
+        self.val_set_cases = list(np.random.choice(self.train_set_cases,
+                                                   size=val_set_size,
+                                                   replace=False))
+        self.train_set_cases = [x for x in self.train_set_cases if x not in self.val_set_cases]
+
+        if set(self.train_set_cases) & set(self.val_set_cases):
+            log.error('Contamination in train & val-set split'), exit(1)
+
+        log.info(f'Train set, counts: {len(self.train_set_cases)}, cases: {self.train_set_cases}')
+        log.info(f'Val set, counts: {len(self.val_set_cases)}, cases: {self.val_set_cases}')
+
+    @log.catch
+    def execute_dataset_split(self):
+        """Copies files to folders: imageTr, labelTr, imageTs, labelTs"""
+
+        def copy_helper(src, folder_name):
+            file_name = os.path.basename(src)
+            try:
+                dst_file_path = os.path.join(self.params['project']['trainset_store_path'], folder_name, file_name)
+                shutil.copy2(src, dst_file_path)
+                return dst_file_path
+            except Exception as e:
+                log.error(e), exit(1)
+
+        # copy train dataset
+        for case_name in self.train_set_cases:
+            self.cm.path_memory['train_dataset_paths']['image'][case_name] = copy_helper(
+                self.preprocessed_store_paths['image'][case_name], 'imagesTr')
+            self.cm.path_memory['train_dataset_paths']['label'][case_name] = copy_helper(
+                self.preprocessed_store_paths['label'][case_name], 'labelsTr')
+
+        # copy val dataset
+        for case_name in self.val_set_cases:
+            self.cm.path_memory['val_dataset_paths']['image'][case_name] = copy_helper(
+                self.preprocessed_store_paths['image'][case_name], 'imagesVal')
+            self.cm.path_memory['val_dataset_paths']['label'][case_name] = copy_helper(
+                self.preprocessed_store_paths['label'][case_name], 'labelsVal')
+
+        # copy test dataset
+        for case_name in self.test_set_cases:
+            self.cm.path_memory['test_dataset_paths']['image'][case_name] = copy_helper(
+                self.preprocessed_store_paths['image'][case_name], 'imagesTs')
+            self.cm.path_memory['test_dataset_paths']['label'][case_name] = copy_helper(
+                self.preprocessed_store_paths['label'][case_name], 'labelsTs')
 
 
 if __name__ == '__main__':
