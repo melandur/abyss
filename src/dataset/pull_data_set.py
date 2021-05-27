@@ -73,6 +73,6 @@ def pull_data_set(params):
         # exit(1)
 
 if __name__ == '__main__':
-    from main_conf import ConfigManager
+    from src.config.config_manager import ConfigManager
     params = ConfigManager().params
     pull_data_set(params)

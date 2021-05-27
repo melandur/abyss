@@ -92,7 +92,7 @@ class CreateDatasets:
 if __name__ == '__main__':
     import sys
     from loguru import logger as log
-    from main_conf import ConfigManager
+    from src.config.config_manager import ConfigManager
 
     params = ConfigManager(load_conf_file_path=None).params
     log.remove()  # fresh start

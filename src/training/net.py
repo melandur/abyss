@@ -1,7 +1,5 @@
-import os
 import torch
 import pytorch_lightning
-import matplotlib.pyplot as plt
 from loguru import logger as log
 from monai import data, inferers, losses, metrics, transforms, utils
 
@@ -10,31 +8,33 @@ from src.training.data_augmentation import DataAugmentation
 
 
 class Net(pytorch_lightning.LightningModule):
-    def __init__(self, params):
+    def __init__(self, cm):
         super().__init__()
-        self.params = params
+        self.cm = cm
+        self.params = cm.params
 
         self._model = net_architecture
         # TODO: Make native a multiloss available
         self.loss_function = losses.DiceLoss(to_onehot_y=False,
                                              sigmoid=True,
                                              squared_pred=True)
-
         self.post_pred = transforms.AsDiscrete(argmax=True,
                                                to_onehot=True,
                                                n_classes=self.params['training']['n_classes'])
         self.post_label = transforms.AsDiscrete(to_onehot=False,
                                                 n_classes=self.params['training']['n_classes'])
 
+        print('asdas')
+
     def forward(self, x):
         return self._model(x)
 
     def prepare_data(self):
-        train_files = self.params['tmp']['train_data_path_store']
-        val_files = self.params['tmp']['val_data_path_store']
+        train_files = self.cm.get_path_memory('train_dataset_paths')
+        val_files = self.cm.get_path_memory('val_dataset_paths')
         utils.set_determinism(seed=self.params['dataset']['seed'])  # set training deterministic
 
-        da = DataAugmentation(self.params)
+        da = DataAugmentation()
         if self.params['dataset']['use_cache']:
             self.train_ds = data.CacheDataset(data=train_files,
                                               transform=da.train_transform,

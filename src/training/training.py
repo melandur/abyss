@@ -8,9 +8,10 @@ from src.training.net import Net
 
 class Training:
 
-    def __init__(self, params):
+    def __init__(self, cm):
+        params = cm.params
 
-        # Define logger: TBoard, MLflow, Comet, Neptune, WandB
+        # Integrated loggers: TBoard, MLflow, Comet, Neptune, WandB
         logger = TensorBoardLogger(save_dir=params['project']['result_store_path'])
 
         # Define callbacks
@@ -27,7 +28,7 @@ class Training:
         if params['training']['seed']:
             seed_everything(params['training']['seed'])
 
-        # initialise Lightning's trainer, default values if not set
+        # initialise Lightning's trainer, default values if not specific set in conf set
         trainer = Trainer(
             logger=logger,
             checkpoint_callback=True,
@@ -85,5 +86,5 @@ class Training:
         )
 
         # train
-        net = Net(params)
+        net = Net(cm)
         trainer.fit(net)

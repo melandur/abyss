@@ -1,4 +1,3 @@
-import torch
 import numpy as np
 from monai import transforms as tf
 
@@ -86,12 +85,12 @@ class DataAugmentation:
             ]
         )
 
-        self.debug_transform = tf.Compose(
-            [
-                ConcatenateImages(keys=['image'])
-            ]
-        )
-
+        # self.debug_transform = tf.Compose(
+        #     [
+        #         ConcatenateImages(keys=['image'])
+        #     ]
+        # )
+        #
 
 
 
@@ -138,7 +137,7 @@ if __name__ == '__main__':
                 "ACRINDSCMRBrain0741": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\label\\ACRINDSCMRBrain0741_seg.nii.gz"
             }
     }
-    from main_conf import ConfigManager
+    from src.config.config_manager import ConfigManager
     from src.pre_processing.pre_processing_helpers import ConcatenateImages
 
     params = ConfigManager().params

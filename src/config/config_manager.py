@@ -3,10 +3,10 @@ import sys
 import json
 from loguru import logger as log
 
-from src.utilities.config_file import ConfigFile
+from config_file import ConfigFile
 from src.utilities.utils import NestedDefaultDict
 from src.utilities.data_path_memory import DataPathMemory
-from src.utilities.config_helpers import \
+from src.config.config_helpers import \
     check_and_create_folder_structure, \
     check_image_search_tag_redundancy, \
     check_image_search_tag_uniqueness
