@@ -1,6 +1,7 @@
-import os
 import json
+import os
 import shutil
+
 import numpy as np
 from loguru import logger as log
 
@@ -37,8 +38,10 @@ class DataSetInitPathScan:
         case_name = '_'.join(file_name.split('_')[:-1])
         bad_chars = ['#', '<', '>', '$', '%', '!', '&', '*', "'", '"', '{', '}', '/', ':', '@', '+', '.']
         for bad_char in bad_chars:
-            assert case_name.count(bad_char) == 0, \
-                (log.error(f'Filename: {file_name} contains bad char: "{bad_char}"'), exit(1))
+            assert case_name.count(bad_char) == 0, (
+                log.error(f'Filename: {file_name} contains bad char: "{bad_char}"'),
+                exit(1),
+            )
         log.debug(f'case_name: {case_name} | file_name: {file_name}')
         return case_name
 
@@ -106,10 +109,14 @@ class DataSetInitPathScan:
         """Check if there are any image/label files are missing"""
         for case_name in self.data_path_store['image'].keys():
             for tag_name in self.image_search_tags.keys():
-                assert isinstance(self.data_path_store['image'][case_name][tag_name], str), \
-                    (log.error(f'No {tag_name} file found for {case_name}, check file and search image tags'), exit(1))
-            assert isinstance(self.data_path_store['label'][case_name], str), \
-                (log.error(f'No seg file found for {case_name}, check file and label search tags'), exit(1))
+                assert isinstance(self.data_path_store['image'][case_name][tag_name], str), (
+                    log.error(f'No {tag_name} file found for {case_name}, check file and search image tags'),
+                    exit(1),
+                )
+            assert isinstance(self.data_path_store['label'][case_name], str), (
+                log.error(f'No seg file found for {case_name}, check file and label search tags'),
+                exit(1),
+            )
 
     @log.catch
     def create_structured_dataset(self):
@@ -122,8 +129,9 @@ class DataSetInitPathScan:
             file_name = os.path.basename(src)
             file_extension = file_name.split(os.extsep, 1)[1]
             new_file_name = f'{case_name}_{tag_name}.{file_extension}'
-            dst_file_path = os.path.join(self.params['project']['structured_dataset_store_path'], folder_name,
-                                         new_file_name)
+            dst_file_path = os.path.join(
+                self.params['project']['structured_dataset_store_path'], folder_name, new_file_name
+            )
             os.makedirs(os.path.dirname(dst_file_path), exist_ok=True)
             shutil.copy2(src=src, dst=dst_file_path)
             return dst_file_path
@@ -136,14 +144,13 @@ class DataSetInitPathScan:
                     src=self.data_path_store['image'][case_name][tag_name],
                     folder_name='image',
                     case_name=case_name,
-                    tag_name=tag_name)
+                    tag_name=tag_name,
+                )
 
             # copy labels
             self.path_memory['structured_dataset_paths']['label'][case_name] = copy_helper(
-                src=self.data_path_store['label'][case_name],
-                folder_name='label',
-                case_name=case_name,
-                tag_name='seg')
+                src=self.data_path_store['label'][case_name], folder_name='label', case_name=case_name, tag_name='seg'
+            )
 
         self.cm.store_path_memory_file()
 
@@ -166,9 +173,11 @@ class DataSetInitPathScan:
             if os.path.isfile(label_path):
                 count_labels += 1
 
-        stats_dict = {'Total cases': len(self.data_path_store['image'].keys()),
-                      'Labels': count_labels,
-                      'Images': count_images}
+        stats_dict = {
+            'Total cases': len(self.data_path_store['image'].keys()),
+            'Labels': count_labels,
+            'Images': count_images,
+        }
 
         log.info(f'Dataset scan overview: {json.dumps(stats_dict, indent=4)}')
 

@@ -1,15 +1,17 @@
+import json
 import os
 import sys
-import json
+
 from loguru import logger as log
 
 from config_file import ConfigFile
-from src.utilities.utils import NestedDefaultDict
+from src.config.config_helpers import (
+    check_and_create_folder_structure,
+    check_image_search_tag_redundancy,
+    check_image_search_tag_uniqueness,
+)
 from src.utilities.data_path_memory import DataPathMemory
-from src.config.config_helpers import \
-    check_and_create_folder_structure, \
-    check_image_search_tag_redundancy, \
-    check_image_search_tag_uniqueness
+from src.utilities.utils import NestedDefaultDict
 
 
 class ConfigManager:
@@ -22,10 +24,9 @@ class ConfigManager:
         self.dataset_folder_path = r'C:\Users\melandur\Desktop\test_v2'
 
         if load_config_file_path is None:
-            self.params = ConfigFile(self.project_name,
-                                     self.experiment_name,
-                                     self.project_base_path,
-                                     self.dataset_folder_path).params
+            self.params = ConfigFile(
+                self.project_name, self.experiment_name, self.project_base_path, self.dataset_folder_path
+            ).params
 
         elif isinstance(load_config_file_path, str) and os.path.isfile(load_config_file_path):
             self.load_config_file(load_config_file_path)
@@ -57,7 +58,9 @@ class ConfigManager:
         """Overwrites the loaded config project paths to assure that the config file works inter machine"""
         experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
         self.params['project']['structured_dataset_store_path'] = os.path.join(experiment_path, 'structured_dataset')
-        self.params['project']['preprocessed_dataset_store_path'] = os.path.join(experiment_path, 'pre_processed_dataset')
+        self.params['project']['preprocessed_dataset_store_path'] = os.path.join(
+            experiment_path, 'pre_processed_dataset'
+        )
         self.params['project']['trainset_store_path'] = os.path.join(experiment_path, 'trainset')
         self.params['project']['result_store_path'] = os.path.join(experiment_path, 'results')
         self.params['project']['augmentation_store_path'] = os.path.join(experiment_path, 'aug_plots')

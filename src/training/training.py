@@ -1,13 +1,12 @@
 from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
+from pytorch_lightning.loggers import TensorBoardLogger
 
 from src.training.net import Net
 
 
 class Training:
-
     def __init__(self, cm):
         params = cm.params
 
@@ -15,14 +14,17 @@ class Training:
         logger = TensorBoardLogger(save_dir=params['project']['result_store_path'])
 
         # Define callbacks
-        checkpoint_callback = ModelCheckpoint(dirpath=params['project']['result_store_path'],
-                                              filename=params['project']['name'])
+        checkpoint_callback = ModelCheckpoint(
+            dirpath=params['project']['result_store_path'], filename=params['project']['name']
+        )
 
-        early_stop_callback = EarlyStopping(monitor='val_loss',
-                                            min_delta=params['training']['early_stop']['min_delta'],
-                                            patience=params['training']['early_stop']['patience'],
-                                            verbose=params['training']['early_stop']['verbose'],
-                                            mode=params['training']['early_stop']['mode'])
+        early_stop_callback = EarlyStopping(
+            monitor='val_loss',
+            min_delta=params['training']['early_stop']['min_delta'],
+            patience=params['training']['early_stop']['patience'],
+            verbose=params['training']['early_stop']['verbose'],
+            mode=params['training']['early_stop']['mode'],
+        )
 
         # Used defined train seed
         if params['training']['seed']:
@@ -82,7 +84,7 @@ class Training:
             automatic_optimization=None,
             move_metrics_to_cpu=False,
             multiple_trainloader_mode='max_size_cycle',
-            stochastic_weight_avg=False
+            stochastic_weight_avg=False,
         )
 
         # train

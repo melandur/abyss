@@ -28,7 +28,6 @@ class ConvertToMultiChannelBasedOnBratsClassesd(tf.MapTransform):
 
 
 class DataAugmentation:
-
     def __init__(self):
         # self.params = params
 
@@ -39,9 +38,7 @@ class DataAugmentation:
                 tf.AsChannelFirstd(keys=['image', 'label']),
                 tf.AddChanneld(keys='image'),
                 ConvertToMultiChannelBasedOnBratsClassesd(keys='label'),
-                tf.Spacingd(keys=['image', 'label'],
-                            pixdim=(1.0, 1.0, 1.0),
-                            mode=('bilinear', 'nearest')),
+                tf.Spacingd(keys=['image', 'label'], pixdim=(1.0, 1.0, 1.0), mode=('bilinear', 'nearest')),
                 tf.Orientationd(keys=['image', 'label'], axcodes='RAS'),
                 tf.RandSpatialCropd(keys=['image', 'label'], roi_size=[128, 128, 64], random_size=False),
                 tf.RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=0),
@@ -75,13 +72,11 @@ class DataAugmentation:
                 tf.LoadImaged(keys=['image', 'label']),
                 tf.AsChannelFirstd(keys='image'),
                 ConvertToMultiChannelBasedOnBratsClassesd(keys='label'),
-                tf.Spacingd(keys=['image', 'label'],
-                            pixdim=(1.0, 1.0, 1.0),
-                            mode=('bilinear', 'nearest')),
+                tf.Spacingd(keys=['image', 'label'], pixdim=(1.0, 1.0, 1.0), mode=('bilinear', 'nearest')),
                 tf.Orientationd(keys=['image', 'label'], axcodes='RAS'),
                 tf.CenterSpatialCropd(keys=['image', 'label'], roi_size=[128, 128, 64]),
                 tf.NormalizeIntensityd(keys='image', nonzero=True, channel_wise=True),
-                tf.ToTensord(keys=['image', 'label'])
+                tf.ToTensord(keys=['image', 'label']),
             ]
         )
 
@@ -93,8 +88,6 @@ class DataAugmentation:
         #
 
 
-
-
 if __name__ == '__main__':
     data_dicts = {
         "image": {
@@ -102,40 +95,40 @@ if __name__ == '__main__':
                 "t1": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0571_t1.nii.gz",
                 "t1ce": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0571_t1ce.nii.gz",
                 "flair": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0571_flair.nii.gz",
-                "t2": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0571_t2.nii.gz"
+                "t2": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0571_t2.nii.gz",
             },
             "ACRINDSCMRBrain0621": {
                 "t1": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0621_t1.nii.gz",
                 "t1ce": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0621_t1ce.nii.gz",
                 "flair": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0621_flair.nii.gz",
-                "t2": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0621_t2.nii.gz"
+                "t2": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0621_t2.nii.gz",
             },
             "ACRINDSCMRBrain0641": {
                 "t1": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0641_t1.nii.gz",
                 "t1ce": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0641_t1ce.nii.gz",
                 "flair": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0641_flair.nii.gz",
-                "t2": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0641_t2.nii.gz"
+                "t2": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0641_t2.nii.gz",
             },
             "ACRINDSCMRBrain0671": {
                 "t1": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0671_t1.nii.gz",
                 "t1ce": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0671_t1ce.nii.gz",
                 "flair": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0671_flair.nii.gz",
-                "t2": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0671_t2.nii.gz"
+                "t2": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0671_t2.nii.gz",
             },
             "ACRINDSCMRBrain0741": {
                 "t1": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0741_t1.nii.gz",
                 "t1ce": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0741_t1ce.nii.gz",
                 "flair": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0741_flair.nii.gz",
-                "t2": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0741_t2.nii.gz"
-            }
+                "t2": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\image\\ACRINDSCMRBrain0741_t2.nii.gz",
+            },
         },
         "label": {
-                "ACRINDSCMRBrain0571": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\label\\ACRINDSCMRBrain0571_seg.nii.gz",
-                "ACRINDSCMRBrain0621": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\label\\ACRINDSCMRBrain0621_seg.nii.gz",
-                "ACRINDSCMRBrain0641": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\label\\ACRINDSCMRBrain0641_seg.nii.gz",
-                "ACRINDSCMRBrain0671": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\label\\ACRINDSCMRBrain0671_seg.nii.gz",
-                "ACRINDSCMRBrain0741": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\label\\ACRINDSCMRBrain0741_seg.nii.gz"
-            }
+            "ACRINDSCMRBrain0571": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\label\\ACRINDSCMRBrain0571_seg.nii.gz",
+            "ACRINDSCMRBrain0621": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\label\\ACRINDSCMRBrain0621_seg.nii.gz",
+            "ACRINDSCMRBrain0641": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\label\\ACRINDSCMRBrain0641_seg.nii.gz",
+            "ACRINDSCMRBrain0671": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\label\\ACRINDSCMRBrain0671_seg.nii.gz",
+            "ACRINDSCMRBrain0741": "C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset\\label\\ACRINDSCMRBrain0741_seg.nii.gz",
+        },
     }
     from src.config.config_manager import ConfigManager
     from src.pre_processing.pre_processing_helpers import ConcatenateImages
@@ -148,16 +141,13 @@ if __name__ == '__main__':
     # for case in x['image'].keys():
     #     print(np.shape(x['image'][case]))
 
-
-
-
     # print(x)
     # print(x)
     #
     # for case in data_dicts['image']:
     #     print(case)
     #     print()
-        # x = tf.ConcatItemsD()
+    # x = tf.ConcatItemsD()
     #
     #     print(x)
 

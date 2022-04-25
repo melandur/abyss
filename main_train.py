@@ -6,7 +6,6 @@ from src.pre_processing.pre_processing import PreProcessing
 from src.training.create_datasets import CreateDatasets
 from src.training.training import Training
 
-
 if __name__ == '__main__':
 
     cm = ConfigManager(load_config_file_path=None)

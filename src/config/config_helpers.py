@@ -1,6 +1,7 @@
 import os
-from copy import deepcopy
 from collections import Counter
+from copy import deepcopy
+
 from loguru import logger as log
 
 
@@ -40,5 +41,7 @@ def check_image_search_tag_uniqueness(params):
         tmp_tags.pop(i)
         if [x for x in tmp_tags if x in tag]:
             vague_tag = [x for x in tmp_tags if x in tag]
-            log.error(f'The image search tag {vague_tag} is not expressive/unique enough. '
-                      f'Try to add additional information to the search tag like "_", "."'), exit(1)
+            log.error(
+                f'The image search tag {vague_tag} is not expressive/unique enough. '
+                f'Try to add additional information to the search tag like "_", "."'
+            ), exit(1)

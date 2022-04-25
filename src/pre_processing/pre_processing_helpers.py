@@ -23,9 +23,9 @@ class ConcatenateImages(tf.MapTransform):
         def load_image_sub_dict(sub_dict, keys):
             """Load image and add channel to the first dimension"""
             if self.add_channel:
-                load_image = tf.Compose([
-                    tf.LoadImaged(keys=keys, image_only=True),
-                    tf.AddChanneld(keys=keys)])  # add channel on first dimension
+                load_image = tf.Compose(
+                    [tf.LoadImaged(keys=keys, image_only=True), tf.AddChanneld(keys=keys)]
+                )  # add channel on first dimension
             else:
                 load_image = tf.Compose([tf.LoadImaged(keys=keys, image_only=True)])
             return load_image(sub_dict)
