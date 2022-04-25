@@ -20,8 +20,8 @@ if __name__ == '__main__':
     if cm.params['pipeline_steps']['create_datasets']:
         CreateDatasets(cm)
 
-    if cm.params['pipeline_steps']['training']:
-        Training(cm)
+    # if cm.params['pipeline_steps']['training']:
+    #     Training(cm)
 
     if cm.params['pipeline_steps']['post_processing']:
         log.info('Started with post-processing:')
