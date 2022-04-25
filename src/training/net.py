@@ -8,10 +8,13 @@ from src.training.net_architecture import net_architecture
 
 
 class Net(pytorch_lightning.LightningModule):
-    def __init__(self, cm):
+    def __init__(self, config_manager):
         super().__init__()
-        self.cm = cm
-        self.params = cm.params
+        self.config_manager = config_manager
+        self.params = config_manager.params
+
+        self.val_ds = None
+        self.train_ds = None
 
         self._model = net_architecture
         # TODO: Make native a multiloss available
@@ -27,8 +30,8 @@ class Net(pytorch_lightning.LightningModule):
         return self._model(x)
 
     def prepare_data(self):
-        train_files = self.cm.get_path_memory('train_dataset_paths')
-        val_files = self.cm.get_path_memory('val_dataset_paths')
+        train_files = self.config_manager.get_path_memory('train_dataset_paths')
+        val_files = self.config_manager.get_path_memory('val_dataset_paths')
         utils.set_determinism(seed=self.params['dataset']['seed'])  # set training deterministic
 
         da = DataAugmentation()

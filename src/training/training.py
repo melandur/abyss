@@ -7,8 +7,8 @@ from src.training.net import Net
 
 
 class Training:
-    def __init__(self, cm):
-        params = cm.params
+    def __init__(self, config_manager):
+        params = config_manager.params
 
         # Integrated loggers: TBoard, MLflow, Comet, Neptune, WandB
         logger = TensorBoardLogger(save_dir=params['project']['result_store_path'])
@@ -88,5 +88,5 @@ class Training:
         )
 
         # train
-        net = Net(cm)
+        net = Net(config_manager)
         trainer.fit(net)

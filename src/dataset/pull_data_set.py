@@ -1,16 +1,16 @@
 import os
 
+from loguru import logger as log
 from monai.apps import CrossValidation, DecathlonDataset, MedNISTDataset
-
-"""Allows to download data by API"""
 
 
 def pull_data_set(params):
+    """Allows to download data from API"""
     os.makedirs(params['project']['dataset_store_path'], exist_ok=True)
     dataset = params['dataset']['pull_dataset']
 
     if 'MedNISTDataset' in dataset:
-        print(f'using: {dataset}')
+        log.info(f'using: {dataset}')
         train_ds = MedNISTDataset(
             root_dir=params['project']['dataset_store_path'],
             section='training',
@@ -22,8 +22,7 @@ def pull_data_set(params):
         )
 
     elif 'DecathlonDataset' in dataset:
-        print(f'using: {dataset}, {params["dataset"]["challenge"]}')
-
+        log.info(f'using: {dataset}, {params["dataset"]["challenge"]}')
         DecathlonDataset(
             root_dir=params['project']['dataset_store_path'],
             task=params['dataset']['challenge'],
@@ -56,7 +55,7 @@ def pull_data_set(params):
         )
 
     elif 'CrossValidation' in dataset:
-        print(f'using: {dataset}')
+        log.info(f'using: {dataset}')
         CrossValidation(
             root_dir=params['project']['dataset_store_path'],
             task=params['dataset']['challenge'],
@@ -70,9 +69,9 @@ def pull_data_set(params):
     #     print(f'using: {dataset}')
     #     TODO: Need some code, split data into imageTr, imageTs, labelTr, labelTs. Stored as nii.gz
 
-    # else:
-    # print("Invalid dataset settings in conf.py: params['data']['dataset']")
-    # exit(1)
+    else:
+        raise AssertionError("Invalid dataset settings in conf.py: params['data']['dataset'], "
+                             "options: CustomDataset, DecathlonDataset, MedNISTDataset, CrossValidation")
 
 
 if __name__ == '__main__':

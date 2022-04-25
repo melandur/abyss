@@ -2,8 +2,9 @@ from collections import defaultdict
 
 
 class NestedDefaultDict(defaultdict):
+    """Dynamically expandable nested dict"""
     def __init__(self, *args, **kwargs):
-        super(NestedDefaultDict, self).__init__(NestedDefaultDict, *args, **kwargs)
+        super().__init__(NestedDefaultDict, *args, **kwargs)
 
     def __repr__(self):
         return repr(dict(self))

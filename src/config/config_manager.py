@@ -32,7 +32,7 @@ class ConfigManager:
             self.load_config_file(load_config_file_path)
             self.overwrite_loaded_project_paths()
         else:
-            log.error(f'Was not able to load config file from file path: {load_config_file_path}'), exit(1)
+            raise FileNotFoundError(f'Was not able to load config file from file path: {load_config_file_path}')
 
         self.path_memory = DataPathMemory().path_memory
 
@@ -48,9 +48,9 @@ class ConfigManager:
     @log.catch
     def store_config_file(self):
         """Export conf params as json to the config store folder"""
-        file_path = os.path.join(self.params['project']['config_store_path'], f'config.json')
-        with open(file_path, 'w+') as f:
-            f.write(json.dumps(self.params, indent=4))
+        file_path = os.path.join(self.params['project']['config_store_path'], 'config.json')
+        with open(file_path, 'w+', encoding='utf-8') as file:
+            file.write(json.dumps(self.params, indent=4))
         log.debug(f'Config file has been stored to {file_path}')
 
     @log.catch
@@ -70,34 +70,32 @@ class ConfigManager:
     def load_config_file(self, file_path=None):
         """Export path memory as json to the config store folder"""
         if file_path is None:
-            file_path = os.path.join(self.params['project']['config_store_path'], f'config.json')
+            file_path = os.path.join(self.params['project']['config_store_path'], 'config.json')
         if os.path.isfile(file_path):
-            with open(file_path, 'r') as f:
-                self.params = json.load(f)
+            with open(file_path, 'r', encoding='utf-8') as file:
+                self.params = json.load(file)
         else:
-            log.error(f'Config file not found with file path: {file_path}')
-            exit(1)
-        log.trace(f'Loaded config file contains: {json.dumps(self.params, indent=4)}')
+            raise FileNotFoundError(f'Config file not found with file path: {file_path}')
         log.debug(f'Config file has been loaded from {file_path}')
+        log.trace(f'Loaded config file contains: {json.dumps(self.params, indent=4)}')
 
     @log.catch
     def store_path_memory_file(self):
         """Export path memory as json to the config store folder"""
-        file_path = os.path.join(self.params['project']['config_store_path'], f'path_memory.json')
-        with open(file_path, 'w+') as f:
-            f.write(json.dumps(self.path_memory, indent=4))
+        file_path = os.path.join(self.params['project']['config_store_path'], 'path_memory.json')
+        with open(file_path, 'w+', encoding='utf-8') as file:
+            file.write(json.dumps(self.path_memory, indent=4))
         log.debug(f'Memory path file has been stored to {file_path}')
 
     @log.catch
     def load_path_memory_file(self):
         """Export path memory as json to the config store folder"""
-        file_path = os.path.join(self.params['project']['config_store_path'], f'path_memory.json')
+        file_path = os.path.join(self.params['project']['config_store_path'], 'path_memory.json')
         if os.path.isfile(file_path):
-            with open(file_path, 'r') as f:
-                self.path_memory = json.load(f)
+            with open(file_path, 'r', encoding='utf-8') as file:
+                self.path_memory = json.load(file)
         else:
-            log.error(f'Path memory file not found with file path: {file_path}')
-            exit(1)
+            raise FileNotFoundError(f'Path memory file not found with file path: {file_path}')
 
         # python loads the dicts as default dicts, therefore we need to override those with the nested dicts
         for key in self.path_memory.keys():
@@ -105,8 +103,8 @@ class ConfigManager:
                 self.path_memory[key] = NestedDefaultDict()  # override empty dicts with nested dicts
                 self.path_memory[key]['image'] = {}
                 self.path_memory[key]['label'] = {}
-        log.trace(f'Loaded memory path file contains: {json.dumps(self.path_memory, indent=4)}')
         log.debug(f'Path memory file has been loaded from {file_path}')
+        log.trace(f'Loaded memory path file contains: {json.dumps(self.path_memory, indent=4)}')
 
     @log.catch
     def get_path_memory(self, path_memory_name):
@@ -120,4 +118,4 @@ class ConfigManager:
 
 
 if __name__ == '__main__':
-    cm = ConfigManager()
+    config_manager = ConfigManager()
