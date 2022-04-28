@@ -1,3 +1,4 @@
+from typing_extensions import ClassVar
 import json
 import os
 import shutil
@@ -11,7 +12,7 @@ from abyss.utilities.utils import NestedDefaultDict, assure_instance_type
 class DataSetInitPathScan:
     """Creates a nested dictionary, which holds keys:case_names, values: label and image paths"""
 
-    def __init__(self, config_manager):
+    def __init__(self, config_manager: ClassVar):
         self.config_manager = config_manager
         self.params = config_manager.params
         self.path_memory = config_manager.path_memory
@@ -32,7 +33,7 @@ class DataSetInitPathScan:
             self.create_structured_dataset()
 
     @staticmethod
-    def get_case_name(file_name):
+    def get_case_name(file_name: str) -> str:
         """Extracts specific case name from file name"""
         # TODO: Depends heavily on the naming of your data set
         case_name = '_'.join(file_name.split('_')[:-1])
@@ -44,7 +45,7 @@ class DataSetInitPathScan:
         return case_name
 
     @staticmethod
-    def check_folder_path(folder_path):
+    def check_folder_path(folder_path: str) -> bool:
         """True if string is not empty or None"""
         state = False
         if os.path.isdir(folder_path):
@@ -52,35 +53,35 @@ class DataSetInitPathScan:
         return state
 
     @log.catch
-    def check_file_search_tag_label(self, file_name):
+    def check_file_search_tag_label(self, file_name: str) -> bool:
         """True if label search tag is in file name"""
         check_search_tag = False
         if [x for x in self.label_search_tags if x in file_name]:
             check_search_tag = True
         return check_search_tag
 
-    def check_file_type_label(self, file_name):
+    def check_file_type_label(self, file_name: str) -> bool:
         """True if label file ends with defined file type"""
         check_file_type = False
         if [x for x in self.label_file_type if file_name.endswith(x)]:
             check_file_type = True
         return check_file_type
 
-    def check_file_search_tag_image(self, file_name):
+    def check_file_search_tag_image(self, file_name: str) -> bool:
         """True if image search tag is in file name"""
         check_search_tag = False
         if [x for x in self.image_search_tags.values() if x[0] in file_name]:
             check_search_tag = True
         return check_search_tag
 
-    def check_file_type_image(self, file_name):
+    def check_file_type_image(self, file_name: str) -> bool:
         """True if image file ends with defined file type"""
         check_file_type = False
         if [x for x in self.image_file_type if file_name.endswith(x)]:
             check_file_type = True
         return check_file_type
 
-    def get_file_search_tag_image(self, file_name):
+    def get_file_search_tag_image(self, file_name: str) -> str:
         """Returns the found search tag for a certain file name"""
         found_search_tag = [x for x in self.image_search_tags.values() if x[0] in file_name][0]
         return [k for k, v in self.image_search_tags.items() if v == found_search_tag][0]
@@ -116,7 +117,7 @@ class DataSetInitPathScan:
             file_extension = file_name.split(os.extsep, 1)[1]
             new_file_name = f'{case_name}_{tag_name}.{file_extension}'
             dst_file_path = os.path.join(
-                self.params['project']['structured_dataset_store_path'], folder_name, new_file_name
+                self.params['project']['structured_dataset_store_path'], folder_name, new_file_name,
             )
             os.makedirs(os.path.dirname(dst_file_path), exist_ok=True)
             shutil.copy2(src=src, dst=dst_file_path)
@@ -135,7 +136,7 @@ class DataSetInitPathScan:
 
             # copy labels
             self.path_memory['structured_dataset_paths']['label'][case_name] = copy_helper(
-                src=self.data_path_store['label'][case_name], folder_name='label', case_name=case_name, tag_name='seg'
+                src=self.data_path_store['label'][case_name], folder_name='label', case_name=case_name, tag_name='seg',
             )
 
         self.config_manager.store_path_memory_file()

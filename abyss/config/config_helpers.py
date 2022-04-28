@@ -3,7 +3,7 @@ from collections import Counter
 from copy import deepcopy
 
 
-def check_and_create_folder_structure(params):
+def check_and_create_folder_structure(params: dict):
     """Check and create folders if they are missing"""
     folders = [
         params['project']['structured_dataset_store_path'],
@@ -22,7 +22,7 @@ def check_and_create_folder_structure(params):
         os.makedirs(folder_path, exist_ok=True)
 
 
-def check_image_search_tag_redundancy(params):
+def check_image_search_tag_redundancy(params: dict):
     """Check if there are any redundant search tag per image name"""
     for key, value in params['dataset']['image_search_tags'].items():
         if len(value) != len(set(value)):
@@ -30,7 +30,7 @@ def check_image_search_tag_redundancy(params):
             raise AssertionError(f'The image search tag {redundant_tag} found multiple times for the image name {key}')
 
 
-def check_image_search_tag_uniqueness(params):
+def check_image_search_tag_uniqueness(params: dict):
     """Check if the image search tags are unique enough to avoid wrong data loading"""
     tags = params['dataset']['image_search_tags'].values()
     tags = [x for sublist in tags for x in sublist]  # flatten nested list

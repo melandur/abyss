@@ -17,7 +17,7 @@ from abyss.utilities.utils import NestedDefaultDict
 class ConfigManager:
     """The pipelines control center, most parameters can be found here"""
 
-    def __init__(self, load_config_file_path=None):
+    def __init__(self, load_config_file_path: str = None):
         self.project_name = 'BratsExp1'
         self.experiment_name = 'test1'
         self.project_base_path = os.path.join(os.path.expanduser("~"), 'Downloads', 'test_abyss')
@@ -70,7 +70,7 @@ class ConfigManager:
         self.params['project']['config_store_path'] = os.path.join(experiment_path, 'config_data')
 
     @log.catch
-    def load_config_file(self, file_path=None):
+    def load_config_file(self, file_path: str = None):
         """Export path memory as json to the config store folder"""
         if file_path is None:
             file_path = os.path.join(self.params['project']['config_store_path'], 'config.json')
@@ -110,7 +110,7 @@ class ConfigManager:
         log.trace(f'Loaded memory path file contains: {json.dumps(self.path_memory, indent=4)}')
 
     @log.catch
-    def get_path_memory(self, path_memory_name):
+    def get_path_memory(self, path_memory_name: str):
         """Returns the temporary path_memory if available, otherwise loads path_memory from path_memory.json"""
         if self.path_memory[path_memory_name]:
             found_path_memory = self.path_memory[path_memory_name]

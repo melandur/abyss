@@ -1,3 +1,4 @@
+from typing_extensions import ClassVar
 import os
 
 import monai
@@ -11,7 +12,7 @@ class PreProcessing:
     [B],C,H,W,[D]
     """
 
-    def __init__(self, config_manager):
+    def __init__(self, config_manager: ClassVar):
         self.config_manager = config_manager
         self.params = config_manager.params
         self.structured_dataset_paths = config_manager.get_path_memory('structured_dataset_paths')
@@ -23,7 +24,7 @@ class PreProcessing:
         self.process_labels()
         self.config_manager.store_path_memory_file()
 
-    def define_data_reader(self):
+    def define_data_reader(self) -> ClassVar:
         """Returns a monai supported reader class"""
         if self.params['dataset']['data_reader'] == 'ImageReader':
             data_reader = monai.data.ImageReader()
@@ -41,7 +42,7 @@ class PreProcessing:
             raise AssertionError(f'Defined data reader "{self.params["dataset"]["data_reader"]}" is not supported')
         return data_reader
 
-    def read_data(self, image_path):
+    def read_data(self, image_path: str) -> tuple:
         """Returns images as numpy array and meta data as dict"""
         image_data, meta_data = self.data_reader.get_data(self.data_reader.read(image_path))
         return image_data, meta_data
@@ -58,7 +59,7 @@ class PreProcessing:
         # TODO: ADD filters
         return image
 
-    def process_images(self, stack_images=False):
+    def process_images(self, stack_images: bool=False):
         """Applies pre processing task on images"""
         processed_image_data = None
         for case_name in self.structured_dataset_paths['image']:
