@@ -4,7 +4,7 @@ import sys
 
 from loguru import logger as log
 
-from config_file import ConfigFile
+from abyss.config_file import ConfigFile
 from src.config.config_helpers import (
     check_and_create_folder_structure,
     check_image_search_tag_redundancy,
