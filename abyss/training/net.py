@@ -3,11 +3,13 @@ import torch
 from loguru import logger as log
 from monai import data, inferers, losses, metrics, transforms, utils
 
-from src.training.data_augmentation import DataAugmentation
-from src.training.net_architecture import net_architecture
+from abyss.training.data_augmentation import DataAugmentation
+from abyss.training.net_architecture import net_architecture
 
 
 class Net(pytorch_lightning.LightningModule):
+    """Net definition"""
+
     def __init__(self, config_manager):
         super().__init__()
         self.config_manager = config_manager
@@ -20,11 +22,11 @@ class Net(pytorch_lightning.LightningModule):
         # TODO: Make native a multiloss available
         self.loss_function = losses.DiceLoss(to_onehot_y=False, sigmoid=True, squared_pred=True)
         self.post_pred = transforms.AsDiscrete(
-            argmax=True, to_onehot=True, n_classes=self.params['training']['n_classes']
+            argmax=True,
+            to_onehot=True,
+            n_classes=self.params['training']['n_classes'],
         )
         self.post_label = transforms.AsDiscrete(to_onehot=False, n_classes=self.params['training']['n_classes'])
-
-        print('asdas')
 
     def forward(self, x):
         return self._model(x)
@@ -34,24 +36,24 @@ class Net(pytorch_lightning.LightningModule):
         val_files = self.config_manager.get_path_memory('val_dataset_paths')
         utils.set_determinism(seed=self.params['dataset']['seed'])  # set training deterministic
 
-        da = DataAugmentation()
+        data_augmentation = DataAugmentation()
         if self.params['dataset']['use_cache']:
             self.train_ds = data.CacheDataset(
                 data=train_files,
-                transform=da.train_transform,
+                transform=data_augmentation.train_transform,
                 cache_rate=self.params['dataset']['cache_rate'],
                 num_workers=self.params['dataset']['num_workers'],
             )
 
             self.val_ds = data.CacheDataset(
                 data=val_files,
-                transform=da.val_transform,
+                transform=data_augmentation.val_transform,
                 cache_rate=self.params['dataset']['cache_rate'],
                 num_workers=self.params['dataset']['num_workers'],
             )
         else:
-            self.train_ds = data.Dataset(data=train_files, transform=da.train_transform)
-            self.val_ds = data.Dataset(data=val_files, transform=da.val_transform)
+            self.train_ds = data.Dataset(data=train_files, transform=data_augmentation.train_transform)
+            self.val_ds = data.Dataset(data=val_files, transform=data_augmentation.val_transform)
 
         # # pick one image from DecathlonDataset to visualize and check the 4 channels
         # print(f"image shape: {self.val_ds[0]['image'].shape}")
@@ -71,6 +73,7 @@ class Net(pytorch_lightning.LightningModule):
         # plt.show()
 
     def train_dataloader(self):
+        """Train dataloader"""
         train_loader = torch.utils.data.DataLoader(
             self.train_ds,
             batch_size=self.params['training']['batch_size'],
@@ -81,6 +84,7 @@ class Net(pytorch_lightning.LightningModule):
         return train_loader
 
     def val_dataloader(self):
+        """Validation dataloader"""
         val_loader = torch.utils.data.DataLoader(
             self.val_ds,
             batch_size=self.params['training']['batch_size'],
@@ -89,6 +93,7 @@ class Net(pytorch_lightning.LightningModule):
         return val_loader
 
     def configure_optimizers(self):
+        """Configure optimizers"""
         optimizer = None
         if 'Adam' in self.params['training']['optimizer']:
             optimizer = torch.optim.Adam(
@@ -111,6 +116,7 @@ class Net(pytorch_lightning.LightningModule):
         return optimizer
 
     def training_step(self, batch, batch_idx):
+        """Training step"""
         images, labels = batch['image'], batch['label']
         output = self.forward(images)
         loss = self.loss_function(output, labels)
@@ -118,6 +124,7 @@ class Net(pytorch_lightning.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
+        """Validation step"""
         images, labels = batch['image'], batch['label']
         roi_size = (160, 160, 160)
         sw_batch_size = 1
@@ -130,6 +137,7 @@ class Net(pytorch_lightning.LightningModule):
         self.log('val_dice', value)
 
     def validation_epoch_end(self, outputs):
+        """Validation epoch"""
         val_dice, val_loss, num_items = 0, 0, 0
         for output in outputs:
             val_dice += output['val_dice'].sum().item()

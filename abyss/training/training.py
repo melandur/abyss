@@ -3,10 +3,12 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 
-from src.training.net import Net
+from abyss.training.net import Net
 
 
 class Training:
+    """Training definitions"""
+
     def __init__(self, config_manager):
         params = config_manager.params
 

@@ -70,12 +70,14 @@ def pull_data_set(params):
     #     TODO: Need some code, split data into imageTr, imageTs, labelTr, labelTs. Stored as nii.gz
 
     else:
-        raise AssertionError("Invalid dataset settings in conf.py: params['data']['dataset'], "
-                             "options: CustomDataset, DecathlonDataset, MedNISTDataset, CrossValidation")
+        raise AssertionError(
+            "Invalid dataset settings in conf.py: params['data']['dataset'], "
+            "options: CustomDataset, DecathlonDataset, MedNISTDataset, CrossValidation"
+        )
 
 
 if __name__ == '__main__':
-    from src.config.config_manager import ConfigManager
+    from abyss.config.config_manager import ConfigManager
 
     params = ConfigManager().params
     pull_data_set(params)

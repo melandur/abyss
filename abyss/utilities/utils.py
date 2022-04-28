@@ -3,6 +3,7 @@ from collections import defaultdict
 
 class NestedDefaultDict(defaultdict):
     """Dynamically expandable nested dict"""
+
     def __init__(self, *args, **kwargs):
         super().__init__(NestedDefaultDict, *args, **kwargs)
 

@@ -354,7 +354,8 @@ good-names=i,
            k,
            ex,
            Run,
-           _
+           _,
+           x
 
 # Good variable names regexes, separated by a comma. If names match any regex,
 # they will always be accepted
@@ -448,7 +449,7 @@ ignored-classes=optparse.Values,thread._local,_thread._local
 # (useful for modules/projects where namespaces are manipulated during runtime
 # and thus existing member attributes cannot be deduced by static analysis). It
 # supports qualified module names, as well as Unix pattern matching.
-ignored-modules=monai
+ignored-modules=monai, pytorch_lightning, torch,  SimpleITK
 
 # Show a hint with possible names when a member name was not found. The aspect
 # of finding the hint is based on edit distance.

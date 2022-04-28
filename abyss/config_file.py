@@ -6,39 +6,48 @@ class ConfigFile:
     """The pipelines control center, most parameters can be found here"""
 
     def __init__(self, project_name, experiment_name, project_base_path, dataset_folder_path):
-        experiment_path = os.path.join(project_base_path, project_name, experiment_name)
+        self.experiment_path = os.path.join(project_base_path, project_name, experiment_name)
+        self.project_name = 'project_name'
+        self.project_base_path = 'project_base_path'
+        self.experiment_name = 'experiment_name'
+        self.experiment_path = 'experiment_path'
+        self.dataset_folder_path = dataset_folder_path
 
-        self.params = {
+    def __call__(self):
+        """Returns config file"""
+        return {
             'logger': {'level': 'DEBUG'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
                 'read_dataset': False,
                 'pre_processing': False,
-                'create_datasets': False,
-                'training': True,
+                'create_trainset': False,
+                'training': False,
                 'post_processing': False,
             },
             'project': {
-                'name': project_name,
-                'experiment_name': experiment_name,
-                'base_path': project_base_path,
-                'structured_dataset_store_path': os.path.join(experiment_path, 'structured_dataset'),
-                'preprocessed_dataset_store_path': os.path.join(experiment_path, 'pre_processed_dataset'),
-                'trainset_store_path': os.path.join(experiment_path, 'trainset'),
-                'result_store_path': os.path.join(experiment_path, 'results'),
-                'augmentation_store_path': os.path.join(experiment_path, 'aug_plots'),
-                'config_store_path': os.path.join(experiment_path, 'config_data'),
+                'name': self.project_name,
+                'experiment_name': self.experiment_name,
+                'base_path': self.project_base_path,
+                'structured_dataset_store_path': os.path.join(self.experiment_path, 'structured_dataset'),
+                'preprocessed_dataset_store_path': os.path.join(self.experiment_path, 'pre_processed_dataset'),
+                'trainset_store_path': os.path.join(self.experiment_path, 'trainset'),
+                'result_store_path': os.path.join(self.experiment_path, 'results'),
+                'augmentation_store_path': os.path.join(self.experiment_path, 'aug_plots'),
+                'config_store_path': os.path.join(self.experiment_path, 'config_data'),
             },
             'dataset': {
-                'folder_path': dataset_folder_path,
+                'folder_path': self.dataset_folder_path,
                 'label_search_tags': ['seg.'],
                 'label_file_type': ['.nii.gz'],
                 'image_search_tags': {'t1': ['t1.'], 't1ce': ['t1c.'], 'flair': ['flair.'], 't2': ['t2.']},
                 'image_file_type': ['.nii.gz'],
-                'data_reader': 'NibabelReader',  # 'ImageReader', 'ITKReader', 'NibabelReader', 'NumpyReader', 'PILReader', 'WSIReader'
+                'data_reader': 'NibabelReader',
+                # 'ImageReader', 'ITKReader', 'NibabelReader', 'NumpyReader', 'PILReader', 'WSIReader'
                 'concatenate_image_files': True,
                 'pull_dataset': 'DecathlonDataset',  # 'MedNISTDataset', 'DecathlonDataset', 'CrossValidation'
-                'challenge': 'Task01_BrainTumour',
-                # only need for decathlon:   'Task01_BrainTumour', 'Task02_Heart', 'Task03_Liver0', 'Task04_Hippocampus', 'Task05_Prostate', 'Task06_Lung', 'Task07_Pancreas', 'Task08_HepaticVessel', 'Task09_Spleen', 'Task10_Colon'
+                'challenge': 'Task01_BrainTumour',  # only need for decathlon:   'Task01_BrainTumour', 'Task02_Heart',
+                # 'Task03_Liver0', 'Task04_Hippocampus', 'Task05_Prostate', 'Task06_Lung', 'Task07_Pancreas',
+                # 'Task08_HepaticVessel', 'Task09_Spleen', 'Task10_Colon'
                 'seed': 42,  # find the truth in randomness
                 'val_frac': 0.2,
                 'test_frac': 0.2,
@@ -69,6 +78,9 @@ class ConfigFile:
             },
         }
 
+    def __str__(self):
+        return self.__class__.__name__
+
 
 if __name__ == '__main__':
-    cm = ConfigFile()
+    cm = ConfigFile('project_name', 'experiment_name', 'project_base_path', 'dataset_folder_path')

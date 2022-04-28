@@ -17,7 +17,7 @@ def check_and_create_folder_structure(params):
         os.makedirs(folder, exist_ok=True)
 
     # Create subfolders for training dataset
-    for folder in ['imagesTr', 'labelsTr', 'imagesVal', 'labelsVal', 'imagesTs', 'labelsTs']:
+    for folder in ['images_tr', 'labels_tr', 'images_val', 'labels_val', 'images_ts', 'labels_ts']:
         folder_path = os.path.join(params['project']['trainset_store_path'], folder)
         os.makedirs(folder_path, exist_ok=True)
 

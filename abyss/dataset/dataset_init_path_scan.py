@@ -5,7 +5,7 @@ import shutil
 import numpy as np
 from loguru import logger as log
 
-from src.utilities.utils import NestedDefaultDict, assure_instance_type
+from abyss.utilities.utils import NestedDefaultDict, assure_instance_type
 
 
 class DataSetInitPathScan:
@@ -166,7 +166,3 @@ class DataSetInitPathScan:
         }
 
         log.info(f'Dataset scan overview: {json.dumps(stats_dict, indent=4)}')
-
-
-if __name__ == '__main__':
-    ds = DataSetInitPathScan()

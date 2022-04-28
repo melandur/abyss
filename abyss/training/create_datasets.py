@@ -33,9 +33,7 @@ class CreateDatasets:
         self.test_set_cases = list(
             np.random.choice(list(self.preprocessed_store_paths['image']), size=test_set_size, replace=False)
         )
-        self.train_set_cases = [
-            x for x in self.preprocessed_store_paths['image'] if x not in self.test_set_cases
-        ]
+        self.train_set_cases = [x for x in self.preprocessed_store_paths['image'] if x not in self.test_set_cases]
         if set(self.test_set_cases) & set(self.train_set_cases):
             raise AssertionError('Contamination in train & test-set split')
         log.info(f'Test set, counts: {len(self.test_set_cases)}, cases: {self.test_set_cases}')
@@ -63,7 +61,7 @@ class CreateDatasets:
                 shutil.copy2(src, dst_file_path)
                 return dst_file_path
             except Exception as error:
-                raise Exception(error)
+                raise error
 
         # copy train dataset
         for case_name in self.train_set_cases:
@@ -92,7 +90,7 @@ if __name__ == '__main__':
 
     from loguru import logger as log
 
-    from src.config.config_manager import ConfigManager
+    from abyss.config.config_manager import ConfigManager
 
     config_manager = ConfigManager(load_config_file_path=None)
     log.remove()  # fresh start

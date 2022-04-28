@@ -1,6 +1,6 @@
 from loguru import logger as log
 
-from src.utilities.utils import NestedDefaultDict
+from abyss.utilities.utils import NestedDefaultDict
 
 
 class DataPathMemory:

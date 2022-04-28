@@ -28,6 +28,7 @@ class ConvertToMultiChannelBasedOnBratsClassesd(tf.MapTransform):
 
 
 class DataAugmentation:
+    """Apply data augmentation"""
     def __init__(self):
         # self.params = params
 
@@ -89,50 +90,50 @@ class DataAugmentation:
 
 
 if __name__ == '__main__':
-    path = 'C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset'
+    PATH = 'C:\\Users\\melandur\\Downloads\\mytest\\BratsExp1\\test1\\structured_dataset'
     data_dicts = {
         "image": {
             "ACRINDSCMRBrain0571": {
-                "t1": f"{path}\\image\\ACRINDSCMRBrain0571_t1.nii.gz",
-                "t1ce": f"{path}\\image\\ACRINDSCMRBrain0571_t1ce.nii.gz",
-                "flair": f"{path}\\image\\ACRINDSCMRBrain0571_flair.nii.gz",
-                "t2": f"{path}\\image\\ACRINDSCMRBrain0571_t2.nii.gz",
+                "t1": f"{PATH}\\image\\ACRINDSCMRBrain0571_t1.nii.gz",
+                "t1ce": f"{PATH}\\image\\ACRINDSCMRBrain0571_t1ce.nii.gz",
+                "flair": f"{PATH}\\image\\ACRINDSCMRBrain0571_flair.nii.gz",
+                "t2": f"{PATH}\\image\\ACRINDSCMRBrain0571_t2.nii.gz",
             },
             "ACRINDSCMRBrain0621": {
-                "t1": f"{path}\\image\\ACRINDSCMRBrain0621_t1.nii.gz",
-                "t1ce": f"{path}\\image\\ACRINDSCMRBrain0621_t1ce.nii.gz",
-                "flair": f"{path}\\image\\ACRINDSCMRBrain0621_flair.nii.gz",
-                "t2": f"{path}\\image\\ACRINDSCMRBrain0621_t2.nii.gz",
+                "t1": f"{PATH}\\image\\ACRINDSCMRBrain0621_t1.nii.gz",
+                "t1ce": f"{PATH}\\image\\ACRINDSCMRBrain0621_t1ce.nii.gz",
+                "flair": f"{PATH}\\image\\ACRINDSCMRBrain0621_flair.nii.gz",
+                "t2": f"{PATH}\\image\\ACRINDSCMRBrain0621_t2.nii.gz",
             },
             "ACRINDSCMRBrain0641": {
-                "t1": f"{path}\\image\\ACRINDSCMRBrain0641_t1.nii.gz",
-                "t1ce": f"{path}\\image\\ACRINDSCMRBrain0641_t1ce.nii.gz",
-                "flair": f"{path}\\image\\ACRINDSCMRBrain0641_flair.nii.gz",
-                "t2": f"{path}\\image\\ACRINDSCMRBrain0641_t2.nii.gz",
+                "t1": f"{PATH}\\image\\ACRINDSCMRBrain0641_t1.nii.gz",
+                "t1ce": f"{PATH}\\image\\ACRINDSCMRBrain0641_t1ce.nii.gz",
+                "flair": f"{PATH}\\image\\ACRINDSCMRBrain0641_flair.nii.gz",
+                "t2": f"{PATH}\\image\\ACRINDSCMRBrain0641_t2.nii.gz",
             },
             "ACRINDSCMRBrain0671": {
-                "t1": f"{path}\\image\\ACRINDSCMRBrain0671_t1.nii.gz",
-                "t1ce": f"{path}\\image\\ACRINDSCMRBrain0671_t1ce.nii.gz",
-                "flair": f"{path}\\image\\ACRINDSCMRBrain0671_flair.nii.gz",
-                "t2": f"{path}\\image\\ACRINDSCMRBrain0671_t2.nii.gz",
+                "t1": f"{PATH}\\image\\ACRINDSCMRBrain0671_t1.nii.gz",
+                "t1ce": f"{PATH}\\image\\ACRINDSCMRBrain0671_t1ce.nii.gz",
+                "flair": f"{PATH}\\image\\ACRINDSCMRBrain0671_flair.nii.gz",
+                "t2": f"{PATH}\\image\\ACRINDSCMRBrain0671_t2.nii.gz",
             },
             "ACRINDSCMRBrain0741": {
-                "t1": f"{path}\\image\\ACRINDSCMRBrain0741_t1.nii.gz",
-                "t1ce": f"{path}\\image\\ACRINDSCMRBrain0741_t1ce.nii.gz",
-                "flair": f"{path}\\image\\ACRINDSCMRBrain0741_flair.nii.gz",
-                "t2": f"{path}\\image\\ACRINDSCMRBrain0741_t2.nii.gz",
+                "t1": f"{PATH}\\image\\ACRINDSCMRBrain0741_t1.nii.gz",
+                "t1ce": f"{PATH}\\image\\ACRINDSCMRBrain0741_t1ce.nii.gz",
+                "flair": f"{PATH}\\image\\ACRINDSCMRBrain0741_flair.nii.gz",
+                "t2": f"{PATH}\\image\\ACRINDSCMRBrain0741_t2.nii.gz",
             },
         },
         "label": {
-            "ACRINDSCMRBrain0571": f"{path}\\label\\ACRINDSCMRBrain0571_seg.nii.gz",
-            "ACRINDSCMRBrain0621": f"{path}\\label\\ACRINDSCMRBrain0621_seg.nii.gz",
-            "ACRINDSCMRBrain0641": f"{path}\\label\\ACRINDSCMRBrain0641_seg.nii.gz",
-            "ACRINDSCMRBrain0671": f"{path}\\label\\ACRINDSCMRBrain0671_seg.nii.gz",
-            "ACRINDSCMRBrain0741": f"{path}\\label\\ACRINDSCMRBrain0741_seg.nii.gz",
+            "ACRINDSCMRBrain0571": f"{PATH}\\label\\ACRINDSCMRBrain0571_seg.nii.gz",
+            "ACRINDSCMRBrain0621": f"{PATH}\\label\\ACRINDSCMRBrain0621_seg.nii.gz",
+            "ACRINDSCMRBrain0641": f"{PATH}\\label\\ACRINDSCMRBrain0641_seg.nii.gz",
+            "ACRINDSCMRBrain0671": f"{PATH}\\label\\ACRINDSCMRBrain0671_seg.nii.gz",
+            "ACRINDSCMRBrain0741": f"{PATH}\\label\\ACRINDSCMRBrain0741_seg.nii.gz",
         },
     }
-    from src.config.config_manager import ConfigManager
-    from src.pre_processing.pre_processing_helpers import ConcatenateImages
+    from abyss.config.config_manager import ConfigManager
+    from abyss.pre_processing.pre_processing_helpers import ConcatenateImages
 
     params = ConfigManager().params
     da = DataAugmentation()

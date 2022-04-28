@@ -4,14 +4,14 @@ import sys
 
 from loguru import logger as log
 
-from abyss.config_file import ConfigFile
-from src.config.config_helpers import (
+from abyss.config.config_helpers import (
     check_and_create_folder_structure,
     check_image_search_tag_redundancy,
     check_image_search_tag_uniqueness,
 )
-from src.utilities.data_path_memory import DataPathMemory
-from src.utilities.utils import NestedDefaultDict
+from abyss.config_file import ConfigFile
+from abyss.utilities.data_path_memory import DataPathMemory
+from abyss.utilities.utils import NestedDefaultDict
 
 
 class ConfigManager:
@@ -20,13 +20,16 @@ class ConfigManager:
     def __init__(self, load_config_file_path=None):
         self.project_name = 'BratsExp1'
         self.experiment_name = 'test1'
-        self.project_base_path = r'C:\Users\melandur\Downloads\mytest'
-        self.dataset_folder_path = r'C:\Users\melandur\Desktop\test_v2'
+        self.project_base_path = os.path.join(os.path.expanduser("~"), 'Downloads', 'test_abyss')
+        self.dataset_folder_path = os.path.join(os.path.expanduser("~"), 'Downloads', 'test_abyss')
 
         if load_config_file_path is None:
             self.params = ConfigFile(
-                self.project_name, self.experiment_name, self.project_base_path, self.dataset_folder_path
-            ).params
+                self.project_name,
+                self.experiment_name,
+                self.project_base_path,
+                self.dataset_folder_path,
+            )()
 
         elif isinstance(load_config_file_path, str) and os.path.isfile(load_config_file_path):
             self.load_config_file(load_config_file_path)
