@@ -9,14 +9,14 @@ class ConfigFile:
         self.experiment_name = 'experiment_1'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
         self.dataset_folder_path = '/home/melandur/Data/small'
-        self.experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
 
     def __call__(self):
         """Returns config file"""
+        experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
         return {
             'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_selection': True,
+                'data_selection': False,
                 'pre_processing': True,
                 'create_trainset': False,
                 'training': False,
@@ -27,11 +27,11 @@ class ConfigFile:
                 'experiment_name': self.experiment_name,
                 'base_path': self.project_base_path,
                 'dataset_folder_path': self.dataset_folder_path,
-                'structured_dataset_store_path': os.path.join(self.experiment_path, '1_structured_dataset'),
-                'preprocessed_dataset_store_path': os.path.join(self.experiment_path, '2_pre_processed_dataset'),
-                'trainset_store_path': os.path.join(self.experiment_path, '3_trainset'),
-                'result_store_path': os.path.join(self.experiment_path, '4_results'),
-                'config_store_path': os.path.join(self.experiment_path, '0_config_data'),
+                'config_store_path': os.path.join(experiment_path, '0_config_data'),
+                'structured_dataset_store_path': os.path.join(experiment_path, '1_structured_dataset'),
+                'preprocessed_dataset_store_path': os.path.join(experiment_path, '2_pre_processed_dataset'),
+                'trainset_store_path': os.path.join(experiment_path, '3_trainset'),
+                'result_store_path': os.path.join(experiment_path, '4_results'),
             },
             'meta': {
                 'seed': 42,  # find the truth in randomness
