@@ -10,7 +10,6 @@ def check_and_create_folder_structure(params: dict):
         params['project']['preprocessed_dataset_store_path'],
         params['project']['trainset_store_path'],
         params['project']['result_store_path'],
-        params['project']['augmentation_store_path'],
         params['project']['config_store_path'],
     ]
     for folder in folders:

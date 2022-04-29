@@ -8,7 +8,7 @@ class ConfigFile:
         self.project_name = 'Abyss_test'
         self.experiment_name = 'experiment_1'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_folder_path = '/home/melandur/Data/small1'
+        self.dataset_folder_path = '/home/melandur/Data/small'
         self.experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
 
     def __call__(self):
@@ -16,8 +16,8 @@ class ConfigFile:
         return {
             'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_selection': True,
-                'pre_processing': False,
+                'data_selection': False,
+                'pre_processing': True,
                 'create_trainset': False,
                 'training': False,
                 'post_processing': False,
@@ -27,12 +27,11 @@ class ConfigFile:
                 'experiment_name': self.experiment_name,
                 'base_path': self.project_base_path,
                 'dataset_folder_path': self.dataset_folder_path,
-                'structured_dataset_store_path': os.path.join(self.experiment_path, 'structured_dataset'),
-                'preprocessed_dataset_store_path': os.path.join(self.experiment_path, 'pre_processed_dataset'),
-                'trainset_store_path': os.path.join(self.experiment_path, 'trainset'),
-                'result_store_path': os.path.join(self.experiment_path, 'results'),
-                'augmentation_store_path': os.path.join(self.experiment_path, 'aug_plots'),
-                'config_store_path': os.path.join(self.experiment_path, 'config_data'),
+                'structured_dataset_store_path': os.path.join(self.experiment_path, '1_structured_dataset'),
+                'preprocessed_dataset_store_path': os.path.join(self.experiment_path, '2_pre_processed_dataset'),
+                'trainset_store_path': os.path.join(self.experiment_path, '3_trainset'),
+                'result_store_path': os.path.join(self.experiment_path, '4_results'),
+                'config_store_path': os.path.join(self.experiment_path, '0_config_data'),
             },
             'dataset': {
                 'folder_path': self.dataset_folder_path,
@@ -45,9 +44,15 @@ class ConfigFile:
                     't2': ['t2.', 'T2.'],
                 },
                 'image_file_type': ['.nii.gz'],
-                'data_reader': 'ITKReader',  # 'ITKReader', 'NibabelReader', 'NumpyReader', 'PILReader', 'WSIReader'
             },
-            'pre_processing': {'concatenate_image_files': False},
+            'pre_processing': {
+                'seed': 42,
+                'concatenate_image_files': False,
+                'label_data_reader': 'NibabelReader',  # 'ITKReader', 'NibabelReader', 'NumpyReader', 'PILReader',
+                # 'CustomReader'
+                'image_data_reader': 'NibabelReader',  # 'ITKReader', 'NibabelReader', 'NumpyReader', 'PILReader',
+                # 'CustomReader'
+            },
             'post_processing': {},
             'augmentation': {},
             'training': {

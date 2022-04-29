@@ -15,7 +15,7 @@ if __name__ == '__main__':
         DataSelection(cm)()
 
     if cm.params['pipeline_steps']['pre_processing']:
-        PreProcessing(cm)
+        PreProcessing(cm)()
 
     if cm.params['pipeline_steps']['create_trainset']:
         CreateTrainset(cm)

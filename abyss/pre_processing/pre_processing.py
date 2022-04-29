@@ -11,51 +11,57 @@ class PreProcessing:
     Check out monai.transforms filters, which can be applied in data augmentation during the training instead
     [B],C,H,W,[D]
     """
-
     def __init__(self, config_manager: ClassVar):
         self.config_manager = config_manager
         self.params = config_manager.params
         self.structured_dataset_paths = config_manager.get_path_memory('structured_dataset_paths')
-        np.random.seed(config_manager.params['dataset']['seed'])
+        np.random.seed(config_manager.params['pre_processing']['seed'])
 
-        logger.info(f'Init {self.__class__.__name__}')
-        self.data_reader = self.define_data_reader()
-        self.process_images(stack_images=True)
+    def __call__(self):
+        logger.info(f'Run: {self.__class__.__name__}')
+        self.data_reader_image = self.define_data_reader(self.params['pre_processing']['image_data_reader'])
+        self.data_reader_label = self.define_data_reader(self.params['pre_processing']['label_data_reader'])
+        self.process_images(stack_images=self.params['pre_processing']['concatenate_image_files'])
         self.process_labels()
         self.config_manager.store_path_memory_file()
 
-    def define_data_reader(self) -> ClassVar:
-        """Returns a monai supported reader class"""
-        if self.params['dataset']['data_reader'] == 'ITKReader':
+    @staticmethod
+    def define_data_reader(data_reader_name) -> ClassVar:
+        """Returns a monai supported reader class or custom implementation"""
+        if data_reader_name == 'ITKReader':
             data_reader = monai.data.ITKReader()
-        elif self.params['dataset']['data_reader'] == 'NibabelReader':
+        elif data_reader_name == 'NibabelReader':
             data_reader = monai.data.NibabelReader()
-        elif self.params['dataset']['data_reader'] == 'NumpyReader':
+        elif data_reader_name == 'NumpyReader':
             data_reader = monai.data.NumpyReader()
-        elif self.params['dataset']['data_reader'] == 'PILReader':
+        elif data_reader_name == 'PILReader':
             data_reader = monai.data.PILReader()
-        elif self.params['dataset']['data_reader'] == 'WSIReader':
-            data_reader = monai.data.WSIReader()
+        elif data_reader_name == 'CustomReader':
+            raise NotImplementedError('Yet to come')
         else:
-            raise NotImplementedError(f'Defined data reader "{self.params["dataset"]["data_reader"]}" is not supported')
+            raise NotImplementedError(f'Defined data reader {data_reader_name} is not supported')
         return data_reader
 
-    def read_data(self, image_path: str) -> tuple:
-        """Returns images as numpy array and meta data as dict"""
-        image_data, meta_data = self.data_reader.get_data(self.data_reader.read(image_path))
+    def read_label_data(self, image_path: str) -> tuple:
+        """Returns labels as numpy array and meta data as dict"""
+        image_data, meta_data = self.data_reader_image.get_data(self.data_reader_image.read(image_path))
         return image_data, meta_data
 
-    @staticmethod
-    def sequential_process_steps_images(image):
+    def read_image_data(self, image_path: str) -> tuple:
+        """Returns images as numpy array and meta data as dict"""
+        label_data, meta_data = self.data_reader_label.get_data(self.data_reader_label.read(image_path))
+        return label_data, meta_data
+
+    def sequential_process_steps_images(self, image):
         """Add image filter"""
-        # TODO: ADD filters
+        image = self.some_magic_filter_1(image)
+        image = self.some_magic_filter_2(image)
         return image
 
-    @staticmethod
-    def sequential_process_steps_labels(image):
+    def sequential_process_steps_labels(self, label):
         """Add segmentation filters"""
-        # TODO: ADD filters
-        return image
+        label = self.label_conversion(label)
+        return label
 
     def process_images(self, stack_images: bool = False):
         """Applies pre processing task on images"""
@@ -64,22 +70,22 @@ class PreProcessing:
             logger.debug(f'Image data: {case_name}')
             tmp_image_store = {}
             for image_name in self.structured_dataset_paths['image'][case_name]:
-                image_data, _ = self.read_data(self.structured_dataset_paths['image'][case_name][image_name])
+                image_data, _ = self.read_image_data(self.structured_dataset_paths['image'][case_name][image_name])
                 processed_image_data = self.sequential_process_steps_images(image_data)
                 tmp_image_store[image_name] = processed_image_data
             if stack_images:
                 processed_image_data = self.stack_data(tmp_image_store)
             if processed_image_data is None:
-                raise AssertionError('Preprocessing failed')
+                raise AssertionError('Preprocessing failed, processed image data type is None')
             self.save_data(processed_image_data, case_name, folder_tag='image', export_tag='.nii.gz')
 
     def process_labels(self):
         """Applies pre processing task on labels"""
         for case_name in self.structured_dataset_paths['label']:
             logger.debug(f'Label data: {case_name}')
-            image_data, _ = self.read_data(self.structured_dataset_paths['label'][case_name])
-            processed_image_data = self.sequential_process_steps_labels(image_data)
-            self.save_data(processed_image_data, case_name, folder_tag='label', export_tag='.nii.gz')
+            label_data, _ = self.read_label_data(self.structured_dataset_paths['label'][case_name])
+            processed_label_data = self.sequential_process_steps_labels(label_data)
+            self.save_data(processed_label_data, case_name, folder_tag='label', export_tag='.nii.gz')
 
     def save_data(self, image_data, case_name, folder_tag='image', export_tag='.nii.gz'):
         """Save data to preprocessed data folder as nifti or npz file"""
@@ -100,7 +106,7 @@ class PreProcessing:
         elif folder_tag == 'label':
             self.config_manager.path_memory['preprocessed_dataset_paths'][folder_tag][case_name] = file_path
         else:
-            raise NameError(f'Folder tag: "{folder_tag}" not found')
+            raise ValueError(f'Folder tag: "{folder_tag}" not found')
 
     @staticmethod
     def stack_data(tmp_image_store):
@@ -119,26 +125,27 @@ class PreProcessing:
     def show_processed_data(self):
         """Show the processed data"""
 
-    def label_conversion(self):
+    @staticmethod
+    def label_conversion(label):
         """For the sake of ideas"""
-        # TODO: Expand on preprocessing filters, try to use monai.transforms were possible
+        return label
 
-    def image_conversion(self):
+    @staticmethod
+    def image_conversion(image):
         """For the sake of ideas"""
-        # TODO: Expand on preprocessing filters, try to use monai.transforms were possible
+        return image
 
-    def some_magic_filter_1(self):
+    @staticmethod
+    def some_magic_filter_1(image):
         """For the sake of ideas"""
-        # TODO: Expand on preprocessing filters, try to use monai.transforms were possible
+        return image
 
-    def some_magic_filter_2(self):
+    @staticmethod
+    def some_magic_filter_2(image):
         """For the sake of ideas"""
-        # TODO: Expand on preprocessing filters, try to use monai.transforms were possible
+        return image
 
-    def image_resizing(self):
+    @staticmethod
+    def image_resizing(image):
         """For the sake of ideas"""
-        # TODO: Expand on preprocessing filters, try to use monai.transforms were possible
-
-    def splitting_rgb_channels(self):
-        """For the sake of ideas"""
-        # TODO: Expand on preprocessing filters, try to use monai.transforms were possible
+        return image
