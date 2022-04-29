@@ -1,15 +1,15 @@
-from typing_extensions import ClassVar
 import json
 import os
 import shutil
 
 import numpy as np
-from loguru import logger as log
+from loguru import logger
+from typing_extensions import ClassVar
 
 from abyss.utilities.utils import NestedDefaultDict, assure_instance_type
 
 
-class DataSetInitPathScan:
+class DatasetAnalyzer:
     """Creates a nested dictionary, which holds keys:case_names, values: label and image paths"""
 
     def __init__(self, config_manager: ClassVar):
@@ -24,7 +24,7 @@ class DataSetInitPathScan:
 
         self.data_path_store = NestedDefaultDict()
         np.random.seed(config_manager.params['dataset']['seed'])
-        log.info(f'Init: {self.__class__.__name__}')
+        logger.info(f'Init: {self.__class__.__name__}')
 
         if self.check_folder_path(self.dataset_folder_path):
             self.scan_folder()
@@ -41,7 +41,7 @@ class DataSetInitPathScan:
         for bad_char in bad_chars:
             if case_name.count(bad_char) != 0:
                 raise AssertionError(f'Filename: {file_name} contains bad char: "{bad_char}"')
-        log.debug(f'case_name: {case_name} | file_name: {file_name}')
+        logger.debug(f'case_name: {case_name} | file_name: {file_name}')
         return case_name
 
     @staticmethod
@@ -52,7 +52,6 @@ class DataSetInitPathScan:
             state = True
         return state
 
-    @log.catch
     def check_file_search_tag_label(self, file_name: str) -> bool:
         """True if label search tag is in file name"""
         check_search_tag = False
@@ -117,14 +116,16 @@ class DataSetInitPathScan:
             file_extension = file_name.split(os.extsep, 1)[1]
             new_file_name = f'{case_name}_{tag_name}.{file_extension}'
             dst_file_path = os.path.join(
-                self.params['project']['structured_dataset_store_path'], folder_name, new_file_name,
+                self.params['project']['structured_dataset_store_path'],
+                folder_name,
+                new_file_name,
             )
             os.makedirs(os.path.dirname(dst_file_path), exist_ok=True)
             shutil.copy2(src=src, dst=dst_file_path)
             return dst_file_path
 
         # copy files from original dataset to structured dataset and create file path dict
-        log.info('Copying original dataset into structured dataset')
+        logger.info('Copying original dataset into structured dataset')
         for case_name in self.data_path_store['image'].keys():
             for tag_name in self.image_search_tags.keys():  # copy images
                 self.path_memory['structured_dataset_paths']['image'][case_name][tag_name] = copy_helper(
@@ -136,15 +137,17 @@ class DataSetInitPathScan:
 
             # copy labels
             self.path_memory['structured_dataset_paths']['label'][case_name] = copy_helper(
-                src=self.data_path_store['label'][case_name], folder_name='label', case_name=case_name, tag_name='seg',
+                src=self.data_path_store['label'][case_name],
+                folder_name='label',
+                case_name=case_name,
+                tag_name='seg',
             )
 
         self.config_manager.store_path_memory_file()
 
-    @log.catch
     def show_dict_findings(self):
         """Summaries and shows the findings"""
-        log.trace(f'Dataset scan found: {json.dumps(self.data_path_store, indent=4)}')
+        logger.trace(f'Dataset scan found: {json.dumps(self.data_path_store, indent=4)}')
 
         count_labels = 0
         count_images = {}
@@ -166,4 +169,4 @@ class DataSetInitPathScan:
             'Images': count_images,
         }
 
-        log.info(f'Dataset scan overview: {json.dumps(stats_dict, indent=4)}')
+        logger.info(f'Dataset scan overview: {json.dumps(stats_dict, indent=4)}')

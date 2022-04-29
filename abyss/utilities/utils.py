@@ -14,5 +14,5 @@ class NestedDefaultDict(defaultdict):
 def assure_instance_type(data, check_type=list):
     """Checks and corrects instance type"""
     if not isinstance(data, check_type):
-        data = type(data)
+        raise ValueError(f'{data} is type: {type(data)}, expected: {check_type}')
     return data

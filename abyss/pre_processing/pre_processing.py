@@ -1,9 +1,9 @@
-from typing_extensions import ClassVar
 import os
 
 import monai
 import numpy as np
-from loguru import logger as log
+from loguru import logger
+from typing_extensions import ClassVar
 
 
 class PreProcessing:
@@ -18,7 +18,7 @@ class PreProcessing:
         self.structured_dataset_paths = config_manager.get_path_memory('structured_dataset_paths')
         np.random.seed(config_manager.params['dataset']['seed'])
 
-        log.info(f'Init {self.__class__.__name__}')
+        logger.info(f'Init {self.__class__.__name__}')
         self.data_reader = self.define_data_reader()
         self.process_images(stack_images=True)
         self.process_labels()
@@ -26,9 +26,7 @@ class PreProcessing:
 
     def define_data_reader(self) -> ClassVar:
         """Returns a monai supported reader class"""
-        if self.params['dataset']['data_reader'] == 'ImageReader':
-            data_reader = monai.data.ImageReader()
-        elif self.params['dataset']['data_reader'] == 'ITKReader':
+        if self.params['dataset']['data_reader'] == 'ITKReader':
             data_reader = monai.data.ITKReader()
         elif self.params['dataset']['data_reader'] == 'NibabelReader':
             data_reader = monai.data.NibabelReader()
@@ -39,7 +37,7 @@ class PreProcessing:
         elif self.params['dataset']['data_reader'] == 'WSIReader':
             data_reader = monai.data.WSIReader()
         else:
-            raise AssertionError(f'Defined data reader "{self.params["dataset"]["data_reader"]}" is not supported')
+            raise NotImplementedError(f'Defined data reader "{self.params["dataset"]["data_reader"]}" is not supported')
         return data_reader
 
     def read_data(self, image_path: str) -> tuple:
@@ -59,11 +57,11 @@ class PreProcessing:
         # TODO: ADD filters
         return image
 
-    def process_images(self, stack_images: bool=False):
+    def process_images(self, stack_images: bool = False):
         """Applies pre processing task on images"""
         processed_image_data = None
         for case_name in self.structured_dataset_paths['image']:
-            log.debug(f'Image data: {case_name}')
+            logger.debug(f'Image data: {case_name}')
             tmp_image_store = {}
             for image_name in self.structured_dataset_paths['image'][case_name]:
                 image_data, _ = self.read_data(self.structured_dataset_paths['image'][case_name][image_name])
@@ -78,7 +76,7 @@ class PreProcessing:
     def process_labels(self):
         """Applies pre processing task on labels"""
         for case_name in self.structured_dataset_paths['label']:
-            log.debug(f'Label data: {case_name}')
+            logger.debug(f'Label data: {case_name}')
             image_data, _ = self.read_data(self.structured_dataset_paths['label'][case_name])
             processed_image_data = self.sequential_process_steps_labels(image_data)
             self.save_data(processed_image_data, case_name, folder_tag='label', export_tag='.nii.gz')
@@ -107,15 +105,15 @@ class PreProcessing:
     @staticmethod
     def stack_data(tmp_image_store):
         """Stack images"""
-        log.debug('Stacking images')
+        logger.debug('Stacking images')
         tmp_stack = None
         for index, image_name in enumerate(tmp_image_store):
             if index == 0:
                 tmp_stack = np.expand_dims(tmp_image_store[image_name], axis=0)
-                log.debug(f'{image_name:<7} index:{index:<4} current dim: {np.shape(tmp_stack)}')
+                logger.debug(f'{image_name:<7} index:{index:<4} current dim: {np.shape(tmp_stack)}')
             else:
                 tmp_stack = np.concatenate((tmp_stack, np.expand_dims(tmp_image_store[image_name], axis=0)), axis=0)
-                log.debug(f'{image_name:<7} index:{index:<4} current dim: {np.shape(tmp_stack)}')
+                logger.debug(f'{image_name:<7} index:{index:<4} current dim: {np.shape(tmp_stack)}')
         return tmp_stack
 
     def show_processed_data(self):

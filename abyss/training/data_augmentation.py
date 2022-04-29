@@ -29,6 +29,7 @@ class ConvertToMultiChannelBasedOnBratsClassesd(tf.MapTransform):
 
 class DataAugmentation:
     """Apply data augmentation"""
+
     def __init__(self):
         # self.params = params
 
@@ -132,8 +133,8 @@ if __name__ == '__main__':
             "ACRINDSCMRBrain0741": f"{PATH}\\label\\ACRINDSCMRBrain0741_seg.nii.gz",
         },
     }
-    from abyss.config.config_manager import ConfigManager
-    from abyss.pre_processing.pre_processing_helpers import ConcatenateImages
+    from abyss.config import ConfigManager
+    # from abyss.pre_processing.pre_processing_helpers import ConcatenateImages
 
     params = ConfigManager().params
     da = DataAugmentation()

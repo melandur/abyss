@@ -2,7 +2,7 @@ import json
 import os
 import sys
 
-from loguru import logger as log
+from loguru import logger
 
 from abyss.config.config_helpers import (
     check_and_create_folder_structure,
@@ -39,8 +39,8 @@ class ConfigManager:
 
         self.path_memory = DataPathMemory().path_memory
 
-        log.remove()  # fresh start
-        log.add(sys.stderr, level=self.params['logger']['level'])
+        logger.remove()  # fresh start
+        logger.add(sys.stderr, level=self.params['logger']['level'])
 
         # Some minor dict check
         check_image_search_tag_redundancy(self.params)
@@ -48,15 +48,13 @@ class ConfigManager:
         check_and_create_folder_structure(self.params)
         self.store_config_file()
 
-    @log.catch
     def store_config_file(self):
         """Export conf params as json to the config store folder"""
         file_path = os.path.join(self.params['project']['config_store_path'], 'config.json')
         with open(file_path, 'w+', encoding='utf-8') as file:
             file.write(json.dumps(self.params, indent=4))
-        log.debug(f'Config file has been stored to {file_path}')
+        logger.debug(f'Config file has been stored to {file_path}')
 
-    @log.catch
     def overwrite_loaded_project_paths(self):
         """Overwrites the loaded config project paths to assure that the config file works inter machine"""
         experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
@@ -69,7 +67,6 @@ class ConfigManager:
         self.params['project']['augmentation_store_path'] = os.path.join(experiment_path, 'aug_plots')
         self.params['project']['config_store_path'] = os.path.join(experiment_path, 'config_data')
 
-    @log.catch
     def load_config_file(self, file_path: str = None):
         """Export path memory as json to the config store folder"""
         if file_path is None:
@@ -79,18 +76,16 @@ class ConfigManager:
                 self.params = json.load(file)
         else:
             raise FileNotFoundError(f'Config file not found with file path: {file_path}')
-        log.debug(f'Config file has been loaded from {file_path}')
-        log.trace(f'Loaded config file contains: {json.dumps(self.params, indent=4)}')
+        logger.debug(f'Config file has been loaded from {file_path}')
+        logger.trace(f'Loaded config file contains: {json.dumps(self.params, indent=4)}')
 
-    @log.catch
     def store_path_memory_file(self):
         """Export path memory as json to the config store folder"""
         file_path = os.path.join(self.params['project']['config_store_path'], 'path_memory.json')
         with open(file_path, 'w+', encoding='utf-8') as file:
             file.write(json.dumps(self.path_memory, indent=4))
-        log.debug(f'Memory path file has been stored to {file_path}')
+        logger.debug(f'Memory path file has been stored to {file_path}')
 
-    @log.catch
     def load_path_memory_file(self):
         """Export path memory as json to the config store folder"""
         file_path = os.path.join(self.params['project']['config_store_path'], 'path_memory.json')
@@ -106,10 +101,9 @@ class ConfigManager:
                 self.path_memory[key] = NestedDefaultDict()  # override empty dicts with nested dicts
                 self.path_memory[key]['image'] = {}
                 self.path_memory[key]['label'] = {}
-        log.debug(f'Path memory file has been loaded from {file_path}')
-        log.trace(f'Loaded memory path file contains: {json.dumps(self.path_memory, indent=4)}')
+        logger.debug(f'Path memory file has been loaded from {file_path}')
+        logger.trace(f'Loaded memory path file contains: {json.dumps(self.path_memory, indent=4)}')
 
-    @log.catch
     def get_path_memory(self, path_memory_name: str):
         """Returns the temporary path_memory if available, otherwise loads path_memory from path_memory.json"""
         if self.path_memory[path_memory_name]:

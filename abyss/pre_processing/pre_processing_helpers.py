@@ -1,5 +1,5 @@
 import numpy as np
-from loguru import logger as log
+from loguru import logger
 from monai import transforms as tf
 
 
@@ -30,7 +30,7 @@ class ConcatenateImages(tf.MapTransform):
 
         # assign concat results to input by overwriting the previous sub dicts
         tmp_image = self.concatenate_images_sub_dict(tmp_sub_images, tmp_path_sub_dict)
-        log.debug(f'{self.case_name}, concatenated output dimension: {np.shape(tmp_image["concat_output"])}')
+        logger.debug(f'{self.case_name}, concatenated output dimension: {np.shape(tmp_image["concat_output"])}')
         tmp_dict['image'][self.case_name] = tmp_image["concat_output"]
         del tmp_path_sub_dict
         del tmp_sub_images

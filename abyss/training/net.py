@@ -1,6 +1,6 @@
 import pytorch_lightning
 import torch
-from loguru import logger as log
+from loguru import logger
 from monai import data, inferers, losses, metrics, transforms, utils
 
 from abyss.training.data_augmentation import DataAugmentation
@@ -10,10 +10,10 @@ from abyss.training.net_architecture import net_architecture
 class Net(pytorch_lightning.LightningModule):
     """Net definition"""
 
-    def __init__(self, config_manager):
+    def __init__(self, _config_manager):
         super().__init__()
-        self.config_manager = config_manager
-        self.params = config_manager.params
+        self.config_manager = _config_manager
+        self.params = _config_manager.params
 
         self.val_ds = None
         self.train_ds = None
@@ -112,10 +112,10 @@ class Net(pytorch_lightning.LightningModule):
                 weight_decay=self.params['training']['weight_decay'],
             )
 
-        assert optimizer is not None, log.warning('Invalid optimizer settings in conf.py: training, optimizer')
+        assert optimizer is not None, logger.warning('Invalid optimizer settings in conf.py: training, optimizer')
         return optimizer
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch):
         """Training step"""
         images, labels = batch['image'], batch['label']
         output = self.forward(images)
@@ -123,7 +123,7 @@ class Net(pytorch_lightning.LightningModule):
         self.log('train_loss', loss.item())
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch):
         """Validation step"""
         images, labels = batch['image'], batch['label']
         roi_size = (160, 160, 160)

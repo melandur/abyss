@@ -2,16 +2,15 @@ import os
 import shutil
 
 import numpy as np
-from loguru import logger as log
 
 
-class CreateDatasets:
+class CreateTrainDatasets:
     """Create train, val, and test set for training"""
 
-    def __init__(self, config_manager):
-        self.config_manager = config_manager
-        self.params = config_manager.params
-        self.preprocessed_store_paths = config_manager.get_path_memory('preprocessed_dataset_paths')
+    def __init__(self, _config_manager):
+        self.config_manager = _config_manager
+        self.params = _config_manager.params
+        self.preprocessed_store_paths = _config_manager.get_path_memory('preprocessed_dataset_paths')
 
         self.train_set_cases = None
         self.val_set_cases = None
@@ -19,7 +18,7 @@ class CreateDatasets:
 
     def __call__(self):
         np.random.seed(self.config_manager.params['dataset']['seed'])
-        log.info(f'Run: {self.__class__.__name__}')
+        logger.info(f'Run: {self.__class__.__name__}')
 
         self.train_test_split_by_case_names()
         self.train_val_split_by_case_names()
@@ -36,7 +35,7 @@ class CreateDatasets:
         self.train_set_cases = [x for x in self.preprocessed_store_paths['image'] if x not in self.test_set_cases]
         if set(self.test_set_cases) & set(self.train_set_cases):
             raise AssertionError('Contamination in train & test-set split')
-        log.info(f'Test set, counts: {len(self.test_set_cases)}, cases: {self.test_set_cases}')
+        logger.info(f'Test set, counts: {len(self.test_set_cases)}, cases: {self.test_set_cases}')
 
     def train_val_split_by_case_names(self):
         """Split train data into train and val data"""
@@ -48,8 +47,8 @@ class CreateDatasets:
         if set(self.train_set_cases) & set(self.val_set_cases):
             raise AssertionError('Contamination in train & val-set split')
 
-        log.info(f'Train set, counts: {len(self.train_set_cases)}, cases: {self.train_set_cases}')
-        log.info(f'Val set, counts: {len(self.val_set_cases)}, cases: {self.val_set_cases}')
+        logger.info(f'Train set, counts: {len(self.train_set_cases)}, cases: {self.train_set_cases}')
+        logger.info(f'Val set, counts: {len(self.val_set_cases)}, cases: {self.val_set_cases}')
 
     def execute_dataset_split(self):
         """Copies files to folders: imageTr, labelTr, imageTs, labelTs"""
@@ -88,13 +87,13 @@ class CreateDatasets:
 if __name__ == '__main__':
     import sys
 
-    from loguru import logger as log
+    from loguru import logger
 
-    from abyss.config.config_manager import ConfigManager
+    from abyss.config import ConfigManager
 
     config_manager = ConfigManager(load_config_file_path=None)
-    log.remove()  # fresh start
-    log.add(sys.stderr, level=config_manager.params['logger']['level'])
-    c = CreateDatasets(config_manager)
+    logger.remove()  # fresh start
+    logger.add(sys.stderr, level=config_manager.params['logger']['level'])
+    c = CreateTrainDatasets(config_manager)
     # for x, a in t.train_data_path_store['image'].items():
     #     print(x, a)

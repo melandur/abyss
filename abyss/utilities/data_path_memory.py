@@ -1,4 +1,4 @@
-from loguru import logger as log
+from loguru import logger
 
 from abyss.utilities.utils import NestedDefaultDict
 
@@ -17,7 +17,7 @@ class DataPathMemory:
 
     def show(self):
         """Show data path memory"""
-        log.info('Data path memory:\n', self.path_memory)
+        logger.info('Data path memory:\n', self.path_memory)
 
     def reset(self):
         """Reset path memory"""

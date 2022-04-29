@@ -1,6 +1,7 @@
 from monai.networks.nets import UNet
 
 net_architecture = UNet(
+    spatial_dims=3,
     dimensions=3,
     in_channels=4,
     out_channels=3,
