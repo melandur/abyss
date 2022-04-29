@@ -9,7 +9,7 @@ class ConfigFile:
         self.project_name = 'Abyss_test'
         self.experiment_name = 'experiment_1'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_folder_path = '/home/melandur/Data/small'
+        self.dataset_folder_path = '/home/melandur/Data/small1'
         self.experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
 
     def __call__(self):
@@ -17,8 +17,8 @@ class ConfigFile:
         return {
             'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'clean_dataset': True,
-                'pre_processing': True,
+                'data_selection': True,
+                'pre_processing': False,
                 'create_trainset': False,
                 'training': False,
                 'post_processing': False,
@@ -27,6 +27,7 @@ class ConfigFile:
                 'name': self.project_name,
                 'experiment_name': self.experiment_name,
                 'base_path': self.project_base_path,
+                'dataset_folder_path': self.dataset_folder_path,
                 'structured_dataset_store_path': os.path.join(self.experiment_path, 'structured_dataset'),
                 'preprocessed_dataset_store_path': os.path.join(self.experiment_path, 'pre_processed_dataset'),
                 'trainset_store_path': os.path.join(self.experiment_path, 'trainset'),
@@ -45,19 +46,21 @@ class ConfigFile:
                     't2': ['t2.', 'T2.'],
                 },
                 'image_file_type': ['.nii.gz'],
-                'data_reader': 'WSIReader',
-                # 'ITKReader', 'NibabelReader', 'NumpyReader', 'PILReader', 'WSIReader'
-                'pull_dataset': 'DecathlonDataset',  # 'MedNISTDataset', 'DecathlonDataset', 'CrossValidation'
-                'challenge': 'Task01_BrainTumour',  # only need for decathlon:   'Task01_BrainTumour', 'Task02_Heart',
-                # 'Task03_Liver0', 'Task04_Hippocampus', 'Task05_Prostate', 'Task06_Lung', 'Task07_Pancreas',
-                # 'Task08_HepaticVessel', 'Task09_Spleen', 'Task10_Colon'
-                'seed': 42,  # find the truth in randomness
-                'val_frac': 0.2,
-                'test_frac': 0.2,
-                'use_cache': False,  # if true goes heavy on memory
-                'cache_max': sys.maxsize,
-                'cache_rate': 0.0,  # 0.0 minimal memory footprint, 1.0 goes heavy on memory
-                'num_workers': 8,
+                'data_reader': 'ITKReader',  # 'ITKReader', 'NibabelReader', 'NumpyReader', 'PILReader', 'WSIReader'
+                'pull_dataset': {
+                    'active': True,
+                    'dataset_name': 'MedNISTDataset',  # 'MedNISTDataset', 'DecathlonDataset', 'CrossValidation'
+                    'challenge': 'Task01_BrainTumour',  # only need for decathlon:   'Task01_BrainTumour',
+                    # 'Task02_Heart', 'Task03_Liver0', 'Task04_Hippocampus', 'Task05_Prostate', 'Task06_Lung',
+                    # 'Task07_Pancreas', 'Task08_HepaticVessel', 'Task09_Spleen', 'Task10_Colon'
+                    'seed': 42,  # find the truth in randomness
+                    'val_frac': 0.2,
+                    'test_frac': 0.2,
+                    'use_cache': False,  # if true goes heavy on memory
+                    'cache_max': sys.maxsize,
+                    'cache_rate': 0.0,  # 0.0 minimal memory footprint, 1.0 goes heavy on memory
+                    'num_workers': 8,
+                },
             },
             'pre_processing': {'concatenate_image_files': False},
             'post_processing': {},

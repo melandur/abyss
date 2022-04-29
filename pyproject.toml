@@ -6,6 +6,8 @@ authors = ["melandur <account@qunit.ch>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
+gdown = "^4.4.0"
+
 loguru = "^0.6.0"
 
 itk = "^5.2.1"
