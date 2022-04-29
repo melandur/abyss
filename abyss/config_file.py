@@ -3,11 +3,9 @@ import sys
 
 
 class ConfigFile:
-    """The pipelines control center, most parameters can be found here"""
+    """The pipelines control center, all parameters can be found here"""
 
-    def __init__(
-        self,
-    ):
+    def __init__(self):
         self.project_name = 'Abyss_test'
         self.experiment_name = 'experiment_1'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
@@ -20,7 +18,7 @@ class ConfigFile:
             'logger': {'level': 'TRACE'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
                 'clean_dataset': True,
-                'pre_processing': False,
+                'pre_processing': True,
                 'create_trainset': False,
                 'training': False,
                 'post_processing': False,
