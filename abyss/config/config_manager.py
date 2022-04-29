@@ -16,7 +16,7 @@ from abyss.utils import NestedDefaultDict
 class ConfigManager:
     """The pipelines control center, most parameters can be found here"""
 
-    def __init__(self, load_config_file_path: str = None, load_path_memory: bool = False):
+    def __init__(self, load_config_file_path: str = None):
         self.path_memory = {
             'structured_dataset_paths': NestedDefaultDict(),
             'preprocessed_dataset_paths': NestedDefaultDict(),
@@ -34,9 +34,6 @@ class ConfigManager:
 
         logger.remove()
         logger.add(sys.stderr, level=self.params['logger']['level'])
-
-        if load_path_memory:
-            self.load_path_memory_file()
 
         check_image_search_tag_redundancy(self.params)
         check_image_search_tag_uniqueness(self.params)
@@ -86,6 +83,15 @@ class ConfigManager:
                 self.path_memory[key]['label'] = {}
         logger.info(f'Path memory file has been loaded from {file_path}')
         logger.debug(f'Memory path file contains: {json.dumps(self.path_memory, indent=4)}')
+
+    def get_path_memory(self, path_memory_name: str):
+        """Returns the temporary path_memory if available, otherwise loads path_memory from path_memory.json"""
+        if self.path_memory[path_memory_name]:
+            found_path_memory = self.path_memory[path_memory_name]
+        else:
+            self.load_path_memory_file()
+            found_path_memory = self.path_memory[path_memory_name]
+        return found_path_memory
 
 
 if __name__ == '__main__':

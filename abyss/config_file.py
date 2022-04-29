@@ -9,7 +9,7 @@ class ConfigFile:
         self.project_name = 'Abyss_test'
         self.experiment_name = 'experiment_1'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_folder_path = '/home/melandur/Data/Brats2020/MICCAI_BraTS2020_TrainingData/'
+        self.dataset_folder_path = '/home/melandur/Data/small'
         self.experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
 
     def __call__(self):
@@ -36,13 +36,17 @@ class ConfigFile:
             },
             'dataset': {
                 'folder_path': self.dataset_folder_path,
-                'label_search_tags': ['seg.'],
+                'label_search_tags': ['seg.', 'Seg.'],
                 'label_file_type': ['.nii.gz'],
-                'image_search_tags': {'t1': ['t1.'], 't1c': ['t1ce'], 'flair': ['flair.', 'Flair.'], 't2': ['t2.']},
+                'image_search_tags': {
+                    't1': ['t1.', 'T1.'],
+                    't1c': ['t1ce', 't1c.'],
+                    'flair': ['flair.', 'Flair.'],
+                    't2': ['t2.', 'T2.'],
+                },
                 'image_file_type': ['.nii.gz'],
-                'data_reader': 'NibabelReader',
+                'data_reader': 'WSIReader',
                 # 'ITKReader', 'NibabelReader', 'NumpyReader', 'PILReader', 'WSIReader'
-                'concatenate_image_files': True,
                 'pull_dataset': 'DecathlonDataset',  # 'MedNISTDataset', 'DecathlonDataset', 'CrossValidation'
                 'challenge': 'Task01_BrainTumour',  # only need for decathlon:   'Task01_BrainTumour', 'Task02_Heart',
                 # 'Task03_Liver0', 'Task04_Hippocampus', 'Task05_Prostate', 'Task06_Lung', 'Task07_Pancreas',
@@ -55,7 +59,7 @@ class ConfigFile:
                 'cache_rate': 0.0,  # 0.0 minimal memory footprint, 1.0 goes heavy on memory
                 'num_workers': 8,
             },
-            'pre_processing': {},
+            'pre_processing': {'concatenate_image_files': False},
             'post_processing': {},
             'augmentation': {},
             'training': {

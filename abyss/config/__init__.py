@@ -1,4 +1,5 @@
 import sys
+
 from loguru import logger
 
 from abyss.config.config_manager import ConfigManager

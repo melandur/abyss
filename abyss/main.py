@@ -9,7 +9,7 @@ from abyss.training import CreateTrainset, Training
 
 if __name__ == '__main__':
     start = datetime.now()
-    cm = ConfigManager(load_config_file_path='/home/melandur/Downloads/Abyss_test/experiment_1/config_data/config.json')
+    cm = ConfigManager(load_config_file_path=None)
 
     if cm.params['pipeline_steps']['clean_dataset']:
         DataCleaner(cm)()
@@ -22,8 +22,5 @@ if __name__ == '__main__':
 
     if cm.params['pipeline_steps']['training']:
         Training(cm)
-
-    if cm.params['pipeline_steps']['post_processing']:
-        logger.info('Started with post-processing:')
 
     logger.info(f'Execution time -> {datetime.now() - start}')

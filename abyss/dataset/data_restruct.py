@@ -23,8 +23,9 @@ class DataRestruct:
     def create_structured_dataset(self):
         """Copy files from original dataset to structured dataset and create file path dict"""
         logger.info('Copying original dataset into structured dataset')
-        for case_name in self.data_path_store['image'].keys():
-            for tag_name in self.image_search_tags.keys():  # copy images
+
+        for case_name in sorted(self.data_path_store['image']):
+            for tag_name in self.image_search_tags:  # copy images
                 self.path_memory['structured_dataset_paths']['image'][case_name][tag_name] = self.copy_helper(
                     src=self.data_path_store['image'][case_name][tag_name],
                     folder_name='image',
