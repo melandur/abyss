@@ -19,15 +19,18 @@ class DataCleaner:
         self.path_memory = config_manager.path_memory
         self.image_search_tags = assure_instance_type(config_manager.params['dataset']['image_search_tags'], dict)
 
-        self.data_path_store = NestedDefaultDict()
+        self.data_path_store = NestedDefaultDict
         np.random.seed(config_manager.params['dataset']['seed'])
 
     def __call__(self):
         """Run"""
         logger.info(f'Run: {self.__class__.__name__}')
-        data_analyzer = DataAnalyzer(self.config_manager)()
+        data_analyzer = DataAnalyzer(self.config_manager)
+        data_analyzer()
+        self.data_path_store = data_analyzer.data_path_store
         self.show_dict_findings()
-        # data_restruct = DataRestruct(self.config_manager, data_analyzer.data_path_store)
+        data_restruct = DataRestruct(self.config_manager, data_analyzer.data_path_store)
+        data_restruct()
 
     def show_dict_findings(self):
         """Summaries and shows the findings"""

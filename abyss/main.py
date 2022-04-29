@@ -2,12 +2,13 @@ from loguru import logger
 
 from abyss.config import ConfigManager
 from abyss.dataset import DataCleaner
-from abyss.pre_processing.pre_processing import PreProcessing
-from abyss.training.create_trainset import CreateTrainset
-from abyss.training.training import Training
+from abyss.pre_processing import PreProcessing
+from abyss.training import CreateTrainset, Training
 
 if __name__ == '__main__':
+    import time
 
+    tic = time.time()
     cm = ConfigManager(load_config_file_path=None)
 
     if cm.params['pipeline_steps']['clean_dataset']:
@@ -24,3 +25,4 @@ if __name__ == '__main__':
 
     if cm.params['pipeline_steps']['post_processing']:
         logger.info('Started with post-processing:')
+    print(time.time() - tic)

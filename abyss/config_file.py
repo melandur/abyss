@@ -5,13 +5,14 @@ import sys
 class ConfigFile:
     """The pipelines control center, most parameters can be found here"""
 
-    def __init__(self, project_name, experiment_name, project_base_path, dataset_folder_path):
-        self.experiment_path = os.path.join(project_base_path, project_name, experiment_name)
-        self.project_name = project_name
-        self.project_base_path = project_base_path
-        self.experiment_name = experiment_name
-        self.experiment_path = os.path.join(project_base_path, experiment_name)
-        self.dataset_folder_path = dataset_folder_path
+    def __init__(
+        self,
+    ):
+        self.project_name = 'Abyss_test'
+        self.experiment_name = 'experiment_1'
+        self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
+        self.dataset_folder_path = '/home/melandur/Data/Brats2020/MICCAI_BraTS2020_TrainingData/'
+        self.experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
 
     def __call__(self):
         """Returns config file"""
@@ -39,10 +40,7 @@ class ConfigFile:
                 'folder_path': self.dataset_folder_path,
                 'label_search_tags': ['seg.'],
                 'label_file_type': ['.nii.gz'],
-                'image_search_tags': {'t1': ['T1.'],
-                                      't1c': ['T1c'],
-                                      'flair': ['flair.', 'Flair.'],
-                                      't2': ['T2.']},
+                'image_search_tags': {'t1': ['t1.'], 't1c': ['t1ce'], 'flair': ['flair.', 'Flair.'], 't2': ['t2.']},
                 'image_file_type': ['.nii.gz'],
                 'data_reader': 'NibabelReader',
                 # 'ITKReader', 'NibabelReader', 'NumpyReader', 'PILReader', 'WSIReader'
@@ -86,4 +84,4 @@ class ConfigFile:
 
 
 if __name__ == '__main__':
-    cm = ConfigFile('project_name', 'experiment_name', 'project_base_path', 'dataset_folder_path')
+    cm = ConfigFile()

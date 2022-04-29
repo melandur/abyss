@@ -17,25 +17,6 @@ class ConfigManager:
     """The pipelines control center, most parameters can be found here"""
 
     def __init__(self, load_config_file_path: str = None):
-        self.project_name = 'Abyss_test'
-        self.experiment_name = 'experiment_1'
-        self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'test_abyss')
-        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'test_abyss', 'test_data')
-
-        if load_config_file_path is None:
-            self.params = ConfigFile(
-                self.project_name,
-                self.experiment_name,
-                self.project_base_path,
-                self.dataset_folder_path,
-            )()
-
-        elif isinstance(load_config_file_path, str) and os.path.isfile(load_config_file_path):
-            self.load_config_file(load_config_file_path)
-            self.overwrite_loaded_project_paths()
-        else:
-            raise FileNotFoundError(f'Was not able to load config file from file path: {load_config_file_path}')
-
         self.path_memory = {
             'structured_dataset_paths': NestedDefaultDict(),
             'preprocessed_dataset_paths': NestedDefaultDict(),
@@ -44,13 +25,19 @@ class ConfigManager:
             'test_dataset_paths': NestedDefaultDict(),
         }
 
-        logger.remove(0)  # fresh start
-        logger.add(sys.stderr, level=self.params['logger']['level'])
+        if load_config_file_path is None:
+            self.params = ConfigFile()()
+        elif isinstance(load_config_file_path, str) and os.path.isfile(load_config_file_path):
+            self.load_config_file(load_config_file_path)
+        else:
+            raise FileNotFoundError(f'Was not able to load config file from file path: {load_config_file_path}')
 
-        # Some minor dict check
         check_image_search_tag_redundancy(self.params)
         check_image_search_tag_uniqueness(self.params)
         check_and_create_folder_structure(self.params)
+
+        logger.remove(0)  # fresh start
+        logger.add(sys.stderr, level=self.params['logger']['level'])
         self.store_config_file()
 
     def store_config_file(self):
@@ -59,18 +46,6 @@ class ConfigManager:
         with open(file_path, 'w+', encoding='utf-8') as file:
             file.write(json.dumps(self.params, indent=4))
         logger.debug(f'Config file has been stored to {file_path}')
-
-    def overwrite_loaded_project_paths(self):
-        """Overwrites the loaded config project paths to assure that the config file works inter machine"""
-        experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
-        self.params['project']['structured_dataset_store_path'] = os.path.join(experiment_path, 'structured_dataset')
-        self.params['project']['preprocessed_dataset_store_path'] = os.path.join(
-            experiment_path, 'pre_processed_dataset'
-        )
-        self.params['project']['trainset_store_path'] = os.path.join(experiment_path, 'trainset')
-        self.params['project']['result_store_path'] = os.path.join(experiment_path, 'results')
-        self.params['project']['augmentation_store_path'] = os.path.join(experiment_path, 'aug_plots')
-        self.params['project']['config_store_path'] = os.path.join(experiment_path, 'config_data')
 
     def load_config_file(self, file_path: str = None):
         """Export path memory as json to the config store folder"""
