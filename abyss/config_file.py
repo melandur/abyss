@@ -16,7 +16,7 @@ class ConfigFile:
         return {
             'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_selection': False,
+                'data_selection': True,
                 'pre_processing': True,
                 'create_trainset': False,
                 'training': False,
@@ -33,6 +33,10 @@ class ConfigFile:
                 'result_store_path': os.path.join(self.experiment_path, '4_results'),
                 'config_store_path': os.path.join(self.experiment_path, '0_config_data'),
             },
+            'meta': {
+                'seed': 42,  # find the truth in randomness
+                'num_workers': 8,
+            },
             'dataset': {
                 'folder_path': self.dataset_folder_path,
                 'label_search_tags': ['seg.', 'Seg.'],
@@ -44,9 +48,10 @@ class ConfigFile:
                     't2': ['t2.', 'T2.'],
                 },
                 'image_file_type': ['.nii.gz'],
+                'val_frac': 0.2,
+                'test_frac': 0.2,
             },
             'pre_processing': {
-                'seed': 42,
                 'concatenate_image_files': False,
                 'label_data_reader': 'NibabelReader',  # 'ITKReader', 'NibabelReader', 'NumpyReader', 'PILReader',
                 # 'CustomReader'
@@ -56,7 +61,6 @@ class ConfigFile:
             'post_processing': {},
             'augmentation': {},
             'training': {
-                'seed': 42,
                 'epochs': 30,  # tbd
                 'trained_epochs': None,
                 'batch_size': 1,  # tbd

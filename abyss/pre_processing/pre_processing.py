@@ -11,11 +11,14 @@ class PreProcessing:
     Check out monai.transforms filters, which can be applied in data augmentation during the training instead
     [B],C,H,W,[D]
     """
+
     def __init__(self, config_manager: ClassVar):
         self.config_manager = config_manager
         self.params = config_manager.params
         self.structured_dataset_paths = config_manager.get_path_memory('structured_dataset_paths')
-        np.random.seed(config_manager.params['pre_processing']['seed'])
+        np.random.seed(config_manager.params['meta']['seed'])
+        self.data_reader_label = None
+        self.data_reader_image = None
 
     def __call__(self):
         logger.info(f'Run: {self.__class__.__name__}')

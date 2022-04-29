@@ -16,10 +16,10 @@ class CreateTrainset:
         self.val_set_cases = None
         self.test_set_cases = None
 
-    def __call__(self):
-        np.random.seed(self.config_manager.params['dataset']['seed'])
-        logger.info(f'Run: {self.__class__.__name__}')
+        np.random.seed(self.config_manager.params['meta']['seed'])
 
+    def __call__(self):
+        logger.info(f'Run: {self.__class__.__name__}')
         self.train_test_split_by_case_names()
         self.train_val_split_by_case_names()
         self.execute_dataset_split()

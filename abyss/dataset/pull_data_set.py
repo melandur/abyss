@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 from loguru import logger
 from monai.apps import DecathlonDataset, MedNISTDataset
