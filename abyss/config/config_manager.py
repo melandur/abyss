@@ -16,7 +16,7 @@ from abyss.utils import NestedDefaultDict
 class ConfigManager:
     """The pipelines control center, most parameters can be found here"""
 
-    def __init__(self, load_config_file_path: str = None):
+    def __init__(self, load_config_file_path: str = None, load_path_memory: bool = False):
         self.path_memory = {
             'structured_dataset_paths': NestedDefaultDict(),
             'preprocessed_dataset_paths': NestedDefaultDict(),
@@ -32,12 +32,16 @@ class ConfigManager:
         else:
             raise FileNotFoundError(f'Was not able to load config file from file path: {load_config_file_path}')
 
+        logger.remove()
+        logger.add(sys.stderr, level=self.params['logger']['level'])
+
+        if load_path_memory:
+            self.load_path_memory_file()
+
         check_image_search_tag_redundancy(self.params)
         check_image_search_tag_uniqueness(self.params)
         check_and_create_folder_structure(self.params)
 
-        logger.remove(0)  # fresh start
-        logger.add(sys.stderr, level=self.params['logger']['level'])
         self.store_config_file()
 
     def store_config_file(self):
@@ -56,8 +60,7 @@ class ConfigManager:
                 self.params = json.load(file)
         else:
             raise FileNotFoundError(f'Config file not found with file path: {file_path}')
-        logger.debug(f'Config file has been loaded from {file_path}')
-        logger.trace(f'Loaded config file contains: {json.dumps(self.params, indent=4)}')
+        logger.info(f'Config file has been loaded from {file_path}')
 
     def store_path_memory_file(self):
         """Export path memory as json to the config store folder"""
@@ -81,17 +84,8 @@ class ConfigManager:
                 self.path_memory[key] = NestedDefaultDict()  # override empty dicts with nested dicts
                 self.path_memory[key]['image'] = {}
                 self.path_memory[key]['label'] = {}
-        logger.debug(f'Path memory file has been loaded from {file_path}')
-        logger.trace(f'Loaded memory path file contains: {json.dumps(self.path_memory, indent=4)}')
-
-    def get_path_memory(self, path_memory_name: str):
-        """Returns the temporary path_memory if available, otherwise loads path_memory from path_memory.json"""
-        if self.path_memory[path_memory_name]:
-            found_path_memory = self.path_memory[path_memory_name]
-        else:
-            self.load_path_memory_file()
-            found_path_memory = self.path_memory[path_memory_name]
-        return found_path_memory
+        logger.info(f'Path memory file has been loaded from {file_path}')
+        logger.debug(f'Memory path file contains: {json.dumps(self.path_memory, indent=4)}')
 
 
 if __name__ == '__main__':

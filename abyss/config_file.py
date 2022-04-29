@@ -15,7 +15,7 @@ class ConfigFile:
     def __call__(self):
         """Returns config file"""
         return {
-            'logger': {'level': 'TRACE'},  # 'TRACE', 'DEBUG', 'INFO'
+            'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
                 'clean_dataset': True,
                 'pre_processing': True,
@@ -79,7 +79,3 @@ class ConfigFile:
 
     def __str__(self):
         return self.__class__.__name__
-
-
-if __name__ == '__main__':
-    cm = ConfigFile()
