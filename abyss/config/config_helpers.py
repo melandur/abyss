@@ -27,7 +27,7 @@ def check_image_search_tag_redundancy(params: dict):
     for key, value in params['dataset']['image_search_tags'].items():
         if len(value) != len(set(value)):
             redundant_tag = list((Counter(value) - Counter(list(set(value)))).elements())
-            raise AssertionError(f'The image search tag {redundant_tag} found multiple times for the image name {key}')
+            raise ValueError(f'The image search tag {redundant_tag} found multiple times for the image name {key}')
 
 
 def check_image_search_tag_uniqueness(params: dict):
@@ -39,7 +39,7 @@ def check_image_search_tag_uniqueness(params: dict):
         tmp_tags.pop(i)
         if [x for x in tmp_tags if x in tag]:
             vague_tag = [x for x in tmp_tags if x in tag]
-            raise AssertionError(
+            raise ValueError(
                 f'The image search tag {vague_tag} is not expressive/unique enough. '
                 f'Try to add additional information to the search tag like "_", "."'
             )

@@ -4,7 +4,7 @@ import shutil
 import numpy as np
 
 
-class CreateTrainDatasets:
+class CreateTrainset:
     """Create train, val, and test set for training"""
 
     def __init__(self, _config_manager):
@@ -94,6 +94,5 @@ if __name__ == '__main__':
     config_manager = ConfigManager(load_config_file_path=None)
     logger.remove()  # fresh start
     logger.add(sys.stderr, level=config_manager.params['logger']['level'])
-    c = CreateTrainDatasets(config_manager)
     # for x, a in t.train_data_path_store['image'].items():
     #     print(x, a)

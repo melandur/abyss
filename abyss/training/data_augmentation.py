@@ -134,6 +134,7 @@ if __name__ == '__main__':
         },
     }
     from abyss.config import ConfigManager
+
     # from abyss.pre_processing.pre_processing_helpers import ConcatenateImages
 
     params = ConfigManager().params

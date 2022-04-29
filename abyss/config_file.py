@@ -7,18 +7,18 @@ class ConfigFile:
 
     def __init__(self, project_name, experiment_name, project_base_path, dataset_folder_path):
         self.experiment_path = os.path.join(project_base_path, project_name, experiment_name)
-        self.project_name = 'project_name'
-        self.project_base_path = 'project_base_path'
-        self.experiment_name = 'experiment_name'
-        self.experiment_path = 'experiment_path'
+        self.project_name = project_name
+        self.project_base_path = project_base_path
+        self.experiment_name = experiment_name
+        self.experiment_path = os.path.join(project_base_path, experiment_name)
         self.dataset_folder_path = dataset_folder_path
 
     def __call__(self):
         """Returns config file"""
         return {
-            'logger': {'level': 'DEBUG'},  # 'TRACE', 'DEBUG', 'INFO'
+            'logger': {'level': 'TRACE'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'read_dataset': False,
+                'clean_dataset': True,
                 'pre_processing': False,
                 'create_trainset': False,
                 'training': False,
@@ -39,10 +39,13 @@ class ConfigFile:
                 'folder_path': self.dataset_folder_path,
                 'label_search_tags': ['seg.'],
                 'label_file_type': ['.nii.gz'],
-                'image_search_tags': {'t1': ['t1.'], 't1ce': ['t1c.'], 'flair': ['flair.'], 't2': ['t2.']},
+                'image_search_tags': {'t1': ['T1.'],
+                                      't1c': ['T1c'],
+                                      'flair': ['flair.', 'Flair.'],
+                                      't2': ['T2.']},
                 'image_file_type': ['.nii.gz'],
                 'data_reader': 'NibabelReader',
-                # 'ImageReader', 'ITKReader', 'NibabelReader', 'NumpyReader', 'PILReader', 'WSIReader'
+                # 'ITKReader', 'NibabelReader', 'NumpyReader', 'PILReader', 'WSIReader'
                 'concatenate_image_files': True,
                 'pull_dataset': 'DecathlonDataset',  # 'MedNISTDataset', 'DecathlonDataset', 'CrossValidation'
                 'challenge': 'Task01_BrainTumour',  # only need for decathlon:   'Task01_BrainTumour', 'Task02_Heart',

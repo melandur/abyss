@@ -10,18 +10,17 @@ from abyss.config.config_helpers import (
     check_image_search_tag_uniqueness,
 )
 from abyss.config_file import ConfigFile
-from abyss.utilities.data_path_memory import DataPathMemory
-from abyss.utilities.utils import NestedDefaultDict
+from abyss.utils import NestedDefaultDict
 
 
 class ConfigManager:
     """The pipelines control center, most parameters can be found here"""
 
     def __init__(self, load_config_file_path: str = None):
-        self.project_name = 'BratsExp1'
-        self.experiment_name = 'test1'
-        self.project_base_path = os.path.join(os.path.expanduser("~"), 'Downloads', 'test_abyss')
-        self.dataset_folder_path = os.path.join(os.path.expanduser("~"), 'Downloads', 'test_abyss')
+        self.project_name = 'Abyss_test'
+        self.experiment_name = 'experiment_1'
+        self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'test_abyss')
+        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'test_abyss', 'test_data')
 
         if load_config_file_path is None:
             self.params = ConfigFile(
@@ -37,9 +36,15 @@ class ConfigManager:
         else:
             raise FileNotFoundError(f'Was not able to load config file from file path: {load_config_file_path}')
 
-        self.path_memory = DataPathMemory().path_memory
+        self.path_memory = {
+            'structured_dataset_paths': NestedDefaultDict(),
+            'preprocessed_dataset_paths': NestedDefaultDict(),
+            'train_dataset_paths': NestedDefaultDict(),
+            'val_dataset_paths': NestedDefaultDict(),
+            'test_dataset_paths': NestedDefaultDict(),
+        }
 
-        logger.remove()  # fresh start
+        logger.remove(0)  # fresh start
         logger.add(sys.stderr, level=self.params['logger']['level'])
 
         # Some minor dict check
