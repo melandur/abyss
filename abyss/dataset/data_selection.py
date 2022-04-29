@@ -1,13 +1,11 @@
 import json
 import os
 
-import numpy as np
 from loguru import logger
 from typing_extensions import ClassVar
 
 from abyss.dataset.data_analyzer import DataAnalyzer
 from abyss.dataset.data_restruct import DataRestruct
-from abyss.dataset.pull_data_set import pull_data_set
 from abyss.utils import NestedDefaultDict, assure_instance_type
 
 
@@ -21,19 +19,16 @@ class DataSelection:
         self.image_search_tags = assure_instance_type(self.params['dataset']['image_search_tags'], dict)
 
         self.data_path_store = NestedDefaultDict
-        np.random.seed(config_manager.params['dataset']['seed'])
 
     def __call__(self):
         """Run"""
         logger.info(f'Run: {self.__class__.__name__}')
-        if self.params['dataset']['pull_dataset']['active']:
-            pull_data_set(self.params)
         data_analyzer = DataAnalyzer(self.config_manager)
         data_analyzer()
         self.data_path_store = data_analyzer.data_path_store
         self.show_dict_findings()
-        # data_restruct = DataRestruct(self.config_manager, data_analyzer.data_path_store)
-        # data_restruct()
+        data_restruct = DataRestruct(self.config_manager, data_analyzer.data_path_store)
+        data_restruct()
 
     def show_dict_findings(self):
         """Summaries and shows the findings"""

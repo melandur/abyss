@@ -1,5 +1,4 @@
 import os
-import sys
 
 
 class ConfigFile:
@@ -47,20 +46,6 @@ class ConfigFile:
                 },
                 'image_file_type': ['.nii.gz'],
                 'data_reader': 'ITKReader',  # 'ITKReader', 'NibabelReader', 'NumpyReader', 'PILReader', 'WSIReader'
-                'pull_dataset': {
-                    'active': True,
-                    'dataset_name': 'MedNISTDataset',  # 'MedNISTDataset', 'DecathlonDataset', 'CrossValidation'
-                    'challenge': 'Task01_BrainTumour',  # only need for decathlon:   'Task01_BrainTumour',
-                    # 'Task02_Heart', 'Task03_Liver0', 'Task04_Hippocampus', 'Task05_Prostate', 'Task06_Lung',
-                    # 'Task07_Pancreas', 'Task08_HepaticVessel', 'Task09_Spleen', 'Task10_Colon'
-                    'seed': 42,  # find the truth in randomness
-                    'val_frac': 0.2,
-                    'test_frac': 0.2,
-                    'use_cache': False,  # if true goes heavy on memory
-                    'cache_max': sys.maxsize,
-                    'cache_rate': 0.0,  # 0.0 minimal memory footprint, 1.0 goes heavy on memory
-                    'num_workers': 8,
-                },
             },
             'pre_processing': {'concatenate_image_files': False},
             'post_processing': {},
