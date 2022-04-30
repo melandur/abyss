@@ -92,7 +92,7 @@ class PreProcessing:
 
     def save_data(self, image_data, case_name, folder_tag='image', export_tag='.nii.gz'):
         """Save data to preprocessed data folder as nifti or npz file"""
-        file_dir = os.path.join(self.params['project']['preprocessed_dataset_store_path'], f'{folder_tag}')
+        file_dir = os.path.join(self.params['project']['preprocessed_dataset_store_path'], folder_tag)
         os.makedirs(file_dir, exist_ok=True)
         if export_tag == '.nii.gz':
             file_path = os.path.join(file_dir, f'{case_name}.nii.gz')

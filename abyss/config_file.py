@@ -6,18 +6,18 @@ class ConfigFile:
 
     def __init__(self):
         self.project_name = 'Abyss_test'
-        self.experiment_name = 'experiment_1'
+        self.experiment_name = 'experiment_2'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_folder_path = '/home/melandur/Data/small'
+        self.dataset_folder_path = '/home/melandur/Data/dicom_small'
 
     def __call__(self):
         """Returns config file"""
         experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
         return {
-            'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
+            'logger': {'level': 'TRACE'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_selection': False,
-                'pre_processing': True,
+                'data_selection': True,
+                'pre_processing': False,
                 'create_trainset': False,
                 'training': False,
                 'post_processing': False,
@@ -36,18 +36,20 @@ class ConfigFile:
             'meta': {
                 'seed': 42,  # find the truth in randomness
                 'num_workers': 8,
+                'folder_layout': 'case_folder -> modality_folder -> dicom_files',  # 'case_name -> 'image_files'
+                # | 'case_folder -> time_step -> modality_folder -> dicom_files'
             },
             'dataset': {
                 'folder_path': self.dataset_folder_path,
                 'label_search_tags': ['seg.', 'Seg.'],
-                'label_file_type': ['.nii.gz'],
+                'label_file_type': ['.DICOM'],
                 'image_search_tags': {
-                    't1': ['t1.', 'T1.'],
-                    't1c': ['t1ce', 't1c.'],
-                    'flair': ['flair.', 'Flair.'],
-                    't2': ['t2.', 'T2.'],
+                    't1': ['t1.', 'T1 '],
+                    't1c': ['t1ce', 'T1pre'],
+                    'flair': ['flair.', 'FLAIR'],
+                    't2': ['t2.', 'T2'],
                 },
-                'image_file_type': ['.nii.gz'],
+                'image_file_type': ['.DICOM'],
                 'val_frac': 0.2,
                 'test_frac': 0.2,
             },
