@@ -14,7 +14,7 @@ class ConfigFile:
         """Returns config file"""
         experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
         return {
-            'logger': {'level': 'TRACE'},  # 'TRACE', 'DEBUG', 'INFO'
+            'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
                 'data_selection': True,
                 'pre_processing': False,
@@ -36,19 +36,22 @@ class ConfigFile:
             'meta': {
                 'seed': 42,  # find the truth in randomness
                 'num_workers': 8,
-                'folder_layout': 'case_folder -> modality_folder -> dicom_files',  # 'case_name -> 'image_files'
-                # | 'case_folder -> time_step -> modality_folder -> dicom_files'
             },
             'dataset': {
                 'folder_path': self.dataset_folder_path,
-                'label_search_tags': ['seg.', 'Seg.'],
+                'label_search_tags': ['seg', 'Seg'],
                 'label_file_type': ['.DICOM'],
+                'get_case_name_from': 'case_folder',
+                'label_folder_layout': 'case_folder -> modality_folder -> dicom_files',
                 'image_search_tags': {
-                    't1': ['t1.', 'T1 '],
-                    't1c': ['t1ce', 'T1pre'],
+                    't1': ['t1pre', 'T1pre', 'T1 pr', 'T1 Pr'],
+                    't1c': ['t1ce', 'T1 po'],
                     'flair': ['flair.', 'FLAIR'],
                     't2': ['t2.', 'T2'],
                 },
+                'image_folder_layout': 'case_folder -> modality_folder -> dicom_files',  # 'case_name -> 'image_files'
+                # | 'case_folder -> time_step -> modality_folder -> dicom_files'
+
                 'image_file_type': ['.DICOM'],
                 'val_frac': 0.2,
                 'test_frac': 0.2,

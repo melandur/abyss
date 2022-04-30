@@ -1,4 +1,5 @@
 import os
+import secrets
 
 from loguru import logger
 from typing_extensions import ClassVar
@@ -22,24 +23,8 @@ class DataAnalyzer:
         logger.info(f'Run: {self.__class__.__name__} -> {self.dataset_folder_path}')
         if os.path.isdir(self.dataset_folder_path):
             self.scan_folder()
-            self.check_for_missing_files()
         else:
             raise NotADirectoryError(str(self.dataset_folder_path))
-
-    @staticmethod
-    def get_case_name(root: str, file_name: str) -> str:
-        """Extracts specific case name from file name"""
-        case_name = '_'.join(file_name.split('_')[:-1])
-        if case_name == '':
-            case_name = os.path.basename(root)
-        bad_chars = ['#', '<', '>', '$', '%', '!', '&', '*', "'", '"', '{', '}', '/', ':', '@', '+', '.']
-        for bad_char in bad_chars:
-            if case_name.count(bad_char) != 0:
-                raise AssertionError(f'Filename: {file_name} contains bad char: "{bad_char}"')
-        if case_name is None:
-            raise AssertionError(f'Case name not found in file name {file_name} and folder name: {root}')
-        logger.debug(f'case_name: {case_name} | file_name: {file_name}')
-        return case_name
 
     def check_file_search_tag_label(self, file_name: str) -> bool:
         """True if label search tag is in file name"""
@@ -79,23 +64,10 @@ class DataAnalyzer:
             for file in files:
                 file_path = os.path.join(root, file)
                 if os.path.isfile(file_path):
+                    pseudo_name = secrets.token_urlsafe(16)
                     if self.check_file_search_tag_label(file) and self.check_file_type_label(file):
-                        self.data_path_store['label'][self.get_case_name(root, file)] = file_path
+                        self.data_path_store['label'][pseudo_name] = file_path
                     if self.check_file_search_tag_image(file) and self.check_file_type_image(file):
                         found_tag = self.get_file_search_tag_image(file)
-                        self.data_path_store['image'][self.get_case_name(root, file)][found_tag] = file_path
+                        self.data_path_store['image'][pseudo_name][found_tag] = file_path
 
-    def check_for_missing_files(self):
-        """Check if there are any image/label files are missing"""
-        for case_name in self.data_path_store['image'].keys():
-            for tag_name in self.image_search_tags.keys():
-                if not isinstance(self.data_path_store['image'][case_name][tag_name], str):
-                    raise FileNotFoundError(
-                        f'No {tag_name} file found for case {case_name}, check file and '
-                        f'search image tags (case sensitive)'
-                    )
-
-            if not isinstance(self.data_path_store['label'][case_name], str):
-                raise FileNotFoundError(
-                    f'No seg file found for case {case_name}, check file and label search ' f'tags (case sensitive)'
-                )

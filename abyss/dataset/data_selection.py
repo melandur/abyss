@@ -4,7 +4,7 @@ import os
 from loguru import logger
 from typing_extensions import ClassVar
 
-# from abyss.dataset.data_analyzer import DataAnalyzer
+from abyss.dataset.data_analyzer import DataAnalyzer
 # from abyss.dataset.data_restruct import DataRestruct
 from abyss.dataset.layout_parser import LayoutParser
 from abyss.utils import NestedDefaultDict, assure_instance_type
@@ -21,15 +21,17 @@ class DataSelection:
 
         self.data_path_store = NestedDefaultDict
 
+        self.layout_parser = LayoutParser(self.params)
+        self.layout_parser()
+
     def __call__(self):
         """Run"""
         logger.info(f'Run: {self.__class__.__name__}')
-        layout_parser = LayoutParser(self.params['meta']['folder_layout'])
-        layout_parser()
-        # data_analyzer = DataAnalyzer(self.config_manager)
-        # data_analyzer()
-        # self.data_path_store = data_analyzer.data_path_store
-        # self.show_dict_findings()
+
+        data_analyzer = DataAnalyzer(self.config_manager)
+        data_analyzer()
+        self.data_path_store = data_analyzer.data_path_store
+        self.show_dict_findings()
         # data_restruct = DataRestruct(self.config_manager, data_analyzer.data_path_store)
         # data_restruct()
 
