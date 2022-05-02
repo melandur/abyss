@@ -27,11 +27,12 @@ class DataSelection:
     def __call__(self):
         """Run"""
         logger.info(f'Run: {self.__class__.__name__}')
-
         data_analyzer = DataAnalyzer(self.config_manager)
         data_analyzer()
         self.data_path_store = data_analyzer.data_path_store
-        self.show_dict_findings()
+        self.layout_parser.decode_folder_layout_of_found_files(self.data_path_store)
+        # self.data_path_store = self.layout_parser
+        # self.show_dict_findings()
         # data_restruct = DataRestruct(self.config_manager, data_analyzer.data_path_store)
         # data_restruct()
 

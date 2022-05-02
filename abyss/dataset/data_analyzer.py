@@ -64,7 +64,7 @@ class DataAnalyzer:
             for file in files:
                 file_path = os.path.join(root, file)
                 if os.path.isfile(file_path):
-                    pseudo_name = secrets.token_urlsafe(16)
+                    pseudo_name = secrets.token_urlsafe(20)
                     if self.check_file_search_tag_label(file) and self.check_file_type_label(file):
                         self.data_path_store['label'][pseudo_name] = file_path
                     if self.check_file_search_tag_image(file) and self.check_file_type_image(file):

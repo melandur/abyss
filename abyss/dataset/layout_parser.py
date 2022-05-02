@@ -1,20 +1,28 @@
 import os
 from loguru import logger
 
+from abyss.utils import NestedDefaultDict
+
 
 class LayoutParser:
     """Create corresponding layout pattern"""
 
     def __init__(self, params: dict):
         self.params = params
-        self.label_layout = None
-        self.image_layout = None
+        self.label_layout = {}
+        self.image_layout = {}
 
     def __call__(self):
-        label_layout = self.clean_definition(self.params['dataset']['label_folder_layout'])
-        image_layout = self.clean_definition(self.params['dataset']['image_folder_layout'])
-        self.label_layout = self.get_definition(label_layout)
-        self.image_layout = self.get_definition(image_layout)
+        label_definition = self.clean_definition(self.params['dataset']['label_folder_layout'])
+        image_definition = self.clean_definition(self.params['dataset']['image_folder_layout'])
+        self.check(label_definition)
+        self.check(image_definition)
+        self.label_layout = self._names_to_dict(self.label_layout, label_definition)
+        self.image_layout = self._names_to_dict(self.image_layout, image_definition)
+
+        print(self.label_layout)
+        for x in reversed(self.label_layout):
+            print(x)
 
     @staticmethod
     def clean_definition(definition: str) -> list:
@@ -25,15 +33,21 @@ class LayoutParser:
         raise ValueError('Missing separator, use "->" to separate folder layers')
 
     @staticmethod
-    def get_definition(definition: list) -> tuple:
+    def check(definition: list):
         """Check if used words are valid"""
         allowed_names = ['case_folder', 'time_step', 'modality_folder', 'image_files', 'dicom_files']
         count_allowed_names = len(allowed_names)
         count_layout = len(definition)
         diff = len(set(allowed_names) - set(definition))
-        if count_allowed_names == count_layout + diff:
-            return tuple(definition)
-        raise ValueError(f'Invalid name in meta -> folder_layout, options: {allowed_names}')
+        if count_allowed_names != count_layout + diff:
+            raise ValueError(f'Invalid name in meta -> folder_layout, options: {allowed_names}')
+
+    @staticmethod
+    def _names_to_dict(layout_store, definiton):
+        """Create empty dict from layout names"""
+        for tag in definiton:
+            layout_store[tag] = None
+        return layout_store
 
     # @staticmethod
     # def get_case_name(root: str, file_name: str) -> str:
@@ -50,8 +64,19 @@ class LayoutParser:
     #     logger.debug(f'case_name: {case_name} | file_name: {file_name}')
     #     return case_name
 
-    def decode_folder_layout_of_found_files(self):
+    def decode_path(self, file_path):
+        """Decodes"""
+        # for layout_name in reversed(self.image_layout):
+
+    def decode_folder_layout_of_found_files(self, data_path_store):
         """adadasd"""
+        final_path_store = NestedDefaultDict()
+        for dataset, file in data_path_store.items():
+            if dataset == 'image':
+                for _, file_data in file.items():
+                    modality = list(file_data.keys())[0]
+                    file_path = file_data[modality]
+                    self.decode_path(file_path)
 
     # def check_for_missing_files(self):
     #     """Check if there are any image/label files are missing"""
