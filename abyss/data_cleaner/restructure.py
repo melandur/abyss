@@ -6,7 +6,7 @@ from loguru import logger
 from abyss.utils import assure_instance_type
 
 
-class DataRestruct:
+class Restructure:
     """Restructure original data"""
 
     def __init__(self, config_manager, data_path_store):

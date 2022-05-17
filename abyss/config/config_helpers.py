@@ -40,5 +40,5 @@ def check_image_search_tag_uniqueness(params: dict):
             vague_tag = [x for x in tmp_tags if x in tag]
             raise ValueError(
                 f'The image search tag {vague_tag} is not expressive/unique enough. '
-                f'Try to add additional information to the search tag like "_", "."'
+                f'Try to add additional information to the search tag like " ", ".", "_"'
             )

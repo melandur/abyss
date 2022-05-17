@@ -4,13 +4,13 @@ import os
 from loguru import logger
 from typing_extensions import ClassVar
 
-from abyss.dataset.data_analyzer import DataAnalyzer
+from abyss.data_cleaner.file_finder import FileFinder
 # from abyss.dataset.data_restruct import DataRestruct
-from abyss.dataset.layout_parser import LayoutParser
+from abyss.data_cleaner.layout_parser import LayoutParser
 from abyss.utils import NestedDefaultDict, assure_instance_type
 
 
-class DataSelection:
+class DataCleaner:
     """Read and clean original data"""
 
     def __init__(self, config_manager: ClassVar):
@@ -21,23 +21,21 @@ class DataSelection:
 
         self.data_path_store = NestedDefaultDict
 
-        self.layout_parser = LayoutParser(self.params)
-        self.layout_parser()
-
     def __call__(self):
         """Run"""
         logger.info(f'Run: {self.__class__.__name__}')
-        data_analyzer = DataAnalyzer(self.config_manager)
-        data_analyzer()
-        self.data_path_store = data_analyzer.data_path_store
-        self.layout_parser.decode_folder_layout_of_found_files(self.data_path_store)
-        # self.data_path_store = self.layout_parser
-        # self.show_dict_findings()
+        file_finder = FileFinder(self.config_manager)
+        file_finder()
+        self.layout_parser = LayoutParser(self.params, file_finder.data_path_store)
+        self.layout_parser()
+        # self.layout_parser.decode_folder_layout(file_finder.data_path_store)
+        self.data_path_store = self.layout_parser.decoded_path_store
+        self.show_dict_findings()
         # data_restruct = DataRestruct(self.config_manager, data_analyzer.data_path_store)
         # data_restruct()
 
     def show_dict_findings(self):
-        """Summaries and shows the findings"""
+        """Summaries the findings"""
         logger.trace(f'Dataset scan found: {json.dumps(self.data_path_store, indent=4)}')
 
         count_labels = 0

@@ -8,15 +8,15 @@ class ConfigFile:
         self.project_name = 'Abyss_test'
         self.experiment_name = 'experiment_2'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_folder_path = '/home/melandur/Data/dicom_small'
+        self.dataset_folder_path = '/home/melandur/Data/test'
 
     def __call__(self):
         """Returns config file"""
         experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
         return {
-            'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
+            'logger': {'level': 'TRACE'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_selection': True,
+                'data_cleaner': True,
                 'pre_processing': False,
                 'create_trainset': False,
                 'training': False,
@@ -39,20 +39,19 @@ class ConfigFile:
             },
             'dataset': {
                 'folder_path': self.dataset_folder_path,
+                'label_file_type': ['.nii.gz'],
                 'label_search_tags': ['seg', 'Seg'],
-                'label_file_type': ['.DICOM'],
                 'get_case_name_from': 'case_folder',
                 'label_folder_layout': 'case_folder -> modality_folder -> dicom_files',
+                'image_file_type': ['.nii.gz'],
                 'image_search_tags': {
-                    't1': ['t1pre', 'T1pre', 'T1 pr', 'T1 Pr'],
-                    't1c': ['t1ce', 'T1 po'],
-                    'flair': ['flair.', 'FLAIR'],
-                    't2': ['t2.', 'T2'],
+                    't1': ['t1_'],
+                    't1c': ['t1c_'],
+                    'flair': ['flair_'],
+                    't2': ['t2_'],
                 },
-                'image_folder_layout': 'case_folder -> modality_folder -> dicom_files',  # 'case_name -> 'image_files'
+                'image_folder_layout': 'case_folder -> image_files',  # 'case_name -> 'image_files'
                 # | 'case_folder -> time_step -> modality_folder -> dicom_files'
-
-                'image_file_type': ['.DICOM'],
                 'val_frac': 0.2,
                 'test_frac': 0.2,
             },
