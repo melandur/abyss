@@ -8,8 +8,7 @@ from typing_extensions import ClassVar
 
 class PreProcessing:
     """Data reading, going from image to numpy space.
-    Check out monai.transforms filters, which can be applied in data augmentation during the training instead
-    [B],C,H,W,[D]
+    Check out monai.transforms filters
     """
 
     def __init__(self, config_manager: ClassVar):
@@ -24,7 +23,7 @@ class PreProcessing:
         logger.info(f'Run: {self.__class__.__name__}')
         self.data_reader_image = self.define_data_reader(self.params['pre_processing']['image_data_reader'])
         self.data_reader_label = self.define_data_reader(self.params['pre_processing']['label_data_reader'])
-        self.process_images(stack_images=self.params['pre_processing']['concatenate_image_files'])
+        self.process_images()
         self.process_labels()
         self.config_manager.store_path_memory_file()
 
@@ -46,12 +45,12 @@ class PreProcessing:
         return data_reader
 
     def read_label_data(self, image_path: str) -> tuple:
-        """Returns labels as numpy array and meta data as dict"""
+        """Returns labels as numpy array and meta-data as dict"""
         image_data, meta_data = self.data_reader_image.get_data(self.data_reader_image.read(image_path))
         return image_data, meta_data
 
     def read_image_data(self, image_path: str) -> tuple:
-        """Returns images as numpy array and meta data as dict"""
+        """Returns images as numpy array and meta-data as dict"""
         label_data, meta_data = self.data_reader_label.get_data(self.data_reader_label.read(image_path))
         return label_data, meta_data
 
@@ -66,43 +65,33 @@ class PreProcessing:
         label = self.label_conversion(label)
         return label
 
-    def process_images(self, stack_images: bool = False):
-        """Applies pre processing task on images"""
-        processed_image_data = None
+    def process_images(self):
+        """Applies pre-processing task on images"""
         for case_name in self.structured_dataset_paths['image']:
             logger.debug(f'Image data: {case_name}')
-            tmp_image_store = {}
             for image_name in self.structured_dataset_paths['image'][case_name]:
-                image_data, _ = self.read_image_data(self.structured_dataset_paths['image'][case_name][image_name])
+                file_path = self.structured_dataset_paths['image'][case_name][image_name]
+                file_name = os.path.basename(file_path)
+                image_data, _ = self.read_image_data(file_path)
                 processed_image_data = self.sequential_process_steps_images(image_data)
-                tmp_image_store[image_name] = processed_image_data
-            if stack_images:
-                processed_image_data = self.stack_data(tmp_image_store)
-            if processed_image_data is None:
-                raise AssertionError('Preprocessing failed, processed image data type is None')
-            self.save_data(processed_image_data, case_name, folder_tag='image', export_tag='.nii.gz')
+                self.save_data(processed_image_data, case_name, file_name, folder_tag='image')
 
     def process_labels(self):
-        """Applies pre processing task on labels"""
+        """Applies pre-processing task on labels"""
         for case_name in self.structured_dataset_paths['label']:
             logger.debug(f'Label data: {case_name}')
-            label_data, _ = self.read_label_data(self.structured_dataset_paths['label'][case_name])
+            file_path = self.structured_dataset_paths['label'][case_name]
+            file_name = os.path.basename(file_path)
+            label_data, _ = self.read_label_data(file_path)
             processed_label_data = self.sequential_process_steps_labels(label_data)
-            self.save_data(processed_label_data, case_name, folder_tag='label', export_tag='.nii.gz')
+            self.save_data(processed_label_data, case_name, file_name, folder_tag='label')
 
-    def save_data(self, image_data, case_name, folder_tag='image', export_tag='.nii.gz'):
+    def save_data(self, image_data, case_name, file_name, folder_tag='image'):
         """Save data to preprocessed data folder as nifti or npz file"""
         file_dir = os.path.join(self.params['project']['preprocessed_dataset_store_path'], folder_tag)
         os.makedirs(file_dir, exist_ok=True)
-        if export_tag == '.nii.gz':
-            file_path = os.path.join(file_dir, f'{case_name}.nii.gz')
-            monai.data.nifti_writer.write_nifti(image_data, file_path)
-        elif export_tag == '.npz':
-            file_path = os.path.join(file_dir, f'{case_name}.npy')
-            with open(file_path, 'wb') as file:
-                np.save(file, image_data)
-        else:
-            raise NameError(f'Export_tag: "{export_tag}" not found')
+        file_path = os.path.join(file_dir, file_name)
+        monai.data.nifti_writer.write_nifti(image_data, file_path)
 
         if folder_tag == 'image':
             self.config_manager.path_memory['preprocessed_dataset_paths'][folder_tag][case_name] = file_path
@@ -110,20 +99,6 @@ class PreProcessing:
             self.config_manager.path_memory['preprocessed_dataset_paths'][folder_tag][case_name] = file_path
         else:
             raise ValueError(f'Folder tag: "{folder_tag}" not found')
-
-    @staticmethod
-    def stack_data(tmp_image_store):
-        """Stack images"""
-        logger.debug('Stacking images')
-        tmp_stack = None
-        for index, image_name in enumerate(tmp_image_store):
-            if index == 0:
-                tmp_stack = np.expand_dims(tmp_image_store[image_name], axis=0)
-                logger.debug(f'{image_name:<7} index:{index:<4} current dim: {np.shape(tmp_stack)}')
-            else:
-                tmp_stack = np.concatenate((tmp_stack, np.expand_dims(tmp_image_store[image_name], axis=0)), axis=0)
-                logger.debug(f'{image_name:<7} index:{index:<4} current dim: {np.shape(tmp_stack)}')
-        return tmp_stack
 
     def show_processed_data(self):
         """Show the processed data"""

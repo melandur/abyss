@@ -17,7 +17,7 @@ class ConfigFile:
             'logger': {'level': 'TRACE'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
                 'data_reader': True,
-                'pre_processing': False,
+                'pre_processing': True,
                 'create_trainset': False,
                 'training': False,
                 'post_processing': False,

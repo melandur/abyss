@@ -5,7 +5,7 @@ from loguru import logger
 from typing_extensions import ClassVar
 
 from abyss.data_reader.file_finder import FileFinder
-# from abyss.dataset.data_restruct import DataRestruct
+from abyss.data_reader.restructure import Restructure
 from abyss.utils import NestedDefaultDict, assure_instance_type
 
 
@@ -26,8 +26,8 @@ class DataReader:
         file_finder = FileFinder(self.config_manager)
         self.data_path_store = file_finder()
         self.show_dict_findings()
-        # data_restruct = DataRestruct(self.config_manager, data_analyzer.data_path_store)
-        # data_restruct()
+        data_restruct = Restructure(self.config_manager, self.data_path_store)
+        data_restruct()
 
     def show_dict_findings(self):
         """Summaries the findings"""
