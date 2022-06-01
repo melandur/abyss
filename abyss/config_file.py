@@ -8,7 +8,7 @@ class ConfigFile:
         self.project_name = 'Abyss_test'
         self.experiment_name = 'experiment_2'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_folder_path = '/home/melandur/Data/test'
+        self.dataset_folder_path = '/home/melandur/Data/small'
 
     def __call__(self):
         """Returns config file"""
@@ -16,7 +16,7 @@ class ConfigFile:
         return {
             'logger': {'level': 'TRACE'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_cleaner': True,
+                'data_reader': True,
                 'pre_processing': False,
                 'create_trainset': False,
                 'training': False,
@@ -42,16 +42,13 @@ class ConfigFile:
                 'label_file_type': ['.nii.gz'],
                 'label_search_tags': ['seg', 'Seg'],
                 'get_case_name_from': 'case_folder',
-                'label_folder_layout': 'case_folder -> modality_folder -> dicom_files',
                 'image_file_type': ['.nii.gz'],
                 'image_search_tags': {
-                    't1': ['t1_'],
-                    't1c': ['t1c_'],
-                    'flair': ['flair_'],
-                    't2': ['t2_'],
+                    't1': ['t1.'],
+                    't1c': ['t1ce.'],
+                    'flair': ['flair.'],
+                    't2': ['t2.'],
                 },
-                'image_folder_layout': 'case_folder -> image_files',  # 'case_name -> 'image_files'
-                # | 'case_folder -> time_step -> modality_folder -> dicom_files'
                 'val_frac': 0.2,
                 'test_frac': 0.2,
             },

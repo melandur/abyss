@@ -4,13 +4,12 @@ import os
 from loguru import logger
 from typing_extensions import ClassVar
 
-from abyss.data_cleaner.file_finder import FileFinder
+from abyss.data_reader.file_finder import FileFinder
 # from abyss.dataset.data_restruct import DataRestruct
-from abyss.data_cleaner.layout_parser import LayoutParser
 from abyss.utils import NestedDefaultDict, assure_instance_type
 
 
-class DataCleaner:
+class DataReader:
     """Read and clean original data"""
 
     def __init__(self, config_manager: ClassVar):
@@ -25,11 +24,7 @@ class DataCleaner:
         """Run"""
         logger.info(f'Run: {self.__class__.__name__}')
         file_finder = FileFinder(self.config_manager)
-        file_finder()
-        self.layout_parser = LayoutParser(self.params, file_finder.data_path_store)
-        self.layout_parser()
-        # self.layout_parser.decode_folder_layout(file_finder.data_path_store)
-        self.data_path_store = self.layout_parser.decoded_path_store
+        self.data_path_store = file_finder()
         self.show_dict_findings()
         # data_restruct = DataRestruct(self.config_manager, data_analyzer.data_path_store)
         # data_restruct()
@@ -37,7 +32,6 @@ class DataCleaner:
     def show_dict_findings(self):
         """Summaries the findings"""
         logger.trace(f'Dataset scan found: {json.dumps(self.data_path_store, indent=4)}')
-
         count_labels = 0
         count_images = {}
         for image_tag in self.image_search_tags.keys():
