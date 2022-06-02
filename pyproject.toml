@@ -12,7 +12,6 @@ loguru = "^0.6.0"
 
 itk = "^5.2.1"
 
-monai = "^0.8.1"
 
 nibabel = "^3.2.2"
 
@@ -23,6 +22,10 @@ python = "^3.9"
 pytorch-lightning = "^1.6.1"
 
 setuptools = "^62.1.0"
+h5py = "^3.7.0"
+torchio = "^0.18.77"
+pytorch-ignite = "^0.4.9"
+monai = "^0.8.1"
 
 
 [tool.poetry.dev-dependencies]

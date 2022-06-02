@@ -1,10 +1,9 @@
 import pytorch_lightning
 import torch
 from loguru import logger
-from monai import data, inferers, losses, metrics, transforms, utils
 
 from abyss.training.data_augmentation import DataAugmentation
-from abyss.training.net_architecture import net_architecture
+# from abyss.training.net_architecture import net_architecture
 
 
 class Net(pytorch_lightning.LightningModule):
@@ -18,42 +17,42 @@ class Net(pytorch_lightning.LightningModule):
         self.val_ds = None
         self.train_ds = None
 
-        self._model = net_architecture
+        # self._model = net_architecture
         # TODO: Make native a multiloss available
-        self.loss_function = losses.DiceLoss(to_onehot_y=False, sigmoid=True, squared_pred=True)
-        self.post_pred = transforms.AsDiscrete(
-            argmax=True,
-            to_onehot=True,
-            n_classes=self.params['training']['n_classes'],
-        )
-        self.post_label = transforms.AsDiscrete(to_onehot=False, n_classes=self.params['training']['n_classes'])
+        # self.loss_function = losses.DiceLoss(to_onehot_y=False, sigmoid=True, squared_pred=True)
+        # self.post_pred = transforms.AsDiscrete(
+        #     argmax=True,
+        #     to_onehot=True,
+        #     n_classes=self.params['training']['n_classes'],
+        # )
+        # self.post_label = transforms.AsDiscrete(to_onehot=False, n_classes=self.params['training']['n_classes'])
 
     def forward(self, x):
         return self._model(x)
 
-    def prepare_data(self):
-        train_files = self.config_manager.get_path_memory('train_dataset_paths')
-        val_files = self.config_manager.get_path_memory('val_dataset_paths')
-        utils.set_determinism(seed=self.params['dataset']['seed'])  # set training deterministic
-
-        data_augmentation = DataAugmentation()
-        if self.params['dataset']['use_cache']:
-            self.train_ds = data.CacheDataset(
-                data=train_files,
-                transform=data_augmentation.train_transform,
-                cache_rate=self.params['dataset']['cache_rate'],
-                num_workers=self.params['dataset']['num_workers'],
-            )
-
-            self.val_ds = data.CacheDataset(
-                data=val_files,
-                transform=data_augmentation.val_transform,
-                cache_rate=self.params['dataset']['cache_rate'],
-                num_workers=self.params['dataset']['num_workers'],
-            )
-        else:
-            self.train_ds = data.Dataset(data=train_files, transform=data_augmentation.train_transform)
-            self.val_ds = data.Dataset(data=val_files, transform=data_augmentation.val_transform)
+    # def prepare_data(self):
+    #     train_files = self.config_manager.get_path_memory('train_dataset_paths')
+    #     val_files = self.config_manager.get_path_memory('val_dataset_paths')
+    #     # utils.set_determinism(seed=self.params['dataset']['seed'])  # set training deterministic
+    #
+    #     data_augmentation = DataAugmentation()
+    #     if self.params['dataset']['use_cache']:
+    #         self.train_ds = data.CacheDataset(
+    #             data=train_files,
+    #             transform=data_augmentation.train_transform,
+    #             cache_rate=self.params['dataset']['cache_rate'],
+    #             num_workers=self.params['dataset']['num_workers'],
+    #         )
+    #
+    #         self.val_ds = data.CacheDataset(
+    #             data=val_files,
+    #             transform=data_augmentation.val_transform,
+    #             cache_rate=self.params['dataset']['cache_rate'],
+    #             num_workers=self.params['dataset']['num_workers'],
+    #         )
+    #     else:
+    #         self.train_ds = data.Dataset(data=train_files, transform=data_augmentation.train_transform)
+    #         self.val_ds = data.Dataset(data=val_files, transform=data_augmentation.val_transform)
 
         # # pick one image from DecathlonDataset to visualize and check the 4 channels
         # print(f"image shape: {self.val_ds[0]['image'].shape}")

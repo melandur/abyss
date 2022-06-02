@@ -16,7 +16,7 @@ class ConfigFile:
         return {
             'logger': {'level': 'TRACE'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_reader': True,
+                'data_reader': False,
                 'pre_processing': True,
                 'create_trainset': False,
                 'training': False,
@@ -53,13 +53,23 @@ class ConfigFile:
                 'test_frac': 0.2,
             },
             'pre_processing': {
-                'concatenate_image_files': False,
-                'label_data_reader': 'NibabelReader',  # 'ITKReader', 'NibabelReader', 'NumpyReader', 'PILReader',
-                # 'CustomReader'
-                'image_data_reader': 'NibabelReader',  # 'ITKReader', 'NibabelReader', 'NumpyReader', 'PILReader',
-                # 'CustomReader'
+                'image': {
+                    'canonical': {'active': True},
+                    'resize': {
+                        'active': True,
+                        'dim': (100, 100, 100),
+                        'interpolator': 'linear'},
+                    'z_score': {'active': True},
+                    'rescale_intensity': {'active': True}
+                },
+                'label': {
+                    'canonical': {'active': True},
+                    'resize': {
+                        'active': True,
+                        'dim': (100, 100, 100),
+                        'interpolator': 'nearest'}
+                }
             },
-            'post_processing': {},
             'augmentation': {},
             'training': {
                 'epochs': 30,  # tbd
@@ -77,6 +87,7 @@ class ConfigFile:
                 'n_classes': 3,
                 'early_stop': {'min_delta': 0.0, 'patience': 0, 'verbose': False, 'mode': 'max'},
             },
+            'post_processing': {},
         }
 
     def __str__(self):
