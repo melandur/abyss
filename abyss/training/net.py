@@ -3,8 +3,7 @@ import torch
 from loguru import logger
 
 from abyss.training.data_augmentation import DataAugmentation
-
-# from abyss.training.net_architecture import net_architecture
+from abyss.training.net_architecture import net_architecture
 
 
 class Net(pytorch_lightning.LightningModule):
@@ -56,7 +55,7 @@ class Net(pytorch_lightning.LightningModule):
     #         self.val_ds = data.Dataset(data=val_files, transform=data_augmentation.val_transform)
 
     # # pick one image from DecathlonDataset to visualize and check the 4 channels
-    # print(f"image shape: {self.val_ds[0]['image'].shape}")
+    # print(f"image shape: {self.val_ds[0]['data'].shape}")
     # plt.figure("image", (24, 6))
     # for i in range(4):
     #     plt.subplot(1, 4, i + 1)
@@ -79,7 +78,7 @@ class Net(pytorch_lightning.LightningModule):
             batch_size=self.params['training']['batch_size'],
             shuffle=True,
             num_workers=self.params['training']['num_workers'],
-            collate_fn=data.list_data_collate,
+            collate_fn=torch.utils.data.list_data_collate,
         )
         return train_loader
 
@@ -117,7 +116,7 @@ class Net(pytorch_lightning.LightningModule):
 
     def training_step(self, batch):
         """Training step"""
-        images, labels = batch['image'], batch['label']
+        images, labels = batch['data'], batch['label']
         output = self.forward(images)
         loss = self.loss_function(output, labels)
         self.log('train_loss', loss.item())
@@ -125,7 +124,7 @@ class Net(pytorch_lightning.LightningModule):
 
     def validation_step(self, batch):
         """Validation step"""
-        images, labels = batch['image'], batch['label']
+        images, labels = batch['data'], batch['label']
         roi_size = (160, 160, 160)
         sw_batch_size = 1
         outputs = inferers.sliding_window_inference(images, roi_size, sw_batch_size, self.forward)

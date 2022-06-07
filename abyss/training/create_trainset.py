@@ -30,14 +30,14 @@ class CreateTrainset:
 
     def train_test_split(self):
         """Creates a list with case names for train and test set each"""
-        count_cases = len(self.preprocessed_store_paths['image'])
+        count_cases = len(self.preprocessed_store_paths['data'])
         if count_cases < 10:
             raise AssertionError('Your dataset needs to have at least 10 subjects')
         test_set_size = int(self.params['dataset']['test_frac'] * count_cases)
         self.test_set_cases = list(
-            np.random.choice(list(self.preprocessed_store_paths['image']), size=test_set_size, replace=False)
+            np.random.choice(list(self.preprocessed_store_paths['data']), size=test_set_size, replace=False)
         )
-        self.train_set_cases = [x for x in self.preprocessed_store_paths['image'] if x not in self.test_set_cases]
+        self.train_set_cases = [x for x in self.preprocessed_store_paths['data'] if x not in self.test_set_cases]
         if set(self.test_set_cases) & set(self.train_set_cases):
             raise AssertionError('Contamination in train & test-set split')
         logger.info(f'Test set, counts: {len(self.test_set_cases)}, cases: {self.test_set_cases}')
@@ -76,33 +76,33 @@ class CreateTrainset:
         logger.info(f'Val set, counts: {len(self.val_set_cases)}, cases: {self.val_set_cases}')
 
     @staticmethod
-    def writer(hf_object, group, set_type, case_name, file_tag, file_path):
+    def writer(h5_object, group, set_type, case_name, file_tag, file_path):
         """Convert data to numpy array and write it hdf5 file"""
         img = sitk.ReadImage(file_path)
         img_arr = sitk.GetArrayFromImage(img)
-        group = hf_object.require_group(f'{group}/{set_type}/{case_name}')
+        group = h5_object.require_group(f'{group}/{set_type}/{case_name}')
         group.create_dataset(file_tag, data=img_arr)
 
-    def create_set(self, hf_object, set_cases, set_tag, data_type):
+    def create_set(self, h5_object, set_cases, set_tag, data_type):
         """Create data set"""
         for case_name in set_cases:
             file_tags = self.preprocessed_store_paths[data_type][case_name]
             for file_tag in file_tags:
                 file_path = self.preprocessed_store_paths[data_type][case_name][file_tag]
-                self.writer(hf_object, set_tag, data_type, case_name, file_tag, file_path)
+                self.writer(h5_object, set_tag, data_type, case_name, file_tag, file_path)
                 self.config_manager.path_memory[
                     f'{set_tag}_dataset_paths'
                 ] = f'{set_tag}/{data_type}/{case_name}/{file_tag}'
 
     def execute_dataset_split(self):
-        """Copies files to folders: imageTr, labelTr, imageTs, labelTs"""
-        with h5py.File(self.trainset_store_path, 'w') as hf_object:
-            self.create_set(hf_object, self.train_set_cases, 'train', 'image')
-            self.create_set(hf_object, self.train_set_cases, 'train', 'label')
-            self.create_set(hf_object, self.val_set_cases, 'val', 'image')
-            self.create_set(hf_object, self.val_set_cases, 'val', 'label')
-            self.create_set(hf_object, self.test_set_cases, 'test', 'image')
-            self.create_set(hf_object, self.test_set_cases, 'test', 'label')
+        """Write files to train/validation/test folders in hdf5"""
+        with h5py.File(self.trainset_store_path, 'w') as h5_object:
+            self.create_set(h5_object, self.train_set_cases, 'train', 'data')
+            self.create_set(h5_object, self.train_set_cases, 'train', 'label')
+            self.create_set(h5_object, self.val_set_cases, 'val', 'data')
+            self.create_set(h5_object, self.val_set_cases, 'val', 'label')
+            self.create_set(h5_object, self.test_set_cases, 'test', 'data')
+            self.create_set(h5_object, self.test_set_cases, 'test', 'label')
 
     @staticmethod
     def branch_formatter(name, obj):
@@ -116,5 +116,5 @@ class CreateTrainset:
 
     def show_tree_structure(self):
         """Visualize tree structure of hdf5"""
-        hf_object = h5py.File(self.trainset_store_path, 'r')
-        hf_object.visititems(self.branch_formatter)
+        h5_object = h5py.File(self.trainset_store_path, 'r')
+        h5_object.visititems(self.branch_formatter)

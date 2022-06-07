@@ -17,7 +17,7 @@ class DataReader:
         self.params = config_manager.params
         self.path_memory = config_manager.path_memory
         self.label_search_tags = assure_instance_type(self.params['dataset']['label_search_tags'], dict)
-        self.image_search_tags = assure_instance_type(self.params['dataset']['image_search_tags'], dict)
+        self.data_search_tags = assure_instance_type(self.params['dataset']['data_search_tags'], dict)
 
         self.data_path_store = NestedDefaultDict
 
@@ -36,14 +36,14 @@ class DataReader:
         count_labels = {}
         for label_tag in self.label_search_tags.keys():
             count_labels[label_tag] = 0
-        count_images = {}
-        for image_tag in self.image_search_tags.keys():
-            count_images[image_tag] = 0
+        count_data = {}
+        for data_tag in self.data_search_tags.keys():
+            count_data[data_tag] = 0
 
-        for case in self.data_path_store['image'].keys():
-            for image_tag, image_path in self.data_path_store['image'][case].items():
-                if os.path.isfile(image_path):
-                    count_images[image_tag] += 1
+        for case in self.data_path_store['data'].keys():
+            for data_tag, data_path in self.data_path_store['data'][case].items():
+                if os.path.isfile(data_path):
+                    count_data[data_tag] += 1
 
         for case in self.data_path_store['label'].keys():
             for label_tag, label_path in self.data_path_store['label'][case].items():
@@ -51,9 +51,8 @@ class DataReader:
                     count_labels[label_tag] += 1
 
         stats_dict = {
-            'Total cases': len(self.data_path_store['image'].keys()),
+            'Total cases': len(self.data_path_store['data'].keys()),
             'Label': count_labels,
-            'Image': count_images,
+            'Data': count_data,
         }
-
         logger.info(f'Dataset scan overview: {json.dumps(stats_dict, indent=4)}')

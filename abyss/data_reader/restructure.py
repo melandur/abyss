@@ -7,26 +7,26 @@ from abyss.utils import assure_instance_type
 
 
 class Restructure:
-    """Restructure original data -> to image/label folder"""
+    """Restructure original data -> to data/label folder"""
 
     def __init__(self, config_manager, data_path_store):
         self.config_manager = config_manager
         self.path_memory = config_manager.path_memory
         self.label_search_tags = assure_instance_type(config_manager.params['dataset']['label_search_tags'], dict)
-        self.image_search_tags = assure_instance_type(config_manager.params['dataset']['image_search_tags'], dict)
+        self.data_search_tags = assure_instance_type(config_manager.params['dataset']['data_search_tags'], dict)
         self.data_path_store = data_path_store
 
     def __call__(self):
         logger.info(f'Run: {self.__class__.__name__}')
         self.create_structured_dataset(self.label_search_tags, 'label')
-        self.create_structured_dataset(self.image_search_tags, 'image')
+        self.create_structured_dataset(self.data_search_tags, 'data')
 
     def create_structured_dataset(self, search_tags, data_type):
         """Copy files from original dataset to structured dataset and create file path dict"""
         logger.info('Copying original dataset into structured dataset')
 
         for case_name in sorted(self.data_path_store[data_type]):
-            for tag_name in search_tags:  # copy images
+            for tag_name in search_tags:  # copy data
                 self.path_memory['structured_dataset_paths'][data_type][case_name][tag_name] = self.copy_helper(
                     src=self.data_path_store[data_type][case_name][tag_name],
                     folder_name=data_type,

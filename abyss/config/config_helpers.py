@@ -16,17 +16,17 @@ def check_and_create_folder_structure(params: dict):
         os.makedirs(folder, exist_ok=True)
 
 
-def check_image_search_tag_redundancy(params: dict):
-    """Check if there are any redundant search tag per image name"""
-    for key, value in params['dataset']['image_search_tags'].items():
+def check_search_tag_redundancy(params: dict, data_type: str):
+    """Check if there are any redundant search tag per data/label name"""
+    for key, value in params['dataset'][f'{data_type}_search_tags'].items():
         if len(value) != len(set(value)):
             redundant_tag = list((Counter(value) - Counter(list(set(value)))).elements())
-            raise ValueError(f'The image search tag {redundant_tag} found multiple times for the image name {key}')
+            raise ValueError(f'The {data_type} search tag {redundant_tag} found multiple times for the name {key}')
 
 
-def check_image_search_tag_uniqueness(params: dict):
-    """Check if the image search tags are unique enough to avoid wrong data loading"""
-    tags = params['dataset']['image_search_tags'].values()
+def check_search_tag_uniqueness(params: dict, data_type: str):
+    """Check if the dat/label search tags are unique enough to avoid wrong loading"""
+    tags = params['dataset'][f'{data_type}_search_tags'].values()
     tags = [x for sublist in tags for x in sublist]  # flatten nested list
     for i, tag in enumerate(tags):
         tmp_tags = deepcopy(tags)
@@ -34,6 +34,6 @@ def check_image_search_tag_uniqueness(params: dict):
         if [x for x in tmp_tags if x in tag]:
             vague_tag = [x for x in tmp_tags if x in tag]
             raise ValueError(
-                f'The image search tag {vague_tag} is not expressive/unique enough. '
+                f'The {data_type} search tag {vague_tag} is not expressive/unique enough. '
                 f'Try to add additional information to the search tag like " ", ".", "_"'
             )

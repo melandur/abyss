@@ -1,13 +1,12 @@
 import h5py
 import torch
-from torch.utils.data import Dataset
 
 
-class H5Dataset(Dataset):
-    def __init__(self, h5_paths, limit=-1):
+class HDF5Dataset(torch.utils.data.Dataset):
+    def __init__(self, limit=-1):
         super().__init__()
         self.limit = limit
-        self.h5_paths = h5_paths
+        self.h5_file_path = ''
         self._archives = [h5py.File(h5_path, "r") for h5_path in self.h5_paths]
         self.indices = {}
         idx = 0

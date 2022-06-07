@@ -6,8 +6,8 @@ from loguru import logger
 
 from abyss.config.config_helpers import (
     check_and_create_folder_structure,
-    check_image_search_tag_redundancy,
-    check_image_search_tag_uniqueness,
+    check_search_tag_redundancy,
+    check_search_tag_uniqueness,
 )
 from abyss.config_file import ConfigFile
 from abyss.utils import NestedDefaultDict
@@ -35,8 +35,10 @@ class ConfigManager:
         logger.remove()
         logger.add(sys.stderr, level=self.params['logger']['level'])
 
-        check_image_search_tag_redundancy(self.params)
-        check_image_search_tag_uniqueness(self.params)
+        check_search_tag_redundancy(self.params, 'data')
+        check_search_tag_uniqueness(self.params, 'data')
+        check_search_tag_redundancy(self.params, 'label')
+        check_search_tag_uniqueness(self.params, 'label')
         check_and_create_folder_structure(self.params)
 
         self.store_config_file()
@@ -79,7 +81,7 @@ class ConfigManager:
         for key in self.path_memory.keys():
             if not self.path_memory[key]:  # check if value for certain key is empty
                 self.path_memory[key] = NestedDefaultDict()  # override empty dicts with nested dicts
-                self.path_memory[key]['image'] = {}
+                self.path_memory[key]['data'] = {}
                 self.path_memory[key]['label'] = {}
         logger.info(f'Path memory file has been loaded from {file_path}')
         logger.debug(f'Memory path file contains: {json.dumps(self.path_memory, indent=4)}')

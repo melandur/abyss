@@ -7,7 +7,8 @@ from typing_extensions import ClassVar
 
 
 class PreProcessing:
-    """Preprocess image/labels"""
+    """Preprocess data/labels"""
+
     # TODO: Subject wise preprocessing
 
     def __init__(self, config_manager: ClassVar):
@@ -15,21 +16,21 @@ class PreProcessing:
         self.params = config_manager.params
         self.structured_dataset_paths = config_manager.get_path_memory('structured_dataset_paths')
         np.random.seed(config_manager.params['meta']['seed'])
-        self.image_transformation = None
+        self.data_transformation = None
         self.label_transformation = None
 
     def __call__(self):
         logger.info(f'Run: {self.__class__.__name__}')
-        self.aggregate_image_transformations()
+        self.aggregate_data_transformations()
         self.aggregate_label_transformations()
         self.process(self.label_transformation, 'label')
-        self.process(self.image_transformation, 'image')
+        self.process(self.data_transformation, 'data')
         self.config_manager.store_path_memory_file()
 
-    def aggregate_image_transformations(self):
-        """Add image filter"""
+    def aggregate_data_transformations(self):
+        """Add data filter"""
         transforms = []
-        params = self.params['pre_processing']['image']
+        params = self.params['pre_processing']['data']
         if params['canonical']['active']:
             transforms.append(tio.ToCanonical())
         if params['resize']['active']:
@@ -40,7 +41,7 @@ class PreProcessing:
             transforms.append(tio.ZNormalization())
         if params['resize']['active']:
             transforms.append(tio.RescaleIntensity())
-        self.image_transformation = tio.Compose(transforms)
+        self.data_transformation = tio.Compose(transforms)
 
     def aggregate_label_transformations(self):
         """Add label filters"""
@@ -55,9 +56,9 @@ class PreProcessing:
         self.label_transformation = tio.Compose(transforms)
 
     def process(self, transformation: tio.Transform, data_type: str):
-        """Applies pre-processing task on images"""
+        """Applies pre-processing task on data"""
         for case_name in self.structured_dataset_paths[data_type]:
-            logger.debug(f'Image data: {case_name}')
+            logger.debug(f'Data data: {case_name}')
             for file_tag in self.structured_dataset_paths[data_type][case_name]:
                 file_path = self.structured_dataset_paths[data_type][case_name][file_tag]
                 subject = tio.Subject(data=tio.ScalarImage(file_path))

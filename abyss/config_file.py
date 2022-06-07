@@ -16,8 +16,8 @@ class ConfigFile:
         return {
             'logger': {'level': 'TRACE'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_reader': False,
-                'pre_processing': False,
+                'data_reader': True,
+                'pre_processing': True,
                 'create_trainset': True,
                 'training': False,
                 'post_processing': False,
@@ -41,20 +41,19 @@ class ConfigFile:
                 'folder_path': self.dataset_folder_path,
                 'label_file_type': ['.nii.gz'],
                 'label_search_tags': {'mask': ['seg', 'Seg']},
-                'get_case_name_from': 'case_folder',
-                'image_file_type': ['.nii.gz'],
-                'image_search_tags': {
-                    't1': ['t1.'],
-                    't1c': ['t1ce.'],
-                    'flair': ['flair.'],
-                    't2': ['t2.'],
+                'data_file_type': ['.nii.gz'],
+                'data_search_tags': {
+                    't1': ['t1.', 'T1.'],
+                    't1c': ['t1ce.', 'T1CE.'],
+                    'flair': ['flair.', 'FLAIR.'],
+                    't2': ['t2.', 'T2.'],
                 },
                 'val_frac': 0.2,
                 'test_frac': 0.2,
                 'cross_fold': '1/2',
             },
             'pre_processing': {
-                'image': {
+                'data': {
                     'canonical': {'active': True},
                     'resize': {'active': True, 'dim': (100, 100, 100), 'interpolator': 'linear'},
                     'z_score': {'active': True},

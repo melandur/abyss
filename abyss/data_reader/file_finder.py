@@ -13,8 +13,8 @@ class FileFinder:
         self.dataset_folder_path = config_manager.params['dataset']['folder_path']
         self.label_search_tags = assure_instance_type(config_manager.params['dataset']['label_search_tags'], dict)
         self.label_file_type = assure_instance_type(config_manager.params['dataset']['label_file_type'], list)
-        self.image_search_tags = assure_instance_type(config_manager.params['dataset']['image_search_tags'], dict)
-        self.image_file_type = assure_instance_type(config_manager.params['dataset']['image_file_type'], list)
+        self.data_search_tags = assure_instance_type(config_manager.params['dataset']['data_search_tags'], dict)
+        self.data_file_type = assure_instance_type(config_manager.params['dataset']['data_file_type'], list)
         self.data_path_store = NestedDefaultDict()
 
     def __call__(self):
@@ -22,7 +22,7 @@ class FileFinder:
         logger.info(f'Run: {self.__class__.__name__} -> {self.dataset_folder_path}')
         if os.path.isdir(self.dataset_folder_path):
             self.scan_folder()
-            self.check_for_missing_files(self.image_search_tags, 'image')
+            self.check_for_missing_files(self.data_search_tags, 'data')
             self.check_for_missing_files(self.label_search_tags, 'label')
             return self.data_path_store
         else:
@@ -45,7 +45,7 @@ class FileFinder:
 
     @staticmethod
     def check_file_search_tag(file_name: str, search_tags: dict) -> bool:
-        """True if image search tag is in file name"""
+        """True if search tag is in file name"""
         for value in search_tags.values():
             if [x for x in [*value] if x in file_name]:
                 return True
@@ -53,7 +53,7 @@ class FileFinder:
 
     @staticmethod
     def check_file_type(file_name: str, file_type: dict) -> bool:
-        """True if image file ends with defined file type"""
+        """True if file ends with defined file type"""
         if [x for x in file_type if file_name.endswith(x)]:
             return True
         return False
@@ -81,12 +81,12 @@ class FileFinder:
                     if self.validate_file(file, self.label_search_tags, self.label_file_type):
                         found_tag = self.get_file_search_tag(file, self.label_search_tags)
                         self.data_path_store['label'][self.get_case_name(root, file)][found_tag] = file_path
-                    if self.validate_file(file, self.image_search_tags, self.image_file_type):
-                        found_tag = self.get_file_search_tag(file, self.image_search_tags)
-                        self.data_path_store['image'][self.get_case_name(root, file)][found_tag] = file_path
+                    if self.validate_file(file, self.data_search_tags, self.data_file_type):
+                        found_tag = self.get_file_search_tag(file, self.data_search_tags)
+                        self.data_path_store['data'][self.get_case_name(root, file)][found_tag] = file_path
 
     def check_for_missing_files(self, search_tag: dict, data_type: str):
-        """Check if there are any image/label files are missing"""
+        """Check if there are any data/label files are missing"""
         for case_name in self.data_path_store[data_type].keys():
             for tag_name in search_tag.keys():
                 if not isinstance(self.data_path_store[data_type][case_name][tag_name], str):

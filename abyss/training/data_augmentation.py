@@ -36,26 +36,26 @@ class DataAugmentation:
         self.train_transform = tf.Compose(
             [
                 # load 4 Nifti images and stack them together
-                tf.LoadImaged(keys=['image', 'label']),
-                tf.AsChannelFirstd(keys=['image', 'label']),
-                tf.AddChanneld(keys='image'),
+                tf.LoadImaged(keys=['data', 'label']),
+                tf.AsChannelFirstd(keys=['data', 'label']),
+                tf.AddChanneld(keys='data'),
                 ConvertToMultiChannelBasedOnBratsClassesd(keys='label'),
-                tf.Spacingd(keys=['image', 'label'], pixdim=(1.0, 1.0, 1.0), mode=('bilinear', 'nearest')),
-                tf.Orientationd(keys=['image', 'label'], axcodes='RAS'),
-                tf.RandSpatialCropd(keys=['image', 'label'], roi_size=[128, 128, 64], random_size=False),
-                tf.RandFlipd(keys=['image', 'label'], prob=0.5, spatial_axis=0),
-                tf.NormalizeIntensityd(keys='image', nonzero=True, channel_wise=True),
-                tf.RandScaleIntensityd(keys='image', factors=0.1, prob=0.5),
-                tf.RandShiftIntensityd(keys='image', offsets=0.1, prob=0.5),
-                tf.ToTensord(keys=['image', 'label']),
+                tf.Spacingd(keys=['data', 'label'], pixdim=(1.0, 1.0, 1.0), mode=('bilinear', 'nearest')),
+                tf.Orientationd(keys=['data', 'label'], axcodes='RAS'),
+                tf.RandSpatialCropd(keys=['data', 'label'], roi_size=[128, 128, 64], random_size=False),
+                tf.RandFlipd(keys=['data', 'label'], prob=0.5, spatial_axis=0),
+                tf.NormalizeIntensityd(keys='data', nonzero=True, channel_wise=True),
+                tf.RandScaleIntensityd(keys='data', factors=0.1, prob=0.5),
+                tf.RandShiftIntensityd(keys='data', offsets=0.1, prob=0.5),
+                tf.ToTensord(keys=['data', 'label']),
             ]
         )
 
         self.val_transform = tf.Compose(
             [
                 tf.LoadImaged(keys=["image", "label"]),
-                tf.AsChannelFirstd(keys=['image', 'label']),
-                tf.AddChanneld(keys='image'),
+                tf.AsChannelFirstd(keys=['data', 'label']),
+                tf.AddChanneld(keys='data'),
                 ConvertToMultiChannelBasedOnBratsClassesd(keys="label"),
                 tf.Spacingd(
                     keys=["image", "label"],
@@ -71,20 +71,20 @@ class DataAugmentation:
 
         self.test_transform = tf.Compose(
             [
-                tf.LoadImaged(keys=['image', 'label']),
-                tf.AsChannelFirstd(keys='image'),
+                tf.LoadImaged(keys=['data', 'label']),
+                tf.AsChannelFirstd(keys='data'),
                 ConvertToMultiChannelBasedOnBratsClassesd(keys='label'),
-                tf.Spacingd(keys=['image', 'label'], pixdim=(1.0, 1.0, 1.0), mode=('bilinear', 'nearest')),
-                tf.Orientationd(keys=['image', 'label'], axcodes='RAS'),
-                tf.CenterSpatialCropd(keys=['image', 'label'], roi_size=[128, 128, 64]),
-                tf.NormalizeIntensityd(keys='image', nonzero=True, channel_wise=True),
-                tf.ToTensord(keys=['image', 'label']),
+                tf.Spacingd(keys=['data', 'label'], pixdim=(1.0, 1.0, 1.0), mode=('bilinear', 'nearest')),
+                tf.Orientationd(keys=['data', 'label'], axcodes='RAS'),
+                tf.CenterSpatialCropd(keys=['data', 'label'], roi_size=[128, 128, 64]),
+                tf.NormalizeIntensityd(keys='data', nonzero=True, channel_wise=True),
+                tf.ToTensord(keys=['data', 'label']),
             ]
         )
 
         # self.debug_transform = tf.Compose(
         #     [
-        #         ConcatenateImages(keys=['image'])
+        #         ConcatenateImages(keys=['data'])
         #     ]
         # )
         #
@@ -141,14 +141,14 @@ if __name__ == '__main__':
     da = DataAugmentation()
 
     x = da.debug_transform(data_dicts)
-    print(x['image'].keys())
-    # for case in x['image'].keys():
-    #     print(np.shape(x['image'][case]))
+    print(x['data'].keys())
+    # for case in x['data'].keys():
+    #     print(np.shape(x['data'][case]))
 
     # print(x)
     # print(x)
     #
-    # for case in data_dicts['image']:
+    # for case in data_dicts['data']:
     #     print(case)
     #     print()
     # x = tf.ConcatItemsD()
@@ -156,5 +156,5 @@ if __name__ == '__main__':
     #     print(x)
 
     # print(x)
-    # print('image shape:', np.shape(x['image']))
+    # print('image shape:', np.shape(x['data']))
     # print('label shape:', np.shape(x['label']))
