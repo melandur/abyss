@@ -14,7 +14,7 @@ from abyss.utils import NestedDefaultDict
 
 
 class ConfigManager:
-    """The pipelines control center, most parameters can be found here"""
+    """Manages config file and path memory file"""
 
     def __init__(self, load_config_file_path: str = None):
         self.path_memory = {

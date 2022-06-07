@@ -23,8 +23,7 @@ class Restructure:
 
     def create_structured_dataset(self, search_tags, data_type):
         """Copy files from original dataset to structured dataset and create file path dict"""
-        logger.info('Copying original dataset into structured dataset')
-
+        logger.info(f'Copying original {data_type} to new structure -> 2_pre_processed_dataset')
         for case_name in sorted(self.data_path_store[data_type]):
             for tag_name in search_tags:  # copy data
                 self.path_memory['structured_dataset_paths'][data_type][case_name][tag_name] = self.copy_helper(

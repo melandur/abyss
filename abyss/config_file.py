@@ -16,8 +16,8 @@ class ConfigFile:
         return {
             'logger': {'level': 'TRACE'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_reader': True,
-                'pre_processing': True,
+                'data_reader': False,
+                'pre_processing': False,
                 'create_trainset': True,
                 'training': False,
                 'post_processing': False,
@@ -50,7 +50,7 @@ class ConfigFile:
                 },
                 'val_frac': 0.2,
                 'test_frac': 0.2,
-                'cross_fold': '1/2',
+                'cross_fold': '1/1',
             },
             'pre_processing': {
                 'data': {

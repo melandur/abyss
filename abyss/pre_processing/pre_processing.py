@@ -58,7 +58,7 @@ class PreProcessing:
     def process(self, transformation: tio.Transform, data_type: str):
         """Applies pre-processing task on data"""
         for case_name in self.structured_dataset_paths[data_type]:
-            logger.debug(f'Data data: {case_name}')
+            logger.debug(f'{data_type}: {case_name}')
             for file_tag in self.structured_dataset_paths[data_type][case_name]:
                 file_path = self.structured_dataset_paths[data_type][case_name][file_tag]
                 subject = tio.Subject(data=tio.ScalarImage(file_path))
