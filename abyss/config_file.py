@@ -17,8 +17,8 @@ class ConfigFile:
             'logger': {'level': 'TRACE'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
                 'data_reader': False,
-                'pre_processing': True,
-                'create_trainset': False,
+                'pre_processing': False,
+                'create_trainset': True,
                 'training': False,
                 'post_processing': False,
             },
@@ -40,7 +40,7 @@ class ConfigFile:
             'dataset': {
                 'folder_path': self.dataset_folder_path,
                 'label_file_type': ['.nii.gz'],
-                'label_search_tags': ['seg', 'Seg'],
+                'label_search_tags': {'mask': ['seg', 'Seg']},
                 'get_case_name_from': 'case_folder',
                 'image_file_type': ['.nii.gz'],
                 'image_search_tags': {
@@ -51,24 +51,19 @@ class ConfigFile:
                 },
                 'val_frac': 0.2,
                 'test_frac': 0.2,
+                'cross_fold': '1/2',
             },
             'pre_processing': {
                 'image': {
                     'canonical': {'active': True},
-                    'resize': {
-                        'active': True,
-                        'dim': (100, 100, 100),
-                        'interpolator': 'linear'},
+                    'resize': {'active': True, 'dim': (100, 100, 100), 'interpolator': 'linear'},
                     'z_score': {'active': True},
-                    'rescale_intensity': {'active': True}
+                    'rescale_intensity': {'active': True},
                 },
                 'label': {
                     'canonical': {'active': True},
-                    'resize': {
-                        'active': True,
-                        'dim': (100, 100, 100),
-                        'interpolator': 'nearest'}
-                }
+                    'resize': {'active': True, 'dim': (100, 100, 100), 'interpolator': 'nearest'},
+                },
             },
             'augmentation': {},
             'training': {

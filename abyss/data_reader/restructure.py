@@ -7,40 +7,32 @@ from abyss.utils import assure_instance_type
 
 
 class Restructure:
-    """Restructure original data"""
+    """Restructure original data -> to image/label folder"""
 
     def __init__(self, config_manager, data_path_store):
         self.config_manager = config_manager
         self.path_memory = config_manager.path_memory
+        self.label_search_tags = assure_instance_type(config_manager.params['dataset']['label_search_tags'], dict)
         self.image_search_tags = assure_instance_type(config_manager.params['dataset']['image_search_tags'], dict)
         self.data_path_store = data_path_store
 
     def __call__(self):
-        """Run data restruction"""
         logger.info(f'Run: {self.__class__.__name__}')
-        self.create_structured_dataset()
+        self.create_structured_dataset(self.label_search_tags, 'label')
+        self.create_structured_dataset(self.image_search_tags, 'image')
 
-    def create_structured_dataset(self):
+    def create_structured_dataset(self, search_tags, data_type):
         """Copy files from original dataset to structured dataset and create file path dict"""
         logger.info('Copying original dataset into structured dataset')
 
-        for case_name in sorted(self.data_path_store['image']):
-            for tag_name in self.image_search_tags:  # copy images
-                self.path_memory['structured_dataset_paths']['image'][case_name][tag_name] = self.copy_helper(
-                    src=self.data_path_store['image'][case_name][tag_name],
-                    folder_name='image',
+        for case_name in sorted(self.data_path_store[data_type]):
+            for tag_name in search_tags:  # copy images
+                self.path_memory['structured_dataset_paths'][data_type][case_name][tag_name] = self.copy_helper(
+                    src=self.data_path_store[data_type][case_name][tag_name],
+                    folder_name=data_type,
                     case_name=case_name,
                     tag_name=tag_name,
                 )
-
-            # copy labels
-            self.path_memory['structured_dataset_paths']['label'][case_name] = self.copy_helper(
-                src=self.data_path_store['label'][case_name],
-                folder_name='label',
-                case_name=case_name,
-                tag_name='seg',
-            )
-
         self.config_manager.store_path_memory_file()
 
     def copy_helper(self, src, folder_name, case_name, tag_name):

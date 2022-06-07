@@ -3,6 +3,7 @@ import torch
 from loguru import logger
 
 from abyss.training.data_augmentation import DataAugmentation
+
 # from abyss.training.net_architecture import net_architecture
 
 
@@ -54,22 +55,22 @@ class Net(pytorch_lightning.LightningModule):
     #         self.train_ds = data.Dataset(data=train_files, transform=data_augmentation.train_transform)
     #         self.val_ds = data.Dataset(data=val_files, transform=data_augmentation.val_transform)
 
-        # # pick one image from DecathlonDataset to visualize and check the 4 channels
-        # print(f"image shape: {self.val_ds[0]['image'].shape}")
-        # plt.figure("image", (24, 6))
-        # for i in range(4):
-        #     plt.subplot(1, 4, i + 1)
-        #     plt.title(f"image channel {i}")
-        #     plt.imshow(self.val_ds[1]["image"][i, :, :, 20].detach().cpu(), cmap="gray")
-        # plt.show()
-        # # also visualize the 3 channels label corresponding to this image
-        # print(f"label shape: {self.val_ds[0]['label'].shape}")
-        # plt.figure("label", (18, 6))
-        # for i in range(3):
-        #     plt.subplot(1, 3, i + 1)
-        #     plt.title(f"label channel {i}")
-        #     plt.imshow(self.val_ds[0]["label"][i, :, :, 20].detach().cpu())
-        # plt.show()
+    # # pick one image from DecathlonDataset to visualize and check the 4 channels
+    # print(f"image shape: {self.val_ds[0]['image'].shape}")
+    # plt.figure("image", (24, 6))
+    # for i in range(4):
+    #     plt.subplot(1, 4, i + 1)
+    #     plt.title(f"image channel {i}")
+    #     plt.imshow(self.val_ds[1]["image"][i, :, :, 20].detach().cpu(), cmap="gray")
+    # plt.show()
+    # # also visualize the 3 channels label corresponding to this image
+    # print(f"label shape: {self.val_ds[0]['label'].shape}")
+    # plt.figure("label", (18, 6))
+    # for i in range(3):
+    #     plt.subplot(1, 3, i + 1)
+    #     plt.title(f"label channel {i}")
+    #     plt.imshow(self.val_ds[0]["label"][i, :, :, 20].detach().cpu())
+    # plt.show()
 
     def train_dataloader(self):
         """Train dataloader"""

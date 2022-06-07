@@ -18,7 +18,7 @@ if __name__ == '__main__':
         PreProcessing(cm)()
 
     if cm.params['pipeline_steps']['create_trainset']:
-        CreateTrainset(cm)
+        CreateTrainset(cm)()
 
     if cm.params['pipeline_steps']['training']:
         Training(cm)
