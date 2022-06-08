@@ -75,7 +75,7 @@ class ConfigManager:
             with open(file_path, 'r', encoding='utf-8') as file:
                 self.path_memory = json.load(file)
         else:
-            raise FileNotFoundError(f'Path memory file not found with file path: {file_path}')
+            raise FileNotFoundError(f'Path memory file not found -> {file_path}')
 
         # python loads the dicts as default dicts, therefore we need to override those with the nested dicts
         for key in self.path_memory.keys():

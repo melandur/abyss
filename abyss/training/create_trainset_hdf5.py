@@ -10,10 +10,11 @@ from loguru import logger
 class CreateTrainsetHDF5:
     """Create train, val, and test set for training"""
 
-    def __init__(self, _config_manager):
-        self.config_manager = _config_manager
-        self.params = _config_manager.params
-        self.preprocessed_store_paths = _config_manager.get_path_memory('preprocessed_dataset_paths')
+    def __init__(self, config_manager):
+        self.config_manager = config_manager
+        self.params = config_manager.params
+        self.path_memory = config_manager.path_memory
+        self.preprocessed_store_paths = config_manager.get_path_memory('preprocessed_dataset_paths')
         self.trainset_store_path = os.path.join(self.params['project']['trainset_store_path'], 'data.h5')
         self.train_set_cases = None
         self.val_set_cases = None
@@ -28,8 +29,8 @@ class CreateTrainsetHDF5:
         self.train_val_split()
         self.contamination_check()
         self.execute_dataset_split()
-        self.config_manager.store_path_memory_file()
         self.show_tree_structure()
+        self.config_manager.store_path_memory_file()
 
     def train_test_split(self):
         """Creates a list with case names for train and test set each"""
@@ -83,6 +84,7 @@ class CreateTrainsetHDF5:
         logger.info(f'Val set, counts: {len(self.val_set_cases)}, cases: {self.val_set_cases}')
 
     def contamination_check(self):
+        """Assures that cases are unique in each dataset"""
         contamination = set(self.test_set_cases) & set(self.train_set_cases)
         if contamination:
             raise AssertionError(f'Contamination in train & test-set split -> {contamination}')
@@ -102,15 +104,14 @@ class CreateTrainsetHDF5:
         group.create_dataset(file_tag, data=img_arr)
 
     def create_set(self, h5_object, set_cases, set_tag, data_type):
-        """Create data set"""
+        """Create data set and append location to path memory"""
         for case_name in set_cases:
             file_tags = self.preprocessed_store_paths[data_type][case_name]
             for file_tag in file_tags:
                 file_path = self.preprocessed_store_paths[data_type][case_name][file_tag]
                 self.writer(h5_object, set_tag, data_type, case_name, file_tag, file_path)
-                self.config_manager.path_memory[
-                    f'{set_tag}_dataset_paths'
-                ] = f'{set_tag}/{data_type}/{case_name}/{file_tag}'
+                self.path_memory[f'{set_tag}_dataset_paths'][data_type][case_name][file_tag] = \
+                    f'{set_tag}/{data_type}/{case_name}/{file_tag}'
 
     def execute_dataset_split(self):
         """Write files to train/validation/test folders in hdf5"""
@@ -125,7 +126,7 @@ class CreateTrainsetHDF5:
 
     @staticmethod
     def branch_formatter(name, obj):
-        """Format structure of hdf5 items"""
+        """Makes branches kinda pretty"""
         shift = name.count('/') * 3 * ' '
         item_name = name.split('/')[-1]
         branch = f'{shift}{item_name}'
@@ -136,4 +137,4 @@ class CreateTrainsetHDF5:
     def show_tree_structure(self):
         """Visualize tree structure of hdf5"""
         h5_object = h5py.File(self.trainset_store_path, 'r')
-        h5_object.visititems(self.branch_formatter)
+        h5_object.visititems(self.branch_formatter)  # iterates over each branch

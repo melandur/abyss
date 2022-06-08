@@ -14,6 +14,7 @@ class PreProcessing:
     def __init__(self, config_manager: ClassVar):
         self.config_manager = config_manager
         self.params = config_manager.params
+        self.path_memory = config_manager.path_memory
         self.structured_dataset_paths = config_manager.get_path_memory('structured_dataset_paths')
         np.random.seed(config_manager.params['meta']['seed'])
         self.data_transformation = None
@@ -71,4 +72,4 @@ class PreProcessing:
         os.makedirs(new_file_dir, exist_ok=True)
         new_file_path = os.path.join(new_file_dir, f'{case_name}_{file_tag}.nii.gz')
         subject.data.save(new_file_path)
-        self.config_manager.path_memory['preprocessed_dataset_paths'][folder_tag][case_name][file_tag] = new_file_path
+        self.path_memory['preprocessed_dataset_paths'][folder_tag][case_name][file_tag] = new_file_path

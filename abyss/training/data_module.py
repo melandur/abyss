@@ -1,12 +1,13 @@
-import pytorch_lightning
+import pytorch_lightning as pl
 import torch
 from loguru import logger
+from torch.utils.data import DataLoader
 
-from abyss.training.augmentation import DataAugmentation
-from abyss.training.net import net
+# from abyss.training.augmentation import DataAugmentation
+from abyss.training.models import UNet
 
 
-class Model(pytorch_lightning.LightningModule):
+class DataModule(pl.LightningModule):
     """Net definition"""
 
     def __init__(self, _config_manager):
@@ -16,7 +17,7 @@ class Model(pytorch_lightning.LightningModule):
         self.val_ds = None
         self.train_ds = None
 
-        self.net = net
+        self.model = UNet
         # TODO: Make native a multiloss available
         # self.loss_function = losses.DiceLoss(to_onehot_y=False, sigmoid=True, squared_pred=True)
         # self.post_pred = transforms.AsDiscrete(
@@ -27,7 +28,7 @@ class Model(pytorch_lightning.LightningModule):
         # self.post_label = transforms.AsDiscrete(to_onehot=False, n_classes=self.params['training']['n_classes'])
 
     def forward(self, x):
-        return self.net(x)
+        return self.model(x)
 
     # def prepare_data(self):
     #     train_files = self.config_manager.get_path_memory('train_dataset_paths')
@@ -70,31 +71,43 @@ class Model(pytorch_lightning.LightningModule):
     #     plt.imshow(self.val_ds[0]["label"][i, :, :, 20].detach().cpu())
     # plt.show()
 
-    def train_dataloader(self):
-        """Train dataloader"""
-        train_loader = torch.utils.data.DataLoader(
-            self.train_ds,
-            batch_size=self.params['training']['batch_size'],
-            shuffle=True,
-            num_workers=self.params['training']['num_workers'],
-            collate_fn=torch.utils.data.list_data_collate,
-        )
-        return train_loader
+    def training_step(self, batch):
+        """Training step"""
+        # images, labels = batch['data'], batch['label']
+        # output = self.forward(images)
+        # loss = self.loss_function(output, labels)
+        # self.log('train_loss', loss.item())
+        # return loss
 
-    def val_dataloader(self):
-        """Validation dataloader"""
-        val_loader = torch.utils.data.DataLoader(
-            self.val_ds,
-            batch_size=self.params['training']['batch_size'],
-            num_workers=self.params['training']['num_workers'],
-        )
-        return val_loader
+    def validation_step(self, batch):
+        """Validation step"""
+        # images, labels = batch['data'], batch['label']
+        # roi_size = (160, 160, 160)
+        # sw_batch_size = 1
+        # outputs = inferers.sliding_window_inference(images, roi_size, sw_batch_size, self.forward)
+        # loss = self.loss_function(outputs, labels)
+        # outputs = self.post_pred(outputs)
+        # labels = self.post_label(labels)
+        # value = metrics.compute_meandice(y_pred=outputs, y=labels, include_background=False)
+        # self.log('val_loss', loss)
+        # self.log('val_dice', value)
+
+    def validation_epoch_end(self, outputs):
+        """Validation epoch"""
+        # val_dice, val_loss, num_items = 0, 0, 0
+        # for output in outputs:
+        #     val_dice += output['val_dice'].sum().item()
+        #     val_loss += output['val_loss'].sum().item()
+        #     num_items += len(output['val_dice'])
+        # mean_val_dice = torch.tensor(val_dice / (num_items + 1e-4))
+        # mean_val_loss = torch.tensor(val_loss / (num_items + 1e-4))
+        # self.log('val_dice', mean_val_dice)
+        # self.log('val_loss', mean_val_loss)
 
     def configure_optimizers(self):
         """Configure optimizers"""
-        optimizer = None
         if 'Adam' in self.params['training']['optimizer']:
-            optimizer = torch.optim.Adam(
+            return torch.optim.Adam(
                 params=self._model.parameters(),
                 lr=self.params['training']['learning_rate'],
                 betas=self.params['training']['betas'],
@@ -104,44 +117,31 @@ class Model(pytorch_lightning.LightningModule):
             )
 
         elif 'SGD' in self.params['training']['optimizer']:
-            optimizer = torch.optim.SGD(
+            return torch.optim.SGD(
                 params=self._model.parameters(),
                 lr=self.params['training']['learning_rate'],
                 weight_decay=self.params['training']['weight_decay'],
             )
+        else:
+            raise ValueError('Invalid optimizer settings in conf.py: training, optimizer')
 
-        assert optimizer is not None, logger.warning('Invalid optimizer settings in conf.py: training, optimizer')
-        return optimizer
+    def train_dataloader(self):
+        """Train dataloader"""
+        return DataLoader(
+            self.train_ds,
+            batch_size=self.params['training']['batch_size'],
+            shuffle=True,
+            num_workers=self.params['training']['num_workers'],
+            # collate_fn=torch.utils.data.list_data_collate,
+        )
 
-    def training_step(self, batch):
-        """Training step"""
-        images, labels = batch['data'], batch['label']
-        output = self.forward(images)
-        loss = self.loss_function(output, labels)
-        self.log('train_loss', loss.item())
-        return loss
+    def val_dataloader(self):
+        """Validation dataloader"""
+        return DataLoader(
+            self.val_ds,
+            batch_size=self.params['training']['batch_size'],
+            num_workers=self.params['training']['num_workers'],
+        )
 
-    def validation_step(self, batch):
-        """Validation step"""
-        images, labels = batch['data'], batch['label']
-        roi_size = (160, 160, 160)
-        sw_batch_size = 1
-        outputs = inferers.sliding_window_inference(images, roi_size, sw_batch_size, self.forward)
-        loss = self.loss_function(outputs, labels)
-        outputs = self.post_pred(outputs)
-        labels = self.post_label(labels)
-        value = metrics.compute_meandice(y_pred=outputs, y=labels, include_background=False)
-        self.log('val_loss', loss)
-        self.log('val_dice', value)
 
-    def validation_epoch_end(self, outputs):
-        """Validation epoch"""
-        val_dice, val_loss, num_items = 0, 0, 0
-        for output in outputs:
-            val_dice += output['val_dice'].sum().item()
-            val_loss += output['val_loss'].sum().item()
-            num_items += len(output['val_dice'])
-        mean_val_dice = torch.tensor(val_dice / (num_items + 1e-4))
-        mean_val_loss = torch.tensor(val_loss / (num_items + 1e-4))
-        self.log('val_dice', mean_val_dice)
-        self.log('val_loss', mean_val_loss)
+
