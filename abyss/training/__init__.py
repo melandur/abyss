@@ -1,2 +1,2 @@
-from abyss.training.create_trainset import CreateTrainset
-from abyss.training.training import Training
+from abyss.training.create_trainset_hdf5 import CreateTrainsetHDF5
+from abyss.training import run_training

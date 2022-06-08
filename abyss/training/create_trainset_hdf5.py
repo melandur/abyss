@@ -7,7 +7,7 @@ import SimpleITK as sitk
 from loguru import logger
 
 
-class CreateTrainset:
+class CreateTrainsetHDF5:
     """Create train, val, and test set for training"""
 
     def __init__(self, _config_manager):
@@ -18,7 +18,7 @@ class CreateTrainset:
         self.train_set_cases = None
         self.val_set_cases = None
         self.test_set_cases = None
-        self.use_val_frac = False
+        self.use_val_fraction = False
         np.random.seed(self.config_manager.params['meta']['seed'])
 
     def __call__(self):
@@ -36,7 +36,7 @@ class CreateTrainset:
         count_cases = len(self.preprocessed_store_paths['data'])
         if count_cases < 10:
             raise AssertionError('Your dataset needs to have at least 10 subjects')
-        test_set_size = int(self.params['dataset']['test_frac'] * count_cases)
+        test_set_size = int(self.params['dataset']['test_fraction'] * count_cases)
         self.test_set_cases = list(
             np.random.choice(list(self.preprocessed_store_paths['data']), size=test_set_size, replace=False)
         )
@@ -51,10 +51,10 @@ class CreateTrainset:
         if max_folds <= 0:
             raise ValueError('config_file -> dataset -> cross_fold: max_number_of_folds >= 1')
         if max_folds == 1:
-            self.use_val_frac = True
+            self.use_val_fraction = True
             logger.info(
-                f'Max_number_of_folds = 1, therefore the current val_frac of '
-                f'{self.params["dataset"]["val_frac"]} will be used to determine the validation set size'
+                f'Max_number_of_folds = 1, therefore the current val_fraction of '
+                f'{self.params["dataset"]["val_fraction"]} will be used to determine the validation set size'
             )
         fold_number = int(self.params['dataset']['cross_fold'].split('/')[0])
         if fold_number <= 0:
@@ -63,17 +63,17 @@ class CreateTrainset:
             raise ValueError('fold_number exceeded max_number_of_folds, check cross_fold settings')
 
     def train_val_split(self):
-        """Split train data into train and val data, determined by val_frac or by cross_fold"""
+        """Split train data into train and val data, determined by val_fraction or by cross_fold"""
         count_cases = len(self.train_set_cases)
-        if self.use_val_frac:
-            val_set_size = int(round(self.params['dataset']['val_frac'] * count_cases))
+        if self.use_val_fraction:
+            val_set_size = int(round(self.params['dataset']['val_fraction'] * count_cases))
         else:
-            fold_frac = round(1.0 / int(self.params['dataset']['cross_fold'].split('/')[1]), 2)
-            val_set_size = int(round(fold_frac * count_cases))
+            fold_fraction = round(1.0 / int(self.params['dataset']['cross_fold'].split('/')[1]), 2)
+            val_set_size = int(round(fold_fraction * count_cases))
         fold_number = int(self.params['dataset']['cross_fold'].split('/')[0])
         if val_set_size <= 0:
             raise ValueError(
-                f'Validation set has {val_set_size} cases, config_file -> increase val_frac or reduce ' f'test_frac'
+                f'Validation set has {val_set_size} cases, config_file -> increase val_fraction or reduce test_fraction'
             )
         tmp_train_set_cases = copy.deepcopy(self.train_set_cases)
         for _ in range(1, fold_number + 1, 1):
@@ -131,7 +131,7 @@ class CreateTrainset:
         branch = f'{shift}{item_name}'
         if isinstance(obj, h5py.Dataset):
             branch = f'{branch} {obj.shape}'
-        logger.info(branch)
+        logger.debug(branch)
 
     def show_tree_structure(self):
         """Visualize tree structure of hdf5"""

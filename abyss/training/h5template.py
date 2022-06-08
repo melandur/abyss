@@ -6,7 +6,7 @@ class HDF5Dataset(torch.utils.data.Dataset):
     def __init__(self, limit=-1):
         super().__init__()
         self.limit = limit
-        self.h5_file_path = ''
+        self.h5_path =
         self._archives = [h5py.File(h5_path, "r") for h5_path in self.h5_paths]
         self.indices = {}
         idx = 0
@@ -36,3 +36,6 @@ class HDF5Dataset(torch.utils.data.Dataset):
         if self.limit > 0:
             return min([len(self.indices), self.limit])
         return len(self.indices)
+
+if __name__ == '__main__':
+    d = HDF5Dataset()

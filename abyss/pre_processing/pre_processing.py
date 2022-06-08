@@ -31,7 +31,7 @@ class PreProcessing:
         """Add data filter"""
         transforms = []
         params = self.params['pre_processing']['data']
-        if params['canonical']['active']:
+        if params['orient_to_ras']['active']:
             transforms.append(tio.ToCanonical())
         if params['resize']['active']:
             transforms.append(
@@ -47,7 +47,7 @@ class PreProcessing:
         """Add label filters"""
         transforms = []
         params = self.params['pre_processing']['label']
-        if params['canonical']['active']:
+        if params['orient_to_ras']['active']:
             transforms.append(tio.ToCanonical())
         if params['resize']['active']:
             transforms.append(

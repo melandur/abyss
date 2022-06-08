@@ -1,26 +1,25 @@
-from pytorch_lightning import Trainer, seed_everything
+from pytorch_lightning import Trainer as LightningTrainer
+from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 
-from abyss.training.net import Net
 
-
-class Training:
-    """Training definitions"""
+class Trainer:
+    """Based on pytorch_lightning trainer"""
 
     def __init__(self, config_manager):
         params = config_manager.params
 
         # Integrated loggers: TBoard, MLflow, Comet, Neptune, WandB
-        logger = TensorBoardLogger(save_dir=params['project']['result_store_path'])
+        self.logger = TensorBoardLogger(save_dir=params['project']['result_store_path'])
 
         # Define callbacks
-        checkpoint_callback = ModelCheckpoint(
+        self.checkpoint_callback = ModelCheckpoint(
             dirpath=params['project']['result_store_path'], filename=params['project']['name']
         )
 
-        early_stop_callback = EarlyStopping(
+        self.early_stop_callback = EarlyStopping(
             monitor='val_loss',
             min_delta=params['training']['early_stop']['min_delta'],
             patience=params['training']['early_stop']['patience'],
@@ -32,11 +31,13 @@ class Training:
         if params['training']['seed']:
             seed_everything(params['training']['seed'])
 
+    def __call__(self ):
         # initialise Lightning's trainer, default values if not specific set in conf set
-        trainer = Trainer(
-            logger=logger,
+        # TODO: Link to config settings
+        trainer = LightningTrainer(
+            logger=self.logger,
             checkpoint_callback=True,
-            callbacks=[checkpoint_callback, early_stop_callback],
+            callbacks=[self.checkpoint_callback, self.early_stop_callback],
             gradient_clip_val=0.0,
             process_position=0,
             num_nodes=1,
@@ -88,7 +89,4 @@ class Training:
             multiple_trainloader_mode='max_size_cycle',
             stochastic_weight_avg=False,
         )
-
-        # train
-        net = Net(config_manager)
-        trainer.fit(net)
+        return trainer

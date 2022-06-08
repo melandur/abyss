@@ -16,8 +16,8 @@ class ConfigFile:
         return {
             'logger': {'level': 'TRACE'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_reader': False,
-                'pre_processing': False,
+                'data_reader': True,
+                'pre_processing': True,
                 'create_trainset': True,
                 'training': False,
                 'post_processing': False,
@@ -48,19 +48,19 @@ class ConfigFile:
                     'flair': ['flair.', 'FLAIR.'],
                     't2': ['t2.', 'T2.'],
                 },
-                'val_frac': 0.2,
-                'test_frac': 0.2,
+                'val_fraction': 0.2,  # only used when cross_fold = 1/1
+                'test_fraction': 0.2,
                 'cross_fold': '1/1',
             },
             'pre_processing': {
                 'data': {
-                    'canonical': {'active': True},
+                    'orient_to_ras': {'active': True},
                     'resize': {'active': True, 'dim': (100, 100, 100), 'interpolator': 'linear'},
                     'z_score': {'active': True},
                     'rescale_intensity': {'active': True},
                 },
                 'label': {
-                    'canonical': {'active': True},
+                    'orient_to_ras': {'active': True},
                     'resize': {'active': True, 'dim': (100, 100, 100), 'interpolator': 'nearest'},
                 },
             },
