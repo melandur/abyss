@@ -124,7 +124,7 @@ class ConfigFile:
                 'resume_from_checkpoint': None,
                 'auto_lr_find': False,
                 'model_summary_depth': 3,
-                'early_stop': {'min_delta': 0.01, 'patience': 5, 'verbose': True, 'mode': 'max'},
+                'early_stop': {'min_delta': 0.01, 'patience': 5, 'verbose': False, 'mode': 'max'},
             },
             'post_processing': {},
         }

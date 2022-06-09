@@ -2,8 +2,9 @@ from pytorch_lightning import Trainer as LightningTrainer
 from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
-from pytorch_lightning.callbacks.model_summary import ModelSummary
 from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.callbacks import RichModelSummary, RichProgressBar
+from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTheme
 
 
 class Trainer:
@@ -28,7 +29,22 @@ class Trainer:
             mode=self.params['trainer']['early_stop']['mode'],
         )
 
-        self.model_summary_cb = ModelSummary(self.params['trainer']['model_summary_depth'])
+        self.model_summary_cb = RichModelSummary(self.params['trainer']['model_summary_depth'])
+
+        self.progress_bar_cb = RichProgressBar(
+            leave=True,
+            refresh_rate=5,
+            theme=RichProgressBarTheme(
+                description='green_yellow',
+                progress_bar='green1',
+                progress_bar_finished='green1',
+                progress_bar_pulse='#6206E0',
+                batch_progress='green_yellow',
+                time='grey82',
+                processing_speed='grey82',
+                metrics='grey82',
+            )
+        )
 
         # Used defined seed
         if self.params['meta']['seed']:
@@ -38,7 +54,7 @@ class Trainer:
         return LightningTrainer(
             logger=self.logger,
             enable_checkpointing=True,
-            callbacks=[self.checkpoint_cb, self.early_stop_cb, self.model_summary_cb],
+            callbacks=[self.checkpoint_cb, self.early_stop_cb, self.model_summary_cb, self.progress_bar_cb],
             default_root_dir=self.params['trainer']['default_root_dir'],
             gradient_clip_val=None,
             gradient_clip_algorithm=None,
@@ -75,7 +91,6 @@ class Trainer:
             sync_batchnorm=False,
             precision=self.params['trainer']['precision'],
             enable_model_summary=False,  # deprecated, now bey model summary callback
-            weights_summary=False,  # deprecated, now bey model summary callback
             weights_save_path=None,  # TODO: Remove in 1.8
             num_sanity_val_steps=2,
             resume_from_checkpoint=self.params['trainer']['resume_from_checkpoint'],
@@ -89,10 +104,10 @@ class Trainer:
             auto_scale_batch_size=False,
             prepare_data_per_node=None,
             plugins=None,
-            amp_backend="native",
+            amp_backend='native',
             amp_level=None,
             move_metrics_to_cpu=False,
-            multiple_trainloader_mode="max_size_cycle",
+            multiple_trainloader_mode='max_size_cycle',
             stochastic_weight_avg=False,
             terminate_on_nan=None,
         )
