@@ -13,22 +13,10 @@ class Augmentation:
             [
                 tf.RandGaussianNoise(),
                 tf.RandGaussianSmooth(),
-                tf.RandScaleIntensity(),
+                # tf.RandScaleIntensity(),
                 tf.RandFlip(),
                 tf.RandAdjustContrast(),
                 tf.RandRotate(),
-                tf.RandScaleCrop(),
-            ]
-        )
-
-        self.val_transforms = tf.Compose(
-            [
-                tf.RandGaussianNoise(),
-                tf.RandGaussianSmooth(),
-                tf.RandScaleIntensity(),
-                tf.RandFlip(),
-                tf.RandAdjustContrast(),
-                tf.RandRotate(),
-                tf.RandScaleCrop(),
+                # tf.RandScaleCrop(),
             ]
         )

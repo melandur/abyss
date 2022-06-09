@@ -18,8 +18,8 @@ class ConfigFile:
             'pipeline_steps': {
                 'data_reader': False,
                 'pre_processing': False,
-                'create_trainset': True,
-                'training': False,
+                'create_trainset': False,
+                'training': True,
                 'post_processing': False,
             },
             'project': {

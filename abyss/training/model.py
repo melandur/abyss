@@ -5,10 +5,10 @@ from torch.utils.data import DataLoader
 
 from abyss.training.augmentation import Augmentation
 from abyss.training.dataset import Dataset
-from abyss.training.models import UNet
+from abyss.training.nets import unet
 
 
-class DataModule(pl.LightningModule):
+class Model(pl.LightningModule):
     """TODO: Need some"""
 
     def __init__(self, _config_manager):
@@ -18,10 +18,10 @@ class DataModule(pl.LightningModule):
         self.val_set = None
         self.test_set = None
         self.train_set = None
-        self.model = UNet
+        self.net = unet
 
     def forward(self, x):
-        return self.model(x)
+        return self.net(x)
 
     def setup(self, stage=None):
         if stage == 'fit' or stage is None:
@@ -59,7 +59,7 @@ class DataModule(pl.LightningModule):
 
     def validation_epoch_end(self, outputs):
         """Validation epoch"""
-        val_dice, val_loss, num_items = 0, 0, 0
+        val_loss, num_items = 0, 0
         for output in outputs:
             val_loss += output['val_loss'].sum().item()
             num_items += len(output['val_loss'])
@@ -70,7 +70,7 @@ class DataModule(pl.LightningModule):
         """Configure optimizers"""
         if 'Adam' in self.params['training']['optimizer']:
             return torch.optim.Adam(
-                params=self._model.parameters(),
+                params=self.parameters(),
                 lr=self.params['training']['learning_rate'],
                 betas=self.params['training']['betas'],
                 weight_decay=self.params['training']['weight_decay'],
@@ -80,7 +80,7 @@ class DataModule(pl.LightningModule):
 
         elif 'SGD' in self.params['training']['optimizer']:
             return torch.optim.SGD(
-                params=self._model.parameters(),
+                params=self.parameters(),
                 lr=self.params['training']['learning_rate'],
                 weight_decay=self.params['training']['weight_decay'],
             )
@@ -90,7 +90,7 @@ class DataModule(pl.LightningModule):
     def train_dataloader(self):
         """Train dataloader"""
         return DataLoader(
-            self.train_ds,
+            self.train_set,
             batch_size=self.params['training']['batch_size'],
             shuffle=False,
             num_workers=self.params['training']['num_workers'],
@@ -99,7 +99,7 @@ class DataModule(pl.LightningModule):
     def val_dataloader(self):
         """Validation dataloader"""
         return DataLoader(
-            self.val_ds,
+            self.val_set,
             batch_size=self.params['training']['batch_size'],
             num_workers=self.params['training']['num_workers'],
         )

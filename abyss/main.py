@@ -5,7 +5,7 @@ from loguru import logger
 from abyss.config import ConfigManager
 from abyss.data_reader import DataReader
 from abyss.pre_processing import PreProcessing
-from abyss.training import CreateTrainsetHDF5, Training
+from abyss.training import CreateHDF5, Training
 
 if __name__ == '__main__':
     start = datetime.now()
@@ -18,9 +18,9 @@ if __name__ == '__main__':
         PreProcessing(cm)()
 
     if cm.params['pipeline_steps']['create_trainset']:
-        CreateTrainsetHDF5(cm)()
+        CreateHDF5(cm)()
 
     if cm.params['pipeline_steps']['training']:
-        Training(cm)
+        Training(cm)()
 
     logger.info(f'Execution time -> {datetime.now() - start}')
