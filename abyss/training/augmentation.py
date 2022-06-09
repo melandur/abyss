@@ -1,22 +1,41 @@
 import monai
+import numpy as np
 from monai import transforms as tf
 
 
 class Augmentation:
-    """Define augmentation transformations for train and val set"""
+    """Composes"""
 
     def __init__(self, config_manager):
-        params = config_manager.params
-        monai.utils.set_determinism(params['meta']['seed'])
+        self.params = config_manager.params
+        monai.utils.set_determinism(self.params['meta']['seed'])
 
-        self.train_transforms = tf.Compose(
-            [
-                tf.RandGaussianNoise(),
-                tf.RandGaussianSmooth(),
-                # tf.RandScaleIntensity(),
-                tf.RandFlip(),
-                tf.RandAdjustContrast(),
-                tf.RandRotate(),
-                # tf.RandScaleCrop(),
-            ]
-        )
+    def compose_transforms(self):
+        transforms = []
+        for trans_name, trans_params in self.params['augmentation'].items():
+            if trans_name == 'RandGaussianNoise':
+                transforms.append(tf.RandGaussianNoise(**trans_params, dtype=np.float32))
+            elif trans_name == 'RandGaussianSmooth':
+                transforms.append(tf.RandGaussianSmooth(**trans_params))
+            elif trans_name == 'RandScaleIntensity':
+                transforms.append(tf.RandScaleIntensity(**trans_params, dtype=np.float32))
+            elif trans_name == 'RandFlip':
+                transforms.append(tf.RandFlip(**trans_params))
+            elif trans_name == 'RandAdjustContrast':
+                transforms.append(tf.RandAdjustContrast(**trans_params))
+            elif trans_name == 'RandRotate':
+                transforms.append(tf.RandRotate(**trans_params, dtype=np.float64))
+            elif trans_name == 'RandScaleCrop':
+                transforms.append(tf.RandScaleCrop(**trans_params))
+            else:
+                raise NotImplementedError(f'{trans_name} is missing, add transformation -> training -> augmentation.py')
+        return tf.Compose(transforms)
+
+
+if __name__ == '__main__':
+    from abyss.config import ConfigManager
+
+    cm = ConfigManager()
+    a = Augmentation(cm)
+    b = a.compose_transforms()
+    print(b)

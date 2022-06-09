@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 
 from abyss.training.augmentation import Augmentation
 from abyss.training.dataset import Dataset
-from abyss.training.nets import unet, resnet_10
+from abyss.training.nets import resnet_10, unet
 
 
 class Model(pl.LightningModule):
@@ -27,7 +27,7 @@ class Model(pl.LightningModule):
     def setup(self, stage=None):
         if stage == 'fit' or stage is None:
             augmentation = Augmentation(self.config_manager)
-            self.train_set = Dataset(self.config_manager, 'train', augmentation.train_transforms)
+            self.train_set = Dataset(self.config_manager, 'train', augmentation.compose_transforms())
             self.val_set = Dataset(self.config_manager, 'val')
 
         if stage == 'test' or stage is None:
@@ -47,7 +47,7 @@ class Model(pl.LightningModule):
         """Training step"""
         data, label = batch
         output = self(data)
-        label = torch.tensor([0, 1]).to(torch.float32)
+        label = torch.tensor([1]).to(torch.float32)
         loss = self.compute_loss(output, label)
         self.log('train_loss', loss.item())
         return loss
@@ -56,7 +56,7 @@ class Model(pl.LightningModule):
         """Validation step"""
         data, label = batch
         output = self(data)
-        label = torch.tensor([0,1]).to(torch.float32)
+        label = torch.tensor([1]).to(torch.float32)
         loss = self.compute_loss(output, label)
         self.log('val_loss', loss, prog_bar=True)
         return loss

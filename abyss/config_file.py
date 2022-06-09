@@ -1,5 +1,7 @@
 import os
 
+import numpy as np
+
 
 class ConfigFile:
     """The pipelines control center, all parameters can be found here"""
@@ -64,7 +66,35 @@ class ConfigFile:
                     'resize': {'active': True, 'dim': (100, 100, 100), 'interpolator': 'nearest'},
                 },
             },
-            'augmentation': {},
+            'augmentation': {  # based on monai.transforms
+                'RandGaussianNoise': {'prob': 0.1, 'mean': 0.0, 'std': 0.1},
+                'RandGaussianSmooth': {
+                    'sigma_x': (0.25, 1.5),
+                    'sigma_y': (0.25, 1.5),
+                    'sigma_z': (0.25, 1.5),
+                    'prob': 0.1,
+                    'approx': 'erf',
+                },
+                'RandScaleIntensity': {'factors': (1.0, 1.0), 'prob': 0.1},
+                'RandFlip': {'prob': 0.1, 'spatial_axis': None},
+                'RandAdjustContrast': {'prob': 0.1, 'gamma': (0.5, 4.5)},
+                'RandRotate': {
+                    'range_x': 0.0,
+                    'range_y': 0.0,
+                    'range_z': 0.0,
+                    'prob': 0.1,
+                    'keep_size': True,
+                    'mode': 'bilinear',
+                    'padding_mode': 'border',
+                    'align_corners': False,
+                },
+                'RandScaleCrop': {
+                    'roi_scale': [1.0, 1.0],
+                    'max_roi_scale': None,
+                    'random_center': True,
+                    'random_size': True,
+                },
+            },
             'training': {
                 'batch_size': 1,  # tbd
                 'optimizer': 'Adam',  # Adam, SGD
@@ -84,10 +114,10 @@ class ConfigFile:
                 'check_val_every_n_epoch': 1,
                 'enable_progress_bar': True,
                 'enable_model_summary': True,
-                'weights_summary': 'top',
+                'weights_summary': 'full',
                 'stochastic_weight_avg': False,
                 'accelerator': None,
-                'deterministic': None,
+                'deterministic': True,
                 'devices': None,
                 'gpus': None,
                 'auto_select_gpus': False,
@@ -95,10 +125,10 @@ class ConfigFile:
                 'fast_dev_run': False,
                 'resume_from_checkpoint': None,
                 'auto_lr_find': False,
-                'early_stop': {'min_delta': 0.0, 'patience': 5, 'verbose': True, 'mode': 'max'},
+                'early_stop': {'min_delta': 0.01, 'patience': 5, 'verbose': True, 'mode': 'max'},
             },
             'post_processing': {},
         }
 
-    def __str__(self):
-        return self.__class__.__name__
+        def __str__(self):
+            return self.__class__.__name__

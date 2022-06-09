@@ -1,6 +1,4 @@
 from monai.networks.nets import UNet, resnet10
-from torchvision.models import resnet18
-import torch
 
 unet = UNet(
     spatial_dims=3,
