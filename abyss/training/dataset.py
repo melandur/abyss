@@ -68,4 +68,3 @@ if __name__ == '__main__':
     train_dataloader = DataLoader(d, batch_size=1, shuffle=False, num_workers=1)
     for i, data in enumerate(train_dataloader):
         print(np.shape(data['data']))
-        continue

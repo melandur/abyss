@@ -44,27 +44,29 @@ class Model(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         """Training step"""
         data, label = batch
-        output = self(data)
-        loss = self.compute_loss(output, label)
-        self.log('train_loss', loss.item())
+        # output = self(data)
+        # loss = self.compute_loss(output, label)
+        loss = data
+        # self.log('train_loss', loss.item())
         return loss
 
     def validation_step(self, batch, batch_idx):
         """Validation step"""
         data, label = batch
-        output = self(data)
-        loss = self.compute_loss(output, label)
-        self.log('val_loss', loss, prog_bar=True)
+        # output = self(data)
+        # loss = self.compute_loss(output, label)
+        loss = label
+        # self.log('val_loss', loss, prog_bar=True)
         return loss
 
     def validation_epoch_end(self, outputs):
         """Validation epoch"""
-        val_loss, num_items = 0, 0
-        for output in outputs:
-            val_loss += output['val_loss'].sum().item()
-            num_items += len(output['val_loss'])
-        mean_val_loss = torch.tensor(val_loss / (num_items + 1e-4))
-        self.log('val_loss', mean_val_loss)
+        # val_loss, num_items = 0, 0
+        # for output in outputs:
+        #     val_loss += output['val_loss'].sum().item()
+        #     num_items += len(output['val_loss'])
+        # mean_val_loss = torch.tensor(val_loss / (num_items + 1e-4))
+        # self.log('val_loss', mean_val_loss)
 
     def configure_optimizers(self):
         """Configure optimizers"""

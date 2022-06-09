@@ -9,55 +9,53 @@ class Trainer:
     """Based on pytorch_lightning trainer"""
 
     def __init__(self, config_manager):
-        params = config_manager.params
+        self.params = config_manager.params
 
         # Integrated loggers: TBoard, MLflow, Comet, Neptune, WandB
-        self.logger = TensorBoardLogger(save_dir=params['project']['result_store_path'])
+        self.logger = TensorBoardLogger(save_dir=self.params['project']['result_store_path'])
 
         # Define callbacks
         self.checkpoint_callback = ModelCheckpoint(
-            dirpath=params['project']['result_store_path'], filename=params['project']['name']
+            dirpath=self.params['project']['result_store_path'], filename=self.params['project']['name']
         )
 
         self.early_stop_callback = EarlyStopping(
             monitor='val_loss',
-            min_delta=params['training']['early_stop']['min_delta'],
-            patience=params['training']['early_stop']['patience'],
-            verbose=params['training']['early_stop']['verbose'],
-            mode=params['training']['early_stop']['mode'],
+            min_delta=self.params['trainer']['early_stop']['min_delta'],
+            patience=self.params['trainer']['early_stop']['patience'],
+            verbose=self.params['trainer']['early_stop']['verbose'],
+            mode=self.params['trainer']['early_stop']['mode'],
         )
 
         # Used defined train seed
-        if params['meta']['seed']:
-            seed_everything(params['meta']['seed'])
+        if self.params['meta']['seed']:
+            seed_everything(self.params['meta']['seed'])
 
     def __call__(self):
-        # initialise Lightning's trainer, default values if not specific set in conf set
-        # TODO: Link to config settings
         return LightningTrainer(
             logger=self.logger,
-            checkpoint_callback=True,
+            enable_checkpointing=True,
             callbacks=[self.checkpoint_callback, self.early_stop_callback],
-            default_root_dir=None,
+            default_root_dir=self.params['trainer']['default_root_dir'],
             gradient_clip_val=None,
             gradient_clip_algorithm=None,
             process_position=0,
             num_nodes=1,
-            num_processes=None,
-            devices=None,
-            gpus=None,
-            auto_select_gpus=False,
-            tpu_cores=None,
+            num_processes=self.params['meta']['num_workers'],
+            devices=self.params['trainer']['devices'],
+            gpus=self.params['trainer']['gpus'],
+            auto_select_gpus=self.params['trainer']['auto_select_gpus'],
+            tpu_cores=self.params['trainer']['tpu_cores'],
             ipus=None,
             log_gpu_memory=None,  # TODO: Remove in 1.7
             progress_bar_refresh_rate=None,  # TODO: remove in v1.7
-            enable_progress_bar=True,
+            enable_progress_bar=self.params['trainer']['enable_progress_bar'],
             overfit_batches=0.0,
             track_grad_norm=-1,
-            check_val_every_n_epoch=1,
-            fast_dev_run=False,
+            check_val_every_n_epoch=self.params['trainer']['check_val_every_n_epoch'],
+            fast_dev_run=self.params['trainer']['fast_dev_run'],
             accumulate_grad_batches=None,
-            max_epochs=None,
+            max_epochs=self.params['trainer']['max_epochs'],
             min_epochs=None,
             max_steps=-1,
             min_steps=None,
@@ -68,21 +66,21 @@ class Trainer:
             limit_predict_batches=None,
             val_check_interval=None,
             flush_logs_every_n_steps=None,
-            log_every_n_steps=50,
-            accelerator=None,
+            log_every_n_steps=self.params['trainer']['log_every_n_steps'],
+            accelerator=self.params['trainer']['accelerator'],
             strategy=None,
             sync_batchnorm=False,
-            precision=32,
-            enable_model_summary=True,
-            weights_summary="top",
+            precision=self.params['trainer']['precision'],
+            enable_model_summary=self.params['trainer']['enable_model_summary'],
+            weights_summary=self.params['trainer']['weights_summary'],
             weights_save_path=None,  # TODO: Remove in 1.8
             num_sanity_val_steps=2,
-            resume_from_checkpoint=None,
+            resume_from_checkpoint=self.params['trainer']['resume_from_checkpoint'],
             profiler=None,
             benchmark=None,
-            deterministic=None,
+            deterministic=self.params['trainer']['deterministic'],
             reload_dataloaders_every_n_epochs=0,
-            auto_lr_find=False,
+            auto_lr_find=self.params['trainer']['auto_lr_find'],
             replace_sampler_ddp=True,
             detect_anomaly=False,
             auto_scale_batch_size=False,

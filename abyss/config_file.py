@@ -6,7 +6,7 @@ class ConfigFile:
 
     def __init__(self):
         self.project_name = 'Abyss_test'  # tbd
-        self.experiment_name = 'experiment_2'  # tbd
+        self.experiment_name = 'experiment_3'  # tbd
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')  # tbd
         self.dataset_folder_path = '/home/melandur/Data/small'  # tbd
 
@@ -40,13 +40,13 @@ class ConfigFile:
             'dataset': {
                 'folder_path': self.dataset_folder_path,
                 'label_file_type': ['.nii.gz'],
-                'label_search_tags': {'mask': ['seg', 'Seg']},
+                'label_search_tags': {'net': ['seg', 'Seg']},
                 'data_file_type': ['.nii.gz'],
                 'data_search_tags': {
-                    't1': ['t1.', 'T1.'],
-                    't1c': ['t1ce.', 'T1CE.'],
                     'flair': ['flair.', 'FLAIR.'],
+                    't1c': ['t1ce.', 'T1CE.'],
                     't2': ['t2.', 'T2.'],
+                    't1': ['t1.', 'T1.'],
                 },
                 'val_fraction': 0.2,  # only used when cross_fold = 1/1
                 'test_fraction': 0.2,
@@ -66,9 +66,6 @@ class ConfigFile:
             },
             'augmentation': {},
             'training': {
-                'epochs': 30,  # tbd
-                'trained_epochs': None,
-                'batch_size': 1,  # tbd
                 'optimizer': 'Adam',  # Adam, SGD
                 'learning_rate': 1e-3,  # tbd
                 'betas': (0.9, 0.999),  # tbd
@@ -77,8 +74,26 @@ class ConfigFile:
                 'amsgrad': True,
                 'dropout': 0.5,  # tbd
                 'criterion': ['MSE_mean'],
-                'num_workers': 8,
-                'n_classes': 3,
+            },
+            'trainer': {
+                'default_root_dir': os.path.join(experiment_path, '4_results'),
+                'max_epochs': 100,
+                'log_every_n_steps': 50,
+                'precision': 32,
+                'check_val_every_n_epoch': 1,
+                'enable_progress_bar': True,
+                'enable_model_summary': True,
+                'weights_summary': 'top',
+                'stochastic_weight_avg': False,
+                'accelerator': None,
+                'deterministic': True,
+                'devices': None,
+                'gpus': None,
+                'auto_select_gpus': False,
+                'tpu_cores': None,
+                'fast_dev_run': False,
+                'resume_from_checkpoint': None,
+                'auto_lr_find': False,
                 'early_stop': {'min_delta': 0.0, 'patience': 0, 'verbose': False, 'mode': 'max'},
             },
             'post_processing': {},
