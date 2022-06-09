@@ -95,7 +95,7 @@ class Model(pl.LightningModule):
             self.train_set,
             batch_size=self.params['training']['batch_size'],
             shuffle=False,
-            num_workers=self.params['training']['num_workers'],
+            num_workers=self.params['meta']['num_workers'],
         )
 
     def val_dataloader(self):
@@ -103,5 +103,5 @@ class Model(pl.LightningModule):
         return DataLoader(
             self.val_set,
             batch_size=self.params['training']['batch_size'],
-            num_workers=self.params['training']['num_workers'],
+            num_workers=self.params['meta']['num_workers'],
         )

@@ -66,6 +66,7 @@ class ConfigFile:
             },
             'augmentation': {},
             'training': {
+                'batch_size': 1,  # tbd
                 'optimizer': 'Adam',  # Adam, SGD
                 'learning_rate': 1e-3,  # tbd
                 'betas': (0.9, 0.999),  # tbd
@@ -77,7 +78,7 @@ class ConfigFile:
             },
             'trainer': {
                 'default_root_dir': os.path.join(experiment_path, '4_results'),
-                'max_epochs': 100,
+                'max_epochs': 1000,
                 'log_every_n_steps': 50,
                 'precision': 32,
                 'check_val_every_n_epoch': 1,
@@ -86,7 +87,7 @@ class ConfigFile:
                 'weights_summary': 'top',
                 'stochastic_weight_avg': False,
                 'accelerator': None,
-                'deterministic': True,
+                'deterministic': None,
                 'devices': None,
                 'gpus': None,
                 'auto_select_gpus': False,

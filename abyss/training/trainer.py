@@ -41,7 +41,7 @@ class Trainer:
             gradient_clip_algorithm=None,
             process_position=0,
             num_nodes=1,
-            num_processes=self.params['meta']['num_workers'],
+            num_processes=None,
             devices=self.params['trainer']['devices'],
             gpus=self.params['trainer']['gpus'],
             auto_select_gpus=self.params['trainer']['auto_select_gpus'],
