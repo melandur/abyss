@@ -1,56 +1,71 @@
 import os
+import random
+
 import h5py
+import numpy as np
 import torch
 from torch.utils.data import Dataset as torch_Dataset
 
 
 class Dataset(torch_Dataset):
-    def __init__(self, _config_manager):
+    def __init__(self, config_manager, set_name, transforms=None):
         super().__init__()
-        self.config_manager = _config_manager
-        self.params = _config_manager.params
+        self.config_manager = config_manager
+        self.set_name = set_name
+        self.transforms = transforms
+        self.params = config_manager.params
+        self.dataset_paths = config_manager.get_path_memory(f'{set_name}_dataset_paths')
+        self.set_case_names = list(self.dataset_paths['data'].keys())
+        random.seed(self.config_manager.params['meta']['seed'])
+        self.random_set_case_names = random.sample(self.set_case_names, len(self.set_case_names))
+        h5_file_path = os.path.join(self.params['project']['trainset_store_path'], 'data.h5')
+        self.h5_object = h5py.File(h5_file_path, 'r')
 
-        self.train_set_cases = _config_manager.get_path_memory('train_dataset_paths')
-        self.val_set_cases = None
-        self.test_set_cases = None
+    def __del__(self):
+        if isinstance(self.h5_object, h5py.File):
+            self.h5_object.close()
 
-        print(self.train_set_cases)
+    def concatenate_data(self, case_name):
+        """Load from hdf5 and stack data on new first dimensions"""
+        img = None
+        for idx, file_tag in enumerate(self.dataset_paths['data'][case_name]):
+            tmp_img = self.h5_object.get(f'{self.set_name}/data/{case_name}/{file_tag}')
+            tmp_img = np.asarray(tmp_img)
+            if self.transforms:
+                tmp_img = self.transforms(tmp_img)
+            if idx == 0:
+                img = np.expand_dims(tmp_img, axis=0)
+            else:
+                tmp_img = np.expand_dims(tmp_img, axis=0)
+                img = np.concatenate((img, tmp_img), axis=0)
+        return torch.from_numpy(img)
 
-        # self.h5_file_path = os.path.join(self.params['project']['trainset_store_path'])
-        # if not os.path.isfile:
-        #     raise ValueError(f'HDF5 file not found -> {self.h5_file_path}')
+    def retrieve_label(self, case_name):
+        """Load label from hdf5"""
+        if len(self.dataset_paths['label'][case_name]) > 1:
+            raise NotImplementedError('Only 1 label tag supported, adjust this method to your needs')
+        for idx, file_tag in enumerate(self.dataset_paths['label'][case_name]):
+            label = self.h5_object.get(f'{self.set_name}/label/{case_name}/{file_tag}')
+            return torch.from_numpy(np.asarray(label))
 
+    def __getitem__(self, index):
+        case_name = self.random_set_case_names[index]
+        data = self.concatenate_data(case_name)
+        label = self.retrieve_label(case_name)
+        return data, label
 
-        # self._archives = [h5py.File(h5_path, "r") for h5_path in self.h5_paths]
-        # self.indices = {}
-        # idx = 0
-        # for a, archive in enumerate(self.archives):
-        #     for i in range(len(archive)):
-        #         self.indices[idx] = (a, i)
+    def __len__(self):
+        return len(self.set_case_names)
 
-    # @property
-    # def archives(self):
-    #     if self._archives is None:  # lazy loading here!
-    #         self._archives = [h5py.File(h5_path, "r") for h5_path in self.h5_paths]
-    #     return self._archives
-
-    # def __getitem__(self, index):
-    #     a, i = self.indices[index]
-    #     archive = self.archives[a]
-    #     dataset = archive[f"trajectory_{i}"]
-    #     data = torch.from_numpy(dataset[:])
-    #     labels = dict(dataset.attrs)
-    #
-    #     return {"data": data, "labels": labels}
-    #
-    # def __len__(self):
-    #     if self.limit > 0:
-    #         return min([len(self.indices), self.limit])
-    #     return len(self.indices)
 
 if __name__ == '__main__':
+    from torch.utils.data import DataLoader
+
     from abyss.config import ConfigManager
+
     cm = ConfigManager()
     d = Dataset(cm)
-    # for x in d:
-    #     print(x)
+    train_dataloader = DataLoader(d, batch_size=1, shuffle=False, num_workers=1)
+    for i, data in enumerate(train_dataloader):
+        print(np.shape(data['data']))
+        continue

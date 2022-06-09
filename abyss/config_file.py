@@ -5,16 +5,16 @@ class ConfigFile:
     """The pipelines control center, all parameters can be found here"""
 
     def __init__(self):
-        self.project_name = 'Abyss_test'
-        self.experiment_name = 'experiment_2'
-        self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_folder_path = '/home/melandur/Data/small'
+        self.project_name = 'Abyss_test'  # tbd
+        self.experiment_name = 'experiment_2'  # tbd
+        self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')  # tbd
+        self.dataset_folder_path = '/home/melandur/Data/small'  # tbd
 
     def __call__(self):
         """Returns config file"""
         experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
         return {
-            'logger': {'level': 'TRACE'},  # 'TRACE', 'DEBUG', 'INFO'
+            'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
                 'data_reader': False,
                 'pre_processing': False,

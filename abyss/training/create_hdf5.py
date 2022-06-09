@@ -7,7 +7,7 @@ import SimpleITK as sitk
 from loguru import logger
 
 
-class CreateTrainsetHDF5:
+class CreateHDF5:
     """Create train, val, and test set for training"""
 
     def __init__(self, config_manager):
@@ -110,8 +110,9 @@ class CreateTrainsetHDF5:
             for file_tag in file_tags:
                 file_path = self.preprocessed_store_paths[data_type][case_name][file_tag]
                 self.writer(h5_object, set_tag, data_type, case_name, file_tag, file_path)
-                self.path_memory[f'{set_tag}_dataset_paths'][data_type][case_name][file_tag] = \
-                    f'{set_tag}/{data_type}/{case_name}/{file_tag}'
+                self.path_memory[f'{set_tag}_dataset_paths'][data_type][case_name][
+                    file_tag
+                ] = f'{set_tag}/{data_type}/{case_name}/{file_tag}'
 
     def execute_dataset_split(self):
         """Write files to train/validation/test folders in hdf5"""

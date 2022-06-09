@@ -84,7 +84,7 @@ class ConfigManager:
                 self.path_memory[key]['data'] = {}
                 self.path_memory[key]['label'] = {}
         logger.info(f'Path memory file has been loaded from {file_path}')
-        logger.debug(f'Memory path file contains: {json.dumps(self.path_memory, indent=4)}')
+        logger.trace(f'Memory path file contains: {json.dumps(self.path_memory, indent=4)}')
 
     def get_path_memory(self, path_memory_name: str):
         """Returns the temporary path_memory if available, otherwise loads path_memory from path_memory.json"""

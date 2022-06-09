@@ -31,7 +31,7 @@ class Trainer:
         if params['training']['seed']:
             seed_everything(params['training']['seed'])
 
-    def __call__(self ):
+    def __call__(self):
         # initialise Lightning's trainer, default values if not specific set in conf set
         # TODO: Link to config settings
         trainer = LightningTrainer(
