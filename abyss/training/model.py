@@ -33,6 +33,7 @@ class Model(pl.LightningModule):
             self.test_set = Dataset(self.config_manager, 'test')
 
     def compute_loss(self, output, ground_truth):
+        """Returns loss"""
         loss = torch.tensor(None)
         for criterion in self.params['training']['criterion']:
             if 'mse' in criterion:
@@ -41,7 +42,7 @@ class Model(pl.LightningModule):
                 loss += F.cross_entropy(output, ground_truth)
         return loss
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch):
         """Training step"""
         data, label = batch
         # output = self(data)
@@ -50,7 +51,7 @@ class Model(pl.LightningModule):
         # self.log('train_loss', loss.item())
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch):
         """Validation step"""
         data, label = batch
         # output = self(data)
@@ -79,22 +80,19 @@ class Model(pl.LightningModule):
                 eps=self.params['training']['eps'],
                 amsgrad=self.params['training']['amsgrad'],
             )
-
-        elif 'SGD' in self.params['training']['optimizer']:
+        if 'SGD' in self.params['training']['optimizer']:
             return torch.optim.SGD(
                 params=self.parameters(),
                 lr=self.params['training']['learning_rate'],
                 weight_decay=self.params['training']['weight_decay'],
             )
-        else:
-            raise ValueError('Invalid optimizer settings -> conf.py -> training -> optimizer')
+        raise ValueError('Invalid optimizer settings -> conf.py -> training -> optimizer')
 
     def train_dataloader(self):
         """Train dataloader"""
         return DataLoader(
             self.train_set,
             batch_size=self.params['training']['batch_size'],
-            shuffle=False,
             num_workers=self.params['meta']['num_workers'],
         )
 

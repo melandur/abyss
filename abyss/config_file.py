@@ -92,7 +92,7 @@ class ConfigFile:
                 'gpus': None,
                 'auto_select_gpus': False,
                 'tpu_cores': None,
-                'fast_dev_run': False,
+                'fast_dev_run': True,
                 'resume_from_checkpoint': None,
                 'auto_lr_find': False,
                 'early_stop': {'min_delta': 0.0, 'patience': 0, 'verbose': False, 'mode': 'max'},

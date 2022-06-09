@@ -8,6 +8,8 @@ from torch.utils.data import Dataset as torch_Dataset
 
 
 class Dataset(torch_Dataset):
+    """Can be used to create dataset for train, val & test set"""
+
     def __init__(self, config_manager, set_name, transforms=None):
         super().__init__()
         self.config_manager = config_manager
@@ -15,9 +17,9 @@ class Dataset(torch_Dataset):
         self.transforms = transforms
         self.params = config_manager.params
         self.dataset_paths = config_manager.get_path_memory(f'{set_name}_dataset_paths')
-        self.set_case_names = list(self.dataset_paths['data'].keys())
+        set_case_names = list(self.dataset_paths['data'].keys())
         random.seed(self.config_manager.params['meta']['seed'])
-        self.random_set_case_names = random.sample(self.set_case_names, len(self.set_case_names))
+        self.random_set_case_names = random.sample(set_case_names, len(set_case_names))
         h5_file_path = os.path.join(self.params['project']['trainset_store_path'], 'data.h5')
         self.h5_object = h5py.File(h5_file_path, 'r')
 
@@ -44,7 +46,7 @@ class Dataset(torch_Dataset):
         """Load label from hdf5"""
         if len(self.dataset_paths['label'][case_name]) > 1:
             raise NotImplementedError('Only 1 label tag supported, adjust this method to your needs')
-        for idx, file_tag in enumerate(self.dataset_paths['label'][case_name]):
+        for file_tag in self.dataset_paths['label'][case_name]:
             label = self.h5_object.get(f'{self.set_name}/label/{case_name}/{file_tag}')
             return torch.from_numpy(np.asarray(label))
 
@@ -55,16 +57,4 @@ class Dataset(torch_Dataset):
         return data, label
 
     def __len__(self):
-        return len(self.set_case_names)
-
-
-if __name__ == '__main__':
-    from torch.utils.data import DataLoader
-
-    from abyss.config import ConfigManager
-
-    cm = ConfigManager()
-    d = Dataset(cm)
-    train_dataloader = DataLoader(d, batch_size=1, shuffle=False, num_workers=1)
-    for i, data in enumerate(train_dataloader):
-        print(np.shape(data['data']))
+        return len(self.random_set_case_names)

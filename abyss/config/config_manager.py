@@ -94,7 +94,3 @@ class ConfigManager:
             self.load_path_memory_file()
             found_path_memory = self.path_memory[path_memory_name]
         return found_path_memory
-
-
-if __name__ == '__main__':
-    config_manager = ConfigManager()
