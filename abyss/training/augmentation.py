@@ -4,7 +4,7 @@ from monai import transforms as tf
 
 
 class Augmentation:
-    """Composes"""
+    """Composes transformation based on the config file order"""
 
     def __init__(self, config_manager):
         self.params = config_manager.params
@@ -36,6 +36,6 @@ if __name__ == '__main__':
     from abyss.config import ConfigManager
 
     cm = ConfigManager()
-    a = Augmentation(cm)
-    b = a.compose_transforms()
-    print(b)
+    aug = Augmentation(cm)
+    composed_transformation = aug.compose_transforms()
+    print(composed_transformation)

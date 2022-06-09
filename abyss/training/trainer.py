@@ -2,6 +2,7 @@ from pytorch_lightning import Trainer as LightningTrainer
 from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
+from pytorch_lightning.callbacks.model_summary import ModelSummary
 from pytorch_lightning.loggers import TensorBoardLogger
 
 
@@ -15,11 +16,11 @@ class Trainer:
         self.logger = TensorBoardLogger(save_dir=self.params['project']['result_store_path'])
 
         # Define callbacks
-        self.checkpoint_callback = ModelCheckpoint(
+        self.checkpoint_cb = ModelCheckpoint(
             dirpath=self.params['project']['result_store_path'], filename=self.params['project']['name']
         )
 
-        self.early_stop_callback = EarlyStopping(
+        self.early_stop_cb = EarlyStopping(
             monitor='val_loss',
             min_delta=self.params['trainer']['early_stop']['min_delta'],
             patience=self.params['trainer']['early_stop']['patience'],
@@ -27,7 +28,9 @@ class Trainer:
             mode=self.params['trainer']['early_stop']['mode'],
         )
 
-        # Used defined train seed
+        self.model_summary_cb = ModelSummary(self.params['trainer']['model_summary_depth'])
+
+        # Used defined seed
         if self.params['meta']['seed']:
             seed_everything(self.params['meta']['seed'])
 
@@ -35,7 +38,7 @@ class Trainer:
         return LightningTrainer(
             logger=self.logger,
             enable_checkpointing=True,
-            callbacks=[self.checkpoint_callback, self.early_stop_callback],
+            callbacks=[self.checkpoint_cb, self.early_stop_cb, self.model_summary_cb],
             default_root_dir=self.params['trainer']['default_root_dir'],
             gradient_clip_val=None,
             gradient_clip_algorithm=None,
@@ -71,8 +74,8 @@ class Trainer:
             strategy=None,
             sync_batchnorm=False,
             precision=self.params['trainer']['precision'],
-            enable_model_summary=self.params['trainer']['enable_model_summary'],
-            weights_summary=self.params['trainer']['weights_summary'],
+            enable_model_summary=False,  # deprecated, now bey model summary callback
+            weights_summary=False,  # deprecated, now bey model summary callback
             weights_save_path=None,  # TODO: Remove in 1.8
             num_sanity_val_steps=2,
             resume_from_checkpoint=self.params['trainer']['resume_from_checkpoint'],
