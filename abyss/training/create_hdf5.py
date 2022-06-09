@@ -126,7 +126,7 @@ class CreateHDF5:
             self.create_set(h5_object, self.test_set_cases, 'test', 'label')
 
     @staticmethod
-    def branch_formatter(name, obj):
+    def branch_helper(name, obj):
         """Makes branches kinda pretty"""
         shift = name.count('/') * 3 * ' '
         item_name = name.split('/')[-1]
@@ -138,4 +138,4 @@ class CreateHDF5:
     def show_tree_structure(self):
         """Visualize tree structure of hdf5"""
         h5_object = h5py.File(self.trainset_store_path, 'r')
-        h5_object.visititems(self.branch_formatter)  # iterates over each branch
+        h5_object.visititems(self.branch_helper)  # iterates over each branch

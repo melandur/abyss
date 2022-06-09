@@ -5,11 +5,11 @@ from torch.utils.data import DataLoader
 
 from abyss.training.augmentation import Augmentation
 from abyss.training.dataset import Dataset
-from abyss.training.nets import unet
+from abyss.training.nets import unet, resnet_10
 
 
 class Model(pl.LightningModule):
-    """TODO: Need some"""
+    """Model definitions"""
 
     def __init__(self, _config_manager):
         super().__init__()
@@ -18,7 +18,8 @@ class Model(pl.LightningModule):
         self.val_set = None
         self.test_set = None
         self.train_set = None
-        self.net = unet
+
+        self.net = resnet_10
 
     def forward(self, x):
         return self.net(x)
@@ -34,30 +35,30 @@ class Model(pl.LightningModule):
 
     def compute_loss(self, output, ground_truth):
         """Returns loss"""
-        loss = torch.tensor(None)
-        for criterion in self.params['training']['criterion']:
-            if 'mse' in criterion:
-                loss += F.mse_loss(output, ground_truth)
-            if 'cross_entropy' in criterion:
-                loss += F.cross_entropy(output, ground_truth)
+        # loss = torch.tensor([0])
+        # for criterion in self.params['training']['criterion']:
+        #     if 'mse' in criterion:
+        loss = F.mse_loss(output, ground_truth)
+        #     if 'cross_entropy' in criterion:
+        # loss = F.cross_entropy(output, ground_truth)
         return loss
 
-    def training_step(self, batch):
+    def training_step(self, batch, batch_idx):
         """Training step"""
         data, label = batch
-        # output = self(data)
-        # loss = self.compute_loss(output, label)
-        loss = data
-        # self.log('train_loss', loss.item())
+        output = self(data)
+        label = torch.tensor([0, 1]).to(torch.float32)
+        loss = self.compute_loss(output, label)
+        self.log('train_loss', loss.item())
         return loss
 
-    def validation_step(self, batch):
+    def validation_step(self, batch, batch_idx):
         """Validation step"""
         data, label = batch
-        # output = self(data)
-        # loss = self.compute_loss(output, label)
-        loss = label
-        # self.log('val_loss', loss, prog_bar=True)
+        output = self(data)
+        label = torch.tensor([0,1]).to(torch.float32)
+        loss = self.compute_loss(output, label)
+        self.log('val_loss', loss, prog_bar=True)
         return loss
 
     def validation_epoch_end(self, outputs):

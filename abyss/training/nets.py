@@ -1,4 +1,6 @@
-from monai.networks.nets import UNet
+from monai.networks.nets import UNet, resnet10
+from torchvision.models import resnet18
+import torch
 
 unet = UNet(
     spatial_dims=3,
@@ -7,4 +9,11 @@ unet = UNet(
     channels=(16, 32, 64, 128, 256),
     strides=(2, 2, 2, 2),
     num_res_units=2,
+)
+
+resnet_10 = resnet10(
+    pretrained=False,
+    spatial_dims=3,
+    n_input_channels=4,
+    num_classes=2,
 )
