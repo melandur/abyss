@@ -1,7 +1,5 @@
 import os
 
-import numpy as np
-
 
 class ConfigFile:
     """The pipelines control center, all parameters can be found here"""
@@ -12,16 +10,16 @@ class ConfigFile:
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')  # tbd
         self.dataset_folder_path = '/home/melandur/Data/small'  # tbd
 
-    def __call__(self):
+    def __call__(self) -> dict:
         """Returns config file"""
         experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
         return {
             'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_reader': False,
-                'pre_processing': False,
-                'create_trainset': False,
-                'training': True,
+                'data_reader': True,
+                'pre_processing': True,
+                'create_trainset': True,
+                'training': False,
                 'post_processing': False,
             },
             'project': {
@@ -129,5 +127,5 @@ class ConfigFile:
             'post_processing': {},
         }
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.__class__.__name__

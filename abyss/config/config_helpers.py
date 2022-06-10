@@ -25,7 +25,7 @@ def check_search_tag_redundancy(params: dict, data_type: str):
 
 
 def check_search_tag_uniqueness(params: dict, data_type: str):
-    """Check if the dat/label search tags are unique enough to avoid wrong loading"""
+    """Check if the data/label search tags are unique enough to avoid wrong loading"""
     tags = params['dataset'][f'{data_type}_search_tags'].values()
     tags = [x for sublist in tags for x in sublist]  # flatten nested list
     for i, tag in enumerate(tags):

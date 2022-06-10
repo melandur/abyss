@@ -1,3 +1,5 @@
+from typing import ClassVar, Optional
+
 import pytorch_lightning as pl
 import torch
 from torch.nn import functional as F
@@ -9,22 +11,22 @@ from abyss.training.nets import resnet_10, unet
 
 
 class Model(pl.LightningModule):
-    """Model definitions"""
+    """Holds model definitions"""
 
-    def __init__(self, _config_manager):
+    def __init__(self, config_manager: ClassVar):
         super().__init__()
-        self.config_manager = _config_manager
-        self.params = _config_manager.params
+        self.config_manager = config_manager
+        self.params = config_manager.params
         self.val_set = None
         self.test_set = None
         self.train_set = None
 
         self.net = resnet_10
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.net(x)
 
-    def setup(self, stage=None):
+    def setup(self, stage: Optional[str] = None) -> torch.utils.data:
         if stage == 'fit' or stage is None:
             augmentation = Augmentation(self.config_manager)
             self.train_set = Dataset(self.config_manager, 'train', augmentation.compose_transforms())
@@ -33,7 +35,7 @@ class Model(pl.LightningModule):
         if stage == 'test' or stage is None:
             self.test_set = Dataset(self.config_manager, 'test')
 
-    def compute_loss(self, output, ground_truth):
+    def compute_loss(self, output: torch.Tensor, ground_truth: torch.Tensor) -> torch.Tensor:
         """Returns loss"""
         # loss = torch.tensor([0])
         # for criterion in self.params['training']['criterion']:
@@ -43,8 +45,8 @@ class Model(pl.LightningModule):
         # loss = F.cross_entropy(output, ground_truth)
         return loss
 
-    def training_step(self, batch, batch_idx):
-        """Training step"""
+    def training_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor:
+        """Predict, compare, log"""
         data, label = batch
         output = self(data)
         label = torch.tensor([1]).to(torch.float32)
@@ -52,8 +54,8 @@ class Model(pl.LightningModule):
         self.log('train_loss', loss.item())
         return loss
 
-    def validation_step(self, batch, batch_idx):
-        """Validation step"""
+    def validation_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor:
+        """Predict, compare, log"""
         data, label = batch
         output = self(data)
         label = torch.tensor([1]).to(torch.float32)
@@ -70,7 +72,7 @@ class Model(pl.LightningModule):
         # mean_val_loss = torch.tensor(val_loss / (num_items + 1e-4))
         # self.log('val_loss', mean_val_loss)
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> torch.optim.Optimizer:
         """Configure optimizers"""
         if 'Adam' in self.params['training']['optimizer']:
             return torch.optim.Adam(
@@ -89,7 +91,7 @@ class Model(pl.LightningModule):
             )
         raise ValueError('Invalid optimizer settings -> conf.py -> training -> optimizer')
 
-    def train_dataloader(self):
+    def train_dataloader(self) -> DataLoader:
         """Train dataloader"""
         return DataLoader(
             self.train_set,
@@ -97,7 +99,7 @@ class Model(pl.LightningModule):
             num_workers=self.params['meta']['num_workers'],
         )
 
-    def val_dataloader(self):
+    def val_dataloader(self) -> DataLoader:
         """Validation dataloader"""
         return DataLoader(
             self.val_set,

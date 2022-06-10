@@ -1,5 +1,6 @@
 import os
 import random
+from typing import ClassVar
 
 import h5py
 import numpy as np
@@ -10,7 +11,7 @@ from torch.utils.data import Dataset as torch_Dataset
 class Dataset(torch_Dataset):
     """Can be used to create dataset for train, val & test set"""
 
-    def __init__(self, config_manager, set_name, transforms=None):
+    def __init__(self, config_manager: ClassVar, set_name: str, transforms=None):
         super().__init__()
         self.config_manager = config_manager
         self.set_name = set_name
@@ -24,10 +25,11 @@ class Dataset(torch_Dataset):
         self.h5_object = h5py.File(h5_file_path, 'r')
 
     def __del__(self):
+        """Close hdf5 file in the end"""
         if isinstance(self.h5_object, h5py.File):
             self.h5_object.close()
 
-    def concatenate_data(self, case_name):
+    def concatenate_data(self, case_name: str) -> torch.tensor:
         """Load from hdf5 and stack data on new first dimensions"""
         img = None
         for idx, file_tag in enumerate(self.dataset_paths['data'][case_name]):
@@ -42,7 +44,7 @@ class Dataset(torch_Dataset):
                 img = np.concatenate((img, tmp_img), axis=0)
         return torch.from_numpy(img)
 
-    def retrieve_label(self, case_name):
+    def retrieve_label(self, case_name: str) -> torch.tensor:
         """Load label from hdf5"""
         if len(self.dataset_paths['label'][case_name]) > 1:
             raise NotImplementedError('Only 1 label tag supported, adjust this method to your needs')
@@ -51,10 +53,12 @@ class Dataset(torch_Dataset):
             return torch.from_numpy(np.asarray(label))
 
     def __getitem__(self, index):
+        """Returns data and corresponding label"""
         case_name = self.random_set_case_names[index]
         data = self.concatenate_data(case_name)
         label = self.retrieve_label(case_name)
         return data, label
 
     def __len__(self):
+        """Holds number of cases"""
         return len(self.random_set_case_names)

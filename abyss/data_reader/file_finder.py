@@ -17,7 +17,7 @@ class FileFinder:
         self.data_file_type = assure_instance_type(config_manager.params['dataset']['data_file_type'], list)
         self.data_path_store = NestedDefaultDict()
 
-    def __call__(self):
+    def __call__(self) -> dict:
         """Run data analyzer"""
         logger.info(f'Run: {self.__class__.__name__} -> {self.dataset_folder_path}')
         if os.path.isdir(self.dataset_folder_path):

@@ -1,5 +1,6 @@
 import copy
 import os
+from typing import ClassVar
 
 import h5py
 import numpy as np
@@ -10,7 +11,7 @@ from loguru import logger
 class CreateHDF5:
     """Create train, val, and test set for training"""
 
-    def __init__(self, config_manager):
+    def __init__(self, config_manager: ClassVar):
         self.config_manager = config_manager
         self.params = config_manager.params
         self.path_memory = config_manager.path_memory
@@ -126,7 +127,7 @@ class CreateHDF5:
             self.create_set(h5_object, self.test_set_cases, 'test', 'label')
 
     @staticmethod
-    def branch_helper(name, obj):
+    def branch_helper(name: str, obj: h5py.Group or h5py.Dataset):
         """Makes branches kinda pretty"""
         shift = name.count('/') * 3 * ' '
         item_name = name.split('/')[-1]

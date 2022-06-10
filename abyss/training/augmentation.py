@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 import monai
 import numpy as np
 from monai import transforms as tf
@@ -6,11 +8,11 @@ from monai import transforms as tf
 class Augmentation:
     """Composes transformation based on the config file order"""
 
-    def __init__(self, config_manager):
+    def __init__(self, config_manager: ClassVar):
         self.params = config_manager.params
         monai.utils.set_determinism(self.params['meta']['seed'])
 
-    def compose_transforms(self):
+    def compose_transforms(self) -> tf.Transform:
         transforms = []
         for trans_name, trans_params in self.params['augmentation'].items():
             if trans_name == 'RandGaussianNoise':

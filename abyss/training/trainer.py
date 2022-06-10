@@ -1,16 +1,19 @@
+from typing import ClassVar
+
+import torchmetrics
 from pytorch_lightning import Trainer as LightningTrainer
 from pytorch_lightning import seed_everything
+from pytorch_lightning.callbacks import RichModelSummary, RichProgressBar
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
-from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.callbacks import RichModelSummary, RichProgressBar
 from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTheme
+from pytorch_lightning.loggers import TensorBoardLogger
 
 
 class Trainer:
     """Based on pytorch_lightning trainer"""
 
-    def __init__(self, config_manager):
+    def __init__(self, config_manager: ClassVar):
         self.params = config_manager.params
 
         # Integrated loggers: TBoard, MLflow, Comet, Neptune, WandB
@@ -33,22 +36,22 @@ class Trainer:
 
         self.progress_bar_cb = RichProgressBar(
             leave=True,
-            refresh_rate=5,
             theme=RichProgressBarTheme(
-                description='green_yellow',
-                progress_bar='green1',
-                progress_bar_finished='green1',
-                progress_bar_pulse='#6206E0',
-                batch_progress='green_yellow',
+                description='cyan',
+                progress_bar='cyan',
+                progress_bar_finished='gray82',
+                progress_bar_pulse='gray82',
+                batch_progress='cyan',
                 time='grey82',
                 processing_speed='grey82',
                 metrics='grey82',
-            )
+            ),
         )
 
-        # Used defined seed
         if self.params['meta']['seed']:
             seed_everything(self.params['meta']['seed'])
+
+        torchmetrics.Metric.full_state_update = False  # will be default False in v0.1
 
     def __call__(self):
         return LightningTrainer(

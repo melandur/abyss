@@ -40,7 +40,6 @@ class ConfigManager:
         check_search_tag_redundancy(self.params, 'label')
         check_search_tag_uniqueness(self.params, 'label')
         check_and_create_folder_structure(self.params)
-
         self.store_config_file()
 
     def store_config_file(self):
@@ -76,15 +75,17 @@ class ConfigManager:
                 self.path_memory = json.load(file)
         else:
             raise FileNotFoundError(f'Path memory file not found -> {file_path}')
+        self.convert_to_nested_dicts()
+        logger.info(f'Path memory file has been loaded from {file_path}')
+        logger.trace(f'Memory path file contains: {json.dumps(self.path_memory, indent=4)}')
 
-        # python loads the dicts as default dicts, therefore we need to override those with the nested dicts
+    def convert_to_nested_dicts(self):
+        """Dicts are loaded as default dicts, therefore we need to override those with the nested dicts"""
         for key in self.path_memory.keys():
             if not self.path_memory[key]:  # check if value for certain key is empty
                 self.path_memory[key] = NestedDefaultDict()  # override empty dicts with nested dicts
                 self.path_memory[key]['data'] = {}
                 self.path_memory[key]['label'] = {}
-        logger.info(f'Path memory file has been loaded from {file_path}')
-        logger.trace(f'Memory path file contains: {json.dumps(self.path_memory, indent=4)}')
 
     def get_path_memory(self, path_memory_name: str):
         """Returns the temporary path_memory if available, otherwise loads path_memory from path_memory.json"""
