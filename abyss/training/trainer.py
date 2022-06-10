@@ -19,6 +19,7 @@ class Trainer:
         # Integrated loggers: TBoard, MLflow, Comet, Neptune, WandB
         self.logger = TensorBoardLogger(save_dir=self.params['project']['result_store_path'])
 
+
         # Define callbacks
         self.checkpoint_cb = ModelCheckpoint(
             dirpath=self.params['project']['result_store_path'], filename=self.params['project']['name']

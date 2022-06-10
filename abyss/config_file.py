@@ -40,7 +40,7 @@ class ConfigFile:
             'dataset': {
                 'folder_path': self.dataset_folder_path,
                 'label_file_type': ['.nii.gz'],
-                'label_search_tags': {'net': ['seg', 'Seg']},
+                'label_search_tags': {'mask': ['seg', 'Seg']},
                 'data_file_type': ['.nii.gz'],
                 'data_search_tags': {
                     'flair': ['flair.', 'FLAIR.'],
@@ -64,7 +64,7 @@ class ConfigFile:
                     'resize': {'active': True, 'dim': (100, 100, 100), 'interpolator': 'nearest'},
                 },
             },
-            'augmentation': {  # based on monai.transforms
+            'augmentation': {  # based on monai.transforms | comment/delete unused ones | order matters
                 'RandGaussianNoise': {'prob': 0.1, 'mean': 0.0, 'std': 0.1},
                 'RandGaussianSmooth': {
                     'sigma_x': (0.25, 1.5),
@@ -92,6 +92,56 @@ class ConfigFile:
                     'random_center': True,
                     'random_size': True,
                 },
+                'RandHistogramShift': {'num_control_points': 10, 'prob': 0.1},
+                'RandSpatialCrop': {
+                    'roi_size': [1, 1],
+                    'max_roi_size': None,
+                    'random_center': True,
+                    'random_size': True,
+                },
+                'RandBiasField': {'degree': 3, 'coeff_range': (0.0, 0.1), 'prob': 0.1},
+                'Rand2DElastic': {
+                    'spacing': 1.0,
+                    'magnitude_range': (1.0, 1.0),
+                    'prob': 0.1,
+                    'rotate_range': None,
+                    'shear_range': None,
+                    'translate_range': None,
+                    'scale_range': None,
+                    'spatial_size': None,
+                    'mode': 'bilinear',
+                    'padding_mode': 'reflection',
+                    'as_tensor_output': False,
+                    'device': None,
+                },
+                'Rand3DElastic': {
+                    'sigma_range': (1.0, 1.0),
+                    'magnitude_range': (1.0, 1.0),
+                    'prob': 0.1,
+                    'rotate_range': None,
+                    'shear_range': None,
+                    'translate_range': None,
+                    'scale_range': None,
+                    'spatial_size': None,
+                    'mode': 'bilinear',
+                    'padding_mode': 'reflection',
+                    'as_tensor_output': False,
+                    'device': None,
+                },
+                'RandAffine': {
+                    'prob': 0.1,
+                    'rotate_range': None,
+                    'shear_range': None,
+                    'translate_range': None,
+                    'scale_range': None,
+                    'spatial_size': None,
+                    'mode': 'bilinear',
+                    'padding_mode': 'reflection',
+                    'cache_grid': False,
+                    'as_tensor_output': True,
+                    'device': None,
+                },
+                'RandRotate90': {'prob': 0.1, 'max_k': 3, 'spatial_axes': (0, 1)},
             },
             'training': {
                 'batch_size': 1,  # tbd
@@ -107,7 +157,7 @@ class ConfigFile:
             'trainer': {
                 'default_root_dir': os.path.join(experiment_path, '4_results'),
                 'max_epochs': 1000,
-                'log_every_n_steps': 50,
+                'log_every_n_steps': 1,
                 'precision': 32,
                 'check_val_every_n_epoch': 1,
                 'enable_progress_bar': True,
