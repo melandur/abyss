@@ -37,11 +37,11 @@ class Trainer:
         self.progress_bar_cb = RichProgressBar(
             leave=True,
             theme=RichProgressBarTheme(
-                description='cyan',
-                progress_bar='cyan',
+                description='gray82',
+                progress_bar='yellow4',
                 progress_bar_finished='gray82',
                 progress_bar_pulse='gray82',
-                batch_progress='cyan',
+                batch_progress='gray82',
                 time='grey82',
                 processing_speed='grey82',
                 metrics='grey82',
