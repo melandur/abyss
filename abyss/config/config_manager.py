@@ -34,6 +34,8 @@ class ConfigManager:
 
         logger.remove()
         logger.add(sys.stderr, level=self.params['logger']['level'])
+        log_file_path = os.path.join(self.params['project']['result_store_path'], 'pipeline.log')
+        logger.add(log_file_path, mode='w', level='TRACE', format='{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}')
 
         check_search_tag_redundancy(self.params, 'data')
         check_search_tag_uniqueness(self.params, 'data')
