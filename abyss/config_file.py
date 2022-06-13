@@ -16,10 +16,10 @@ class ConfigFile:
         return {
             'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_reader': True,
-                'pre_processing': True,
-                'create_trainset': True,
-                'training': False,
+                'data_reader': False,
+                'pre_processing': False,
+                'create_trainset': False,
+                'training': True,
                 'post_processing': False,
             },
             'project': {
@@ -146,6 +146,7 @@ class ConfigFile:
                 'RandRotate90': {'prob': 0.1, 'max_k': 3, 'spatial_axes': (0, 1)},
             },
             'training': {
+                'load_from_checkpoint_path': None,  # loads if valid *.ckpt provided
                 'batch_size': 1,  # tbd
                 'optimizer': 'Adam',  # Adam, SGD
                 'learning_rate': 1e-3,  # tbd

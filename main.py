@@ -2,10 +2,8 @@ from datetime import datetime
 
 from loguru import logger
 
-from abyss.config import ConfigManager
-from abyss.data_reader import DataReader
-from abyss.pre_processing import PreProcessing
-from abyss.training import CreateHDF5, Training
+from abyss import ConfigManager, DataReader, CreateHDF5, PreProcessing, Training
+
 
 if __name__ == '__main__':
     start = datetime.now()

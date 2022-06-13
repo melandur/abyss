@@ -1,6 +1,8 @@
+import os
 from typing import ClassVar
 
 import torchmetrics
+from loguru import logger
 from pytorch_lightning import Trainer as LightningTrainer
 from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks import RichModelSummary, RichProgressBar
@@ -17,12 +19,16 @@ class Trainer:
         self.params = config_manager.params
 
         # Integrated loggers: TBoard, MLflow, Comet, Neptune, WandB
-        self.logger = TensorBoardLogger(save_dir=self.params['project']['result_store_path'])
-
+        results_store_path = self.params['project']['result_store_path']
+        self.logger = TensorBoardLogger(save_dir=results_store_path)
+        logger.info(f'tensorboard --logdir={os.path.join(results_store_path, "lightning_logs")}')
 
         # Define callbacks
         self.checkpoint_cb = ModelCheckpoint(
-            dirpath=self.params['project']['result_store_path'], filename=self.params['project']['name']
+            dirpath=os.path.join(self.params['project']['result_store_path'], 'checkpoints'),
+            filename=self.params['project']['name'] + '_{epoch:02d}_{val_loss:.2f}',
+            save_last=True,
+            monitor='val_loss',
         )
 
         self.early_stop_cb = EarlyStopping(
