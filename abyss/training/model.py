@@ -74,22 +74,23 @@ class Model(pl.LightningModule):
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         """Configure optimizers"""
-        if 'Adam' in self.params['training']['optimizer']:
+        optimizer_params = self.params['training']['optimizers']
+        if optimizer_params['Adam']['active']:
             return torch.optim.Adam(
                 params=self.parameters(),
-                lr=self.params['training']['learning_rate'],
-                betas=self.params['training']['betas'],
-                weight_decay=self.params['training']['weight_decay'],
-                eps=self.params['training']['eps'],
-                amsgrad=self.params['training']['amsgrad'],
+                lr=optimizer_params['Adam']['learning_rate'],
+                betas=optimizer_params['Adam']['betas'],
+                weight_decay=optimizer_params['Adam']['weight_decay'],
+                eps=optimizer_params['Adam']['eps'],
+                amsgrad=optimizer_params['Adam']['amsgrad'],
             )
-        if 'SGD' in self.params['training']['optimizer']:
+        if optimizer_params['SGD']['active']:
             return torch.optim.SGD(
                 params=self.parameters(),
-                lr=self.params['training']['learning_rate'],
-                weight_decay=self.params['training']['weight_decay'],
+                lr=optimizer_params['Adam']['learning_rate'],
+                weight_decay=optimizer_params['Adam']['weight_decay'],
             )
-        raise ValueError('Invalid optimizer settings -> conf.py -> training -> optimizer')
+        raise ValueError('Invalid optimizer settings -> conf.py -> training -> optimizers -> ')
 
     def train_dataloader(self) -> DataLoader:
         """Train dataloader"""

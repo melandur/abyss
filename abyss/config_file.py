@@ -146,16 +146,21 @@ class ConfigFile:
                 'RandRotate90': {'prob': 0.1, 'max_k': 3, 'spatial_axes': (0, 1)},
             },
             'training': {
-                'load_from_checkpoint_path': None,  # loads if valid *.ckpt provided
                 'batch_size': 1,  # tbd
-                'optimizer': 'Adam',  # Adam, SGD
-                'learning_rate': 1e-3,  # tbd
-                'betas': (0.9, 0.999),  # tbd
-                'eps': 1e-8,
-                'weight_decay': 1e-5,  # tbd
-                'amsgrad': True,
-                'dropout': 0.5,  # tbd
+                'optimizers': {
+                    'Adam': {
+                        'active': True,
+                        'learning_rate': 1e-3,  # tbd
+                        'betas': (0.9, 0.999),  # tbd
+                        'eps': 1e-8,
+                        'weight_decay': 1e-5,  # tbd
+                        'amsgrad': True,
+                        'dropout': 0.5,
+                    },  # tbd
+                    'SGD': {'active': False, 'learning_rate': 1e-3, 'dropout': 0.5},
+                },
                 'criterion': ['MSE_mean'],
+                'load_from_checkpoint_path': None,  # loads if valid *.ckpt provided
             },
             'trainer': {
                 'default_root_dir': os.path.join(experiment_path, '4_results'),
