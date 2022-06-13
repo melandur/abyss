@@ -63,7 +63,7 @@ class Model(pl.LightningModule):
         self.log('val_loss', loss, prog_bar=True)
         return loss
 
-    def validation_epoch_end(self, outputs):
+    def validation_epoch_end(self, outputs: list) -> None:
         """Validation epoch"""
         # val_loss, num_items = 0, 0
         # for output in outputs:
@@ -71,6 +71,15 @@ class Model(pl.LightningModule):
         #     num_items += len(output['val_loss'])
         # mean_val_loss = torch.tensor(val_loss / (num_items + 1e-4))
         # self.log('val_loss', mean_val_loss)
+
+    def test_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor:
+        """Test it"""
+        data, label = batch
+        output = self(data)
+        label = torch.tensor([1]).to(torch.float32)
+        loss = self.compute_loss(output, label)
+        self.log('test_loss', loss)
+        return loss
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         """Configure optimizers"""
@@ -104,6 +113,14 @@ class Model(pl.LightningModule):
         """Validation dataloader"""
         return DataLoader(
             self.val_set,
+            batch_size=self.params['training']['batch_size'],
+            num_workers=self.params['meta']['num_workers'],
+        )
+
+    def test_dataloader(self) -> DataLoader:
+        """Test dataloader"""
+        return DataLoader(
+            self.test_set,
             batch_size=self.params['training']['batch_size'],
             num_workers=self.params['meta']['num_workers'],
         )

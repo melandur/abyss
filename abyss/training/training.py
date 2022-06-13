@@ -20,7 +20,8 @@ class Training:
 
     def __call__(self):
         trainer = Trainer(self.config_manager)()
-        trainer.fit(self.model)
+        # trainer.fit(self.model)
+        trainer.test(self.model)
 
     def load_from_checkpoint(self):
         """Load checkpoint to proceed training"""
