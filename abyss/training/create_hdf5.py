@@ -15,7 +15,7 @@ class CreateHDF5:
         self.config_manager = config_manager
         self.params = config_manager.params
         self.path_memory = config_manager.path_memory
-        self.preprocessed_store_paths = config_manager.get_path_memory('preprocessed_dataset_paths')
+        self.data_store_paths = None
         self.trainset_store_path = os.path.join(self.params['project']['trainset_store_path'], 'data.h5')
         self.train_set_cases = None
         self.val_set_cases = None
@@ -25,6 +25,7 @@ class CreateHDF5:
 
     def __call__(self):
         logger.info(f'Run: {self.__class__.__name__}')
+        self.get_data_store_paths()
         self.check_fold_settings()
         self.train_test_split()
         self.train_val_split()
@@ -33,16 +34,30 @@ class CreateHDF5:
         self.show_tree_structure()
         self.config_manager.store_path_memory_file()
 
+    def get_data_store_paths(self):
+        """Returns the current data store path, either from structured or preprocessed dataset"""
+        if len(self.config_manager.get_path_memory('preprocessed_dataset_paths')['data']) != 0:
+            self.data_store_paths = self.config_manager.get_path_memory('preprocessed_dataset_paths')
+            logger.info(f'HDF5 file will be created from preprocessed dataset')
+        elif len(self.config_manager.get_path_memory('structured_dataset_paths')['data']) != 0:
+            self.data_store_paths = self.config_manager.get_path_memory('structured_dataset_paths')
+            logger.info(f'HDF5 file will be created from structured dataset')
+        else:
+            raise ValueError(
+                f'Path memory file is empty for structured and preprocessed data, check config_file -> '
+                f'pipeline_steps'
+            )
+
     def train_test_split(self):
         """Creates a list with case names for train and test set each"""
-        count_cases = len(self.preprocessed_store_paths['data'])
+        count_cases = len(self.data_store_paths['data'])
         if count_cases < 10:
             raise AssertionError('Your dataset needs to have at least 10 subjects')
         test_set_size = int(self.params['dataset']['test_fraction'] * count_cases)
         self.test_set_cases = list(
-            np.random.choice(list(self.preprocessed_store_paths['data']), size=test_set_size, replace=False)
+            np.random.choice(list(self.data_store_paths['data']), size=test_set_size, replace=False)
         )
-        self.train_set_cases = [x for x in self.preprocessed_store_paths['data'] if x not in self.test_set_cases]
+        self.train_set_cases = [x for x in self.data_store_paths['data'] if x not in self.test_set_cases]
         logger.info(f'Test set, counts: {len(self.test_set_cases)}, cases: {self.test_set_cases}')
 
     def check_fold_settings(self):
@@ -107,9 +122,9 @@ class CreateHDF5:
     def create_set(self, h5_object, set_cases, set_tag, data_type):
         """Create data set and append location to path memory"""
         for case_name in set_cases:
-            file_tags = self.preprocessed_store_paths[data_type][case_name]
+            file_tags = self.data_store_paths[data_type][case_name]
             for file_tag in file_tags:
-                file_path = self.preprocessed_store_paths[data_type][case_name][file_tag]
+                file_path = self.data_store_paths[data_type][case_name][file_tag]
                 self.writer(h5_object, set_tag, data_type, case_name, file_tag, file_path)
                 self.path_memory[f'{set_tag}_dataset_paths'][data_type][case_name][
                     file_tag

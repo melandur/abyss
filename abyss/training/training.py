@@ -18,9 +18,12 @@ class Training:
         if self.params['training']['load_from_checkpoint_path']:
             self.load_from_checkpoint()
 
+        if self.params['training']['dev_show_train_batch']:
+            self.model.show_train_batch()
+
     def __call__(self):
         trainer = Trainer(self.config_manager)()
-        # trainer.fit(self.model)
+        trainer.fit(self.model)
         trainer.test(self.model)
 
     def load_from_checkpoint(self):

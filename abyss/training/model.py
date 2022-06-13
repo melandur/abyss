@@ -1,5 +1,6 @@
 from typing import ClassVar, Optional
 
+import matplotlib.pyplot as plt
 import pytorch_lightning as pl
 import torch
 from torch.nn import functional as F
@@ -20,7 +21,7 @@ class Model(pl.LightningModule):
         self.val_set = None
         self.test_set = None
         self.train_set = None
-
+        self.transforms = Augmentation(self.config_manager).compose_transforms()
         self.net = resnet_10
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -29,7 +30,7 @@ class Model(pl.LightningModule):
     def setup(self, stage: Optional[str] = None) -> torch.utils.data:
         if stage == 'fit' or stage is None:
             augmentation = Augmentation(self.config_manager)
-            self.train_set = Dataset(self.config_manager, 'train', augmentation.compose_transforms())
+            self.train_set = Dataset(self.config_manager, 'train', self.transforms)
             self.val_set = Dataset(self.config_manager, 'val')
 
         if stage == 'test' or stage is None:
@@ -46,7 +47,7 @@ class Model(pl.LightningModule):
         return loss
 
     def training_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor:
-        """Predict, compare, log"""
+        """Predict, compare, log, backprop"""
         data, label = batch
         output = self(data)
         label = torch.tensor([1]).to(torch.float32)
@@ -73,7 +74,7 @@ class Model(pl.LightningModule):
         # self.log('val_loss', mean_val_loss)
 
     def test_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor:
-        """Test it"""
+        """Predict, compare, log"""
         data, label = batch
         output = self(data)
         label = torch.tensor([1]).to(torch.float32)
@@ -124,3 +125,26 @@ class Model(pl.LightningModule):
             batch_size=self.params['training']['batch_size'],
             num_workers=self.params['meta']['num_workers'],
         )
+
+    def show_train_batch(self):
+        """Visualize ce train batch"""
+        ori_dataset = Dataset(self.config_manager, 'train')
+        aug_dataset = Dataset(self.config_manager, 'train', self.transforms)
+
+        ori_loader = DataLoader(ori_dataset, 1)
+        aug_loader = DataLoader(aug_dataset, 1)
+
+        slice_number = 70
+        plt.figure(figsize=(15, 10))
+        plt.tight_layout()
+        while True:
+            for (ori_data, _), (aug_data, _) in zip(ori_loader, aug_loader):
+                for modality in range(len(ori_data[0])):
+                    plt.subplot(2, 4, modality + 1)
+                    plt.title('Original')
+                    plt.imshow(ori_data[0, modality, slice_number], cmap='gray')
+                    plt.subplot(2, 4, modality + 5)
+                    plt.title('Augmented')
+                    plt.imshow(aug_data[0, modality, slice_number], cmap='gray')
+                plt.draw()
+                plt.waitforbuttonpress(0)

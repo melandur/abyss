@@ -6,7 +6,7 @@ class ConfigFile:
 
     def __init__(self):
         self.project_name = 'Abyss_test'  # tbd
-        self.experiment_name = 'experiment_3'  # tbd
+        self.experiment_name = 'experiment_4'  # tbd
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')  # tbd
         self.dataset_folder_path = '/home/melandur/Data/small'  # tbd
 
@@ -20,7 +20,7 @@ class ConfigFile:
                 'pre_processing': False,
                 'create_trainset': False,
                 'training': True,
-                'post_processing': False,
+                'post_processing': False,  # TODO: Implement
             },
             'project': {
                 'name': self.project_name,
@@ -102,48 +102,7 @@ class ConfigFile:
                 #     'random_size': True,
                 # },
                 # 'RandBiasField': {'degree': 3, 'coeff_range': (0.0, 0.1), 'prob': 0.1},
-                # 'Rand2DElastic': {
-                #     'spacing': 1.0,
-                #     'magnitude_range': (1.0, 1.0),
-                #     'prob': 0.1,
-                #     'rotate_range': None,
-                #     'shear_range': None,
-                #     'translate_range': None,
-                #     'scale_range': None,
-                #     'spatial_size': None,
-                #     'mode': 'bilinear',
-                #     'padding_mode': 'reflection',
-                #     'as_tensor_output': False,
-                #     'device': None,
-                # },
-                # 'Rand3DElastic': {
-                #     'sigma_range': (1.0, 1.0),
-                #     'magnitude_range': (1.0, 1.0),
-                #     'prob': 0.1,
-                #     'rotate_range': None,
-                #     'shear_range': None,
-                #     'translate_range': None,
-                #     'scale_range': None,
-                #     'spatial_size': None,
-                #     'mode': 'bilinear',
-                #     'padding_mode': 'reflection',
-                #     'as_tensor_output': False,
-                #     'device': None,
-                # },
-                # 'RandAffine': {
-                #     'prob': 0.1,
-                #     'rotate_range': None,
-                #     'shear_range': None,
-                #     'translate_range': None,
-                #     'scale_range': None,
-                #     'spatial_size': None,
-                #     'mode': 'bilinear',
-                #     'padding_mode': 'reflection',
-                #     'cache_grid': False,
-                #     'as_tensor_output': True,
-                #     'device': None,
-                # },
-                'RandRotate90': {'prob': 0.1, 'max_k': 3, 'spatial_axes': (0, 1)},
+                # 'RandRotate90': {'prob': 0.1, 'max_k': 3, 'spatial_axes': (0, 1)},
             },
             'training': {
                 'batch_size': 1,  # tbd
@@ -161,6 +120,7 @@ class ConfigFile:
                 },
                 'criterion': ['MSE_mean'],
                 'load_from_checkpoint_path': None,  # loads if valid *.ckpt provided
+                'dev_show_train_batch': True,
             },
             'trainer': {
                 'default_root_dir': os.path.join(experiment_path, '4_results'),
@@ -179,7 +139,7 @@ class ConfigFile:
                 'fast_dev_run': False,
                 'resume_from_checkpoint': None,
                 'auto_lr_find': False,
-                'model_summary_depth': 3,
+                'model_summary_depth': -1,
                 'early_stop': {'min_delta': 0.01, 'patience': 5, 'verbose': False, 'mode': 'max'},
             },
             'post_processing': {},
