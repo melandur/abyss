@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 
 from abyss.training.augmentation import Augmentation
 from abyss.training.dataset import Dataset
-from abyss.training.nets import resnet_10, unet
+from abyss.training.nets import resnet_10
 
 
 class Model(pl.LightningModule):
@@ -17,7 +17,7 @@ class Model(pl.LightningModule):
     def __init__(self, config_manager: ClassVar):
         super().__init__()
         self.config_manager = config_manager
-        self.params = config_manager.params
+        self.params = config_manager.get_params()
         self.val_set = None
         self.test_set = None
         self.train_set = None
@@ -29,7 +29,6 @@ class Model(pl.LightningModule):
 
     def setup(self, stage: Optional[str] = None) -> torch.utils.data:
         if stage == 'fit' or stage is None:
-            augmentation = Augmentation(self.config_manager)
             self.train_set = Dataset(self.config_manager, 'train', self.transforms)
             self.val_set = Dataset(self.config_manager, 'val')
 
@@ -46,7 +45,7 @@ class Model(pl.LightningModule):
         # loss = F.cross_entropy(output, ground_truth)
         return loss
 
-    def training_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor:
+    def training_step(self, batch: torch.Tensor) -> torch.Tensor:
         """Predict, compare, log, backprop"""
         data, label = batch
         output = self(data)
@@ -55,7 +54,7 @@ class Model(pl.LightningModule):
         self.log('train_loss', loss.item())
         return loss
 
-    def validation_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor:
+    def validation_step(self, batch: torch.Tensor) -> torch.Tensor:
         """Predict, compare, log"""
         data, label = batch
         output = self(data)
@@ -73,7 +72,7 @@ class Model(pl.LightningModule):
         # mean_val_loss = torch.tensor(val_loss / (num_items + 1e-4))
         # self.log('val_loss', mean_val_loss)
 
-    def test_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor:
+    def test_step(self, batch: torch.Tensor) -> torch.Tensor:
         """Predict, compare, log"""
         data, label = batch
         output = self(data)

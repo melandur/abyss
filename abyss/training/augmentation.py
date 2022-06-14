@@ -8,7 +8,7 @@ class Augmentation:
     """Composes transformation based on the config file order"""
 
     def __init__(self, config_manager: ClassVar):
-        self.params = config_manager.params
+        self.params = config_manager.get_params()
 
     def compose_transforms(self) -> tf.Transform:
         """Compose active transformation"""

@@ -4,16 +4,16 @@ from typing import ClassVar
 
 from loguru import logger
 
-from abyss.utils import assure_instance_type
+from abyss.utils import NestedDefaultDict, assure_instance_type
 
 
 class Restructure:
     """Restructure original data -> to data/label folder"""
 
-    def __init__(self, config_manager: ClassVar, data_path_store: dict):
+    def __init__(self, config_manager: ClassVar, data_path_store: NestedDefaultDict):
         self.config_manager = config_manager
-        self.params = config_manager.params
-        self.path_memory = config_manager.path_memory
+        self.params = config_manager.get_params()
+        self.path_memory = config_manager.get_path_memory()
         self.label_search_tags = assure_instance_type(self.params['dataset']['label_search_tags'], dict)
         self.data_search_tags = assure_instance_type(self.params['dataset']['data_search_tags'], dict)
         self.data_path_store = data_path_store
@@ -28,24 +28,24 @@ class Restructure:
         logger.info(f'Copying original {data_type} to new structure -> 2_pre_processed_dataset')
         for case_name in sorted(self.data_path_store[data_type]):
             for tag_name in search_tags:
-                self.path_memory['structured_dataset_paths'][data_type][case_name][tag_name] = self.copy_helper(
-                    src=self.data_path_store[data_type][case_name][tag_name],
+                file_path = self.copy_helper(
+                    file_path=self.data_path_store[data_type][case_name][tag_name],
                     folder_name=data_type,
                     case_name=case_name,
                     tag_name=tag_name,
                 )
-        self.config_manager.store_path_memory_file()
+                self.path_memory['structured_dataset_paths'][data_type][case_name][tag_name] = file_path
 
-    def copy_helper(self, src: str, folder_name: str, case_name: str, tag_name: str) -> str:
+    def copy_helper(self, file_path: str, folder_name: str, case_name: str, tag_name: str) -> str:
         """Copy and renames files by their case and tag name, keeps file extension, returns the new file path"""
-        if isinstance(src, str) and os.path.isfile(src):
-            file_name = os.path.basename(src)
+        if isinstance(file_path, str) and os.path.isfile(file_path):
+            file_name = os.path.basename(file_path)
             file_extension = file_name.split(os.extsep, 1)[1]  # split on first . and uses the rest as extension
             new_file_name = f'{case_name}_{tag_name}.{file_extension}'
             dst_file_path = os.path.join(
                 self.params['project']['structured_dataset_store_path'], folder_name, new_file_name
             )
             os.makedirs(os.path.dirname(dst_file_path), exist_ok=True)
-            shutil.copy2(src=src, dst=dst_file_path)
+            shutil.copy2(src=file_path, dst=dst_file_path)
             return dst_file_path
         raise AssertionError(f'Files seems not to exist, case: {case_name}, tag: {tag_name}')

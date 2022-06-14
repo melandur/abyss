@@ -13,10 +13,10 @@ class PreProcessing:
 
     def __init__(self, config_manager: ClassVar):
         self.config_manager = config_manager
-        self.params = config_manager.params
-        self.path_memory = config_manager.path_memory
-        self.structured_dataset_paths = config_manager.get_path_memory('structured_dataset_paths')
-        np.random.seed(config_manager.params['meta']['seed'])
+        self.params = config_manager.get_params()
+        self.path_memory = config_manager.get_path_memory()
+        self.structured_dataset_paths = self.path_memory['structured_dataset_paths']
+        np.random.seed(self.params['meta']['seed'])
         self.data_transformation = None
         self.label_transformation = None
 
@@ -26,7 +26,7 @@ class PreProcessing:
         self.aggregate_label_transformations()
         self.process(self.label_transformation, 'label')
         self.process(self.data_transformation, 'data')
-        self.config_manager.store_path_memory_file()
+        self.config_manager.set_path_memory(self.path_memory)
 
     def aggregate_data_transformations(self):
         """Add data filter"""
@@ -64,7 +64,7 @@ class PreProcessing:
                 file_path = self.structured_dataset_paths[data_type][case_name][file_tag]
                 subject = tio.Subject(data=tio.ScalarImage(file_path))
                 subject = transformation(subject)
-                self.save_data(subject, case_name, file_tag, folder_tag=data_type)
+                self.save_data(subject, case_name, file_tag, data_type)
 
     def save_data(self, subject: tio.Subject, case_name: str, file_tag: str, folder_tag: str):
         """Save data to preprocessed data folder as nifti file"""

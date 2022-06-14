@@ -5,8 +5,8 @@ class ConfigFile:
     """The pipelines control center, all parameters can be found here"""
 
     def __init__(self):
-        self.project_name = 'Abyss_test'  # tbd
-        self.experiment_name = 'experiment_4'  # tbd
+        self.project_name = 'aby'  # tbd
+        self.experiment_name = '1'  # tbd
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')  # tbd
         self.dataset_folder_path = '/home/melandur/Data/small'  # tbd
 
@@ -75,19 +75,19 @@ class ConfigFile:
                     'prob': 0.1,
                     'approx': 'erf',
                 },
-                'RandScaleIntensity': {'factors': (1.0, 1.0), 'prob': 0.1},
-                'RandFlip': {'prob': 0.1, 'spatial_axis': None},
+                # 'RandScaleIntensity': {'factors': (1.0, 1.0), 'prob': 0.1},
+                # 'RandFlip': {'prob': 0.1, 'spatial_axis': None},
                 # 'RandAdjustContrast': {'prob': 0.1, 'gamma': (0.5, 4.5)},
-                'RandRotate': {
-                    'range_x': 0.0,
-                    'range_y': 0.0,
-                    'range_z': 0.0,
-                    'prob': 0.1,
-                    'keep_size': True,
-                    'mode': 'bilinear',
-                    'padding_mode': 'border',
-                    'align_corners': False,
-                },
+                # 'RandRotate': {
+                #     'range_x': 0.0,
+                #     'range_y': 0.0,
+                #     'range_z': 0.0,
+                #     'prob': 0.1,
+                #     'keep_size': True,
+                #     'mode': 'bilinear',
+                #     'padding_mode': 'border',
+                #     'align_corners': False,
+                # },
                 # 'RandScaleCrop': {
                 #     'roi_scale': [1.0, 1.0],
                 #     'max_roi_scale': None,

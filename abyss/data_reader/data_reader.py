@@ -14,12 +14,11 @@ class DataReader:
 
     def __init__(self, config_manager: ClassVar):
         self.config_manager = config_manager
-        self.params = config_manager.params
-        self.path_memory = config_manager.path_memory
+        self.params = config_manager.get_params()
+        self.path_memory = config_manager.get_path_memory()
         self.label_search_tags = assure_instance_type(self.params['dataset']['label_search_tags'], dict)
         self.data_search_tags = assure_instance_type(self.params['dataset']['data_search_tags'], dict)
-
-        self.data_path_store = NestedDefaultDict
+        self.data_path_store = NestedDefaultDict()
 
     def __call__(self):
         """Run"""
@@ -29,6 +28,7 @@ class DataReader:
         self.show_dict_findings()
         data_restruct = Restructure(self.config_manager, self.data_path_store)
         data_restruct()
+        self.config_manager.set_path_memory(self.path_memory)
 
     def show_dict_findings(self):
         """Summaries the findings"""

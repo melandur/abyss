@@ -10,14 +10,15 @@ class FileFinder:
     """Creates a nested dictionary, which holds keys:case_names, values: label and image paths"""
 
     def __init__(self, config_manager: ClassVar):
-        self.dataset_folder_path = config_manager.params['dataset']['folder_path']
-        self.label_search_tags = assure_instance_type(config_manager.params['dataset']['label_search_tags'], dict)
-        self.label_file_type = assure_instance_type(config_manager.params['dataset']['label_file_type'], list)
-        self.data_search_tags = assure_instance_type(config_manager.params['dataset']['data_search_tags'], dict)
-        self.data_file_type = assure_instance_type(config_manager.params['dataset']['data_file_type'], list)
+        params = config_manager.get_params()
+        self.dataset_folder_path = params['dataset']['folder_path']
+        self.label_search_tags = assure_instance_type(params['dataset']['label_search_tags'], dict)
+        self.label_file_type = assure_instance_type(params['dataset']['label_file_type'], list)
+        self.data_search_tags = assure_instance_type(params['dataset']['data_search_tags'], dict)
+        self.data_file_type = assure_instance_type(params['dataset']['data_file_type'], list)
         self.data_path_store = NestedDefaultDict()
 
-    def __call__(self) -> dict:
+    def __call__(self) -> NestedDefaultDict:
         """Run data analyzer"""
         logger.info(f'Run: {self.__class__.__name__} -> {self.dataset_folder_path}')
         if os.path.isdir(self.dataset_folder_path):

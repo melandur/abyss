@@ -16,7 +16,7 @@ class Trainer:
     """Based on pytorch_lightning trainer"""
 
     def __init__(self, config_manager: ClassVar):
-        self.params = config_manager.params
+        self.params = config_manager.get_params()
 
         # Integrated loggers: TBoard, MLflow, Comet, Neptune, WandB
         results_store_path = self.params['project']['result_store_path']

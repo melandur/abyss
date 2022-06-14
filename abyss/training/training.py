@@ -12,7 +12,7 @@ class Training:
 
     def __init__(self, config_manager: ClassVar):
         self.config_manager = config_manager
-        self.params = config_manager.params
+        self.params = config_manager.get_params()
         self.model = Model(self.config_manager)
 
         if self.params['training']['load_from_checkpoint_path']:

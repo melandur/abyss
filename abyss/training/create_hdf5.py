@@ -13,40 +13,37 @@ class CreateHDF5:
 
     def __init__(self, config_manager: ClassVar):
         self.config_manager = config_manager
-        self.params = config_manager.params
-        self.path_memory = config_manager.path_memory
-        self.data_store_paths = None
+        self.params = config_manager.get_params()
+        self.path_memory = config_manager.get_path_memory()
+        self.data_store_paths = self.get_data_store_paths()
         self.trainset_store_path = os.path.join(self.params['project']['trainset_store_path'], 'data.h5')
         self.train_set_cases = None
         self.val_set_cases = None
         self.test_set_cases = None
         self.use_val_fraction = False
-        np.random.seed(self.config_manager.params['meta']['seed'])
+        np.random.seed(self.params['meta']['seed'])
 
     def __call__(self):
         logger.info(f'Run: {self.__class__.__name__}')
-        self.get_data_store_paths()
         self.check_fold_settings()
         self.train_test_split()
         self.train_val_split()
         self.contamination_check()
         self.execute_dataset_split()
         self.show_tree_structure()
-        self.config_manager.store_path_memory_file()
+        self.config_manager.set_path_memory(self.path_memory)
 
     def get_data_store_paths(self):
-        """Returns the current data store path, either from structured or preprocessed dataset"""
-        if len(self.config_manager.get_path_memory('preprocessed_dataset_paths')['data']) != 0:
-            self.data_store_paths = self.config_manager.get_path_memory('preprocessed_dataset_paths')
-            logger.info(f'HDF5 file will be created from preprocessed dataset')
-        elif len(self.config_manager.get_path_memory('structured_dataset_paths')['data']) != 0:
-            self.data_store_paths = self.config_manager.get_path_memory('structured_dataset_paths')
-            logger.info(f'HDF5 file will be created from structured dataset')
-        else:
-            raise ValueError(
-                f'Path memory file is empty for structured and preprocessed data, check config_file -> '
-                f'pipeline_steps'
-            )
+        """Returns the current data store path, with prio 1: preprocessed, prio 2: structured dataset"""
+        if len(self.path_memory['preprocessed_dataset_paths']['data']) != 0:
+            logger.info('HDF5 file will be created from preprocessed dataset')
+            return self.path_memory['preprocessed_dataset_paths']
+        if len(self.path_memory['structured_dataset_paths']['data']) != 0:
+            logger.info('HDF5 file will be created from structured dataset')
+            return self.path_memory['structured_dataset_paths']
+        raise ValueError(
+            'Path memory file is empty for structured and preprocessed data, check config_file -> pipeline_steps'
+        )
 
     def train_test_split(self):
         """Creates a list with case names for train and test set each"""
@@ -126,9 +123,8 @@ class CreateHDF5:
             for file_tag in file_tags:
                 file_path = self.data_store_paths[data_type][case_name][file_tag]
                 self.writer(h5_object, set_tag, data_type, case_name, file_tag, file_path)
-                self.path_memory[f'{set_tag}_dataset_paths'][data_type][case_name][
-                    file_tag
-                ] = f'{set_tag}/{data_type}/{case_name}/{file_tag}'
+                train_file_path = f'{set_tag}/{data_type}/{case_name}/{file_tag}'
+                self.path_memory[f'{set_tag}_dataset_paths'][data_type][case_name][file_tag] = train_file_path
 
     def execute_dataset_split(self):
         """Write files to train/validation/test folders in hdf5"""
@@ -149,7 +145,7 @@ class CreateHDF5:
         branch = f'{shift}{item_name}'
         if isinstance(obj, h5py.Dataset):
             branch = f'{branch} {obj.shape}'
-        logger.debug(branch)
+        logger.info(branch)
 
     def show_tree_structure(self):
         """Visualize tree structure of hdf5"""
