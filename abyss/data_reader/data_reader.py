@@ -2,20 +2,19 @@ import json
 import os
 
 from loguru import logger
-from typing_extensions import ClassVar
 
+from abyss.config import ConfigManager
 from abyss.data_reader.file_finder import FileFinder
 from abyss.data_reader.restructure import Restructure
 from abyss.utils import NestedDefaultDict, assure_instance_type
 
 
-class DataReader:
+class DataReader(ConfigManager):
     """Read and clean original data"""
 
-    def __init__(self, config_manager: ClassVar):
-        self.config_manager = config_manager
-        self.params = config_manager.get_params()
-        self.path_memory = config_manager.get_path_memory()
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._shared_state.update(kwargs)
         self.label_search_tags = assure_instance_type(self.params['dataset']['label_search_tags'], dict)
         self.data_search_tags = assure_instance_type(self.params['dataset']['data_search_tags'], dict)
         self.data_path_store = NestedDefaultDict()
@@ -23,12 +22,12 @@ class DataReader:
     def __call__(self):
         """Run"""
         logger.info(f'Run: {self.__class__.__name__}')
-        file_finder = FileFinder(self.config_manager)
+        file_finder = FileFinder()
         self.data_path_store = file_finder()
         self.show_dict_findings()
-        data_restruct = Restructure(self.config_manager, self.data_path_store)
+        data_restruct = Restructure(self.data_path_store)
         data_restruct()
-        self.config_manager.set_path_memory(self.path_memory)
+        self.store_path_memory_file()
 
     def show_dict_findings(self):
         """Summaries the findings"""

@@ -1,21 +1,22 @@
 import os
 
 from loguru import logger
-from typing_extensions import ClassVar
 
+from abyss.config import ConfigManager
 from abyss.utils import NestedDefaultDict, assure_instance_type
 
 
-class FileFinder:
+class FileFinder(ConfigManager):
     """Creates a nested dictionary, which holds keys:case_names, values: label and image paths"""
 
-    def __init__(self, config_manager: ClassVar):
-        params = config_manager.get_params()
-        self.dataset_folder_path = params['dataset']['folder_path']
-        self.label_search_tags = assure_instance_type(params['dataset']['label_search_tags'], dict)
-        self.label_file_type = assure_instance_type(params['dataset']['label_file_type'], list)
-        self.data_search_tags = assure_instance_type(params['dataset']['data_search_tags'], dict)
-        self.data_file_type = assure_instance_type(params['dataset']['data_file_type'], list)
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._shared_state.update(kwargs)
+        self.dataset_folder_path = self.params['dataset']['folder_path']
+        self.label_search_tags = assure_instance_type(self.params['dataset']['label_search_tags'], dict)
+        self.label_file_type = assure_instance_type(self.params['dataset']['label_file_type'], list)
+        self.data_search_tags = assure_instance_type(self.params['dataset']['data_search_tags'], dict)
+        self.data_file_type = assure_instance_type(self.params['dataset']['data_file_type'], list)
         self.data_path_store = NestedDefaultDict()
 
     def __call__(self) -> NestedDefaultDict:

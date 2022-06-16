@@ -1,5 +1,4 @@
 import os
-from typing import ClassVar
 
 import torchmetrics
 from loguru import logger
@@ -11,12 +10,15 @@ from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTheme
 from pytorch_lightning.loggers import TensorBoardLogger
 
+from abyss.config import ConfigManager
 
-class Trainer:
+
+class Trainer(ConfigManager):
     """Based on pytorch_lightning trainer"""
 
-    def __init__(self, config_manager: ClassVar):
-        self.params = config_manager.get_params()
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._shared_state.update(kwargs)
 
         # Integrated loggers: TBoard, MLflow, Comet, Neptune, WandB
         results_store_path = self.params['project']['result_store_path']

@@ -64,46 +64,6 @@ class ConfigFile:
                     'resize': {'active': True, 'dim': (100, 100, 100), 'interpolator': 'nearest'},
                 },
             },
-            'augmentation': {
-                # based on monai.transforms | comment/delete unused ones | order corresponds to the application sequence
-                # https://docs.monai.io/en/stable/transforms.html#vanilla-transforms
-                'RandGaussianNoise': {'prob': 0.1, 'mean': 0.0, 'std': 0.1},
-                'RandGaussianSmooth': {
-                    'sigma_x': (0.25, 1.5),
-                    'sigma_y': (0.25, 1.5),
-                    'sigma_z': (0.25, 1.5),
-                    'prob': 0.1,
-                    'approx': 'erf',
-                },
-                # 'RandScaleIntensity': {'factors': (1.0, 1.0), 'prob': 0.1},
-                # 'RandFlip': {'prob': 0.1, 'spatial_axis': None},
-                # 'RandAdjustContrast': {'prob': 0.1, 'gamma': (0.5, 4.5)},
-                # 'RandRotate': {
-                #     'range_x': 0.0,
-                #     'range_y': 0.0,
-                #     'range_z': 0.0,
-                #     'prob': 0.1,
-                #     'keep_size': True,
-                #     'mode': 'bilinear',
-                #     'padding_mode': 'border',
-                #     'align_corners': False,
-                # },
-                # 'RandScaleCrop': {
-                #     'roi_scale': [1.0, 1.0],
-                #     'max_roi_scale': None,
-                #     'random_center': True,
-                #     'random_size': True,
-                # },
-                # 'RandHistogramShift': {'num_control_points': 10, 'prob': 0.1},
-                # 'RandSpatialCrop': {
-                #     'roi_size': [1, 1],
-                #     'max_roi_size': None,
-                #     'random_center': True,
-                #     'random_size': True,
-                # },
-                # 'RandBiasField': {'degree': 3, 'coeff_range': (0.0, 0.1), 'prob': 0.1},
-                # 'RandRotate90': {'prob': 0.1, 'max_k': 3, 'spatial_axes': (0, 1)},
-            },
             'training': {
                 'batch_size': 1,  # tbd
                 'optimizers': {

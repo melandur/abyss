@@ -1,37 +1,38 @@
 import copy
 import os
-from typing import ClassVar
 
 import h5py
 import numpy as np
 import SimpleITK as sitk
 from loguru import logger
 
+from abyss.config import ConfigManager
 
-class CreateHDF5:
+
+class CreateHDF5(ConfigManager):
     """Create train, val, and test set for training"""
 
-    def __init__(self, config_manager: ClassVar):
-        self.config_manager = config_manager
-        self.params = config_manager.get_params()
-        self.path_memory = config_manager.get_path_memory()
-        self.data_store_paths = self.get_data_store_paths()
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._shared_state.update(kwargs)
         self.trainset_store_path = os.path.join(self.params['project']['trainset_store_path'], 'data.h5')
         self.train_set_cases = None
         self.val_set_cases = None
         self.test_set_cases = None
         self.use_val_fraction = False
+        self.data_store_paths = None
         np.random.seed(self.params['meta']['seed'])
 
     def __call__(self):
         logger.info(f'Run: {self.__class__.__name__}')
+        self.data_store_paths = self.get_data_store_paths()
         self.check_fold_settings()
         self.train_test_split()
         self.train_val_split()
         self.contamination_check()
         self.execute_dataset_split()
         self.show_tree_structure()
-        self.config_manager.set_path_memory(self.path_memory)
+        self.store_path_memory_file()
 
     def get_data_store_paths(self):
         """Returns the current data store path, with prio 1: preprocessed, prio 2: structured dataset"""

@@ -1,4 +1,4 @@
-from typing import ClassVar, Optional
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import pytorch_lightning as pl
@@ -14,14 +14,15 @@ from abyss.training.nets import resnet_10
 class Model(pl.LightningModule):
     """Holds model definitions"""
 
-    def __init__(self, config_manager: ClassVar):
+    def __init__(self, params, path_memory):
         super().__init__()
-        self.config_manager = config_manager
-        self.params = config_manager.get_params()
+        self.params = params
+        self.path_memory = path_memory
+        self.net = None
         self.val_set = None
         self.test_set = None
         self.train_set = None
-        self.transforms = Augmentation(self.config_manager).compose_transforms()
+        self.transforms = Augmentation()()
         self.net = resnet_10
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -29,11 +30,11 @@ class Model(pl.LightningModule):
 
     def setup(self, stage: Optional[str] = None) -> torch.utils.data:
         if stage == 'fit' or stage is None:
-            self.train_set = Dataset(self.config_manager, 'train', self.transforms)
-            self.val_set = Dataset(self.config_manager, 'val')
+            self.train_set = Dataset(self.params, self.path_memory, 'train', self.transforms)
+            self.val_set = Dataset(self.params, self.path_memory, 'val')
 
         if stage == 'test' or stage is None:
-            self.test_set = Dataset(self.config_manager, 'test')
+            self.test_set = Dataset(self.params, self.path_memory, self.config_manager, 'test')
 
     def compute_loss(self, output: torch.Tensor, ground_truth: torch.Tensor) -> torch.Tensor:
         """Returns loss"""
@@ -127,8 +128,8 @@ class Model(pl.LightningModule):
 
     def show_train_batch(self):
         """Visualize ce train batch"""
-        ori_dataset = Dataset(self.config_manager, 'train')
-        aug_dataset = Dataset(self.config_manager, 'train', self.transforms)
+        ori_dataset = Dataset(self.params, self.path_memory, 'train')
+        aug_dataset = Dataset(self.params, self.path_memory, 'train', self.transforms)
 
         ori_loader = DataLoader(ori_dataset, 1)
         aug_loader = DataLoader(aug_dataset, 1)

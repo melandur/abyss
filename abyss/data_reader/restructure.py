@@ -1,22 +1,21 @@
 import os
 import shutil
-from typing import ClassVar
 
 from loguru import logger
 
+from abyss.config import ConfigManager
 from abyss.utils import NestedDefaultDict, assure_instance_type
 
 
-class Restructure:
+class Restructure(ConfigManager):
     """Restructure original data -> to data/label folder"""
 
-    def __init__(self, config_manager: ClassVar, data_path_store: NestedDefaultDict):
-        self.config_manager = config_manager
-        self.params = config_manager.get_params()
-        self.path_memory = config_manager.get_path_memory()
+    def __init__(self, data_path_store: NestedDefaultDict, **kwargs):
+        super().__init__()
+        self.data_path_store = data_path_store
+        self._shared_state.update(kwargs)
         self.label_search_tags = assure_instance_type(self.params['dataset']['label_search_tags'], dict)
         self.data_search_tags = assure_instance_type(self.params['dataset']['data_search_tags'], dict)
-        self.data_path_store = data_path_store
 
     def __call__(self):
         logger.info(f'Run: {self.__class__.__name__}')

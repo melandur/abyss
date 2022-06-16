@@ -1,28 +1,29 @@
 import os
-from typing import ClassVar
 
 from loguru import logger
 
+from abyss.config import ConfigManager
 from abyss.training.model import Model
 from abyss.training.trainer import Trainer
 
 
-class Training:
+class Training(ConfigManager):
     """That's were the gpu is getting sweaty"""
 
-    def __init__(self, config_manager: ClassVar):
-        self.config_manager = config_manager
-        self.params = config_manager.get_params()
-        self.model = Model(self.config_manager)
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._shared_state.update(kwargs)
+        self.model = None
 
+    def __call__(self):
+        self.model = Model(self.params, self.path_memory)
         if self.params['training']['load_from_checkpoint_path']:
             self.load_from_checkpoint()
 
         if self.params['training']['dev_show_train_batch']:
             self.model.show_train_batch()
 
-    def __call__(self):
-        trainer = Trainer(self.config_manager)()
+        trainer = Trainer()()
         trainer.fit(self.model)
         trainer.test(self.model)
 
@@ -32,4 +33,4 @@ class Training:
         if not os.path.isfile(ckpt_path):
             raise FileExistsError(f'Checkpoint file path not found -> {ckpt_path}')
         logger.info(f'Load checkpoint -> {ckpt_path}')
-        self.model = self.model.load_from_checkpoint(ckpt_path, config_manager=self.config_manager)
+        self.model = self.model.load_from_checkpoint(ckpt_path)

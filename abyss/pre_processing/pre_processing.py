@@ -3,22 +3,21 @@ import os
 import numpy as np
 import torchio as tio
 from loguru import logger
-from typing_extensions import ClassVar
+
+from abyss.config import ConfigManager
 
 
-class PreProcessing:
+class PreProcessing(ConfigManager):
     """Preprocess data/labels"""
 
     # TODO: Subject wise preprocessing
 
-    def __init__(self, config_manager: ClassVar):
-        self.config_manager = config_manager
-        self.params = config_manager.get_params()
-        self.path_memory = config_manager.get_path_memory()
-        self.structured_dataset_paths = self.path_memory['structured_dataset_paths']
-        np.random.seed(self.params['meta']['seed'])
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._shared_state.update(kwargs)
         self.data_transformation = None
         self.label_transformation = None
+        np.random.seed(self.params['meta']['seed'])
 
     def __call__(self):
         logger.info(f'Run: {self.__class__.__name__}')
@@ -26,7 +25,7 @@ class PreProcessing:
         self.aggregate_label_transformations()
         self.process(self.label_transformation, 'label')
         self.process(self.data_transformation, 'data')
-        self.config_manager.set_path_memory(self.path_memory)
+        self.store_path_memory_file()
 
     def aggregate_data_transformations(self):
         """Add data filter"""
@@ -38,9 +37,9 @@ class PreProcessing:
             transforms.append(
                 tio.Resize(target_shape=params['resize']['dim'], image_interpolation=params['resize']['interpolator'])
             )
-        if params['resize']['active']:
+        if params['z_score']['active']:
             transforms.append(tio.ZNormalization())
-        if params['resize']['active']:
+        if params['rescale_intensity']['active']:
             transforms.append(tio.RescaleIntensity())
         self.data_transformation = tio.Compose(transforms)
 
@@ -58,10 +57,11 @@ class PreProcessing:
 
     def process(self, transformation: tio.Transform, data_type: str):
         """Applies pre-processing task on data"""
-        for case_name in self.structured_dataset_paths[data_type]:
+        structured_dataset_paths = self.path_memory['structured_dataset_paths']
+        for case_name in structured_dataset_paths[data_type]:
             logger.debug(f'{data_type}: {case_name}')
-            for file_tag in self.structured_dataset_paths[data_type][case_name]:
-                file_path = self.structured_dataset_paths[data_type][case_name][file_tag]
+            for file_tag in structured_dataset_paths[data_type][case_name]:
+                file_path = structured_dataset_paths[data_type][case_name][file_tag]
                 subject = tio.Subject(data=tio.ScalarImage(file_path))
                 subject = transformation(subject)
                 self.save_data(subject, case_name, file_tag, data_type)

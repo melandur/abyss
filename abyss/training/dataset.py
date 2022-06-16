@@ -1,6 +1,5 @@
 import os
 import random
-from typing import ClassVar
 
 import h5py
 import numpy as np
@@ -11,19 +10,15 @@ from torch.utils.data import Dataset as torch_Dataset
 class Dataset(torch_Dataset):
     """Can be used to create dataset for train, val & test set"""
 
-    def __init__(self, config_manager: ClassVar, set_name: str, transforms=None):
-        super().__init__()
-        self.config_manager = config_manager
+    def __init__(self, params: dict, path_memory: dict, set_name: str, transforms=None):
         self.set_name = set_name
         self.transforms = transforms
         self.h5_object = None
-        self.params = config_manager.get_params()
-        path_memory = config_manager.get_path_memory()
         self.dataset_paths = path_memory[f'{set_name}_dataset_paths']
         set_case_names = list(self.dataset_paths['data'].keys())
-        random.seed(self.params['meta']['seed'])
+        random.seed(params['meta']['seed'])
         self.random_set_case_names = random.sample(set_case_names, len(set_case_names))
-        h5_file_path = os.path.join(self.params['project']['trainset_store_path'], 'data.h5')
+        h5_file_path = os.path.join(params['project']['trainset_store_path'], 'data.h5')
         if os.path.isfile(h5_file_path):
             self.h5_object = h5py.File(h5_file_path, 'r')
         else:
@@ -40,13 +35,13 @@ class Dataset(torch_Dataset):
         for idx, file_tag in enumerate(self.dataset_paths['data'][case_name]):
             tmp_img = self.h5_object.get(f'{self.set_name}/data/{case_name}/{file_tag}')
             tmp_img = np.asarray(tmp_img)
-            if self.transforms:
-                tmp_img = self.transforms(tmp_img)
+            tmp_img = np.expand_dims(tmp_img, axis=0)
             if idx == 0:
-                img = np.expand_dims(tmp_img, axis=0)
+                img = tmp_img
             else:
-                tmp_img = np.expand_dims(tmp_img, axis=0)
                 img = np.concatenate((img, tmp_img), axis=0)
+        if self.transforms:
+            img = self.transforms(img)
         return torch.from_numpy(img)
 
     def retrieve_label(self, case_name: str) -> torch.tensor:
