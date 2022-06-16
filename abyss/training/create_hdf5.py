@@ -7,6 +7,7 @@ import SimpleITK as sitk
 from loguru import logger
 
 from abyss.config import ConfigManager
+from abyss.utils import NestedDefaultDict
 
 
 class CreateHDF5(ConfigManager):
@@ -130,6 +131,9 @@ class CreateHDF5(ConfigManager):
     def execute_dataset_split(self):
         """Write files to train/validation/test folders in hdf5"""
         logger.info(f'Write hdf5 file -> {self.trainset_store_path}')
+        self.path_memory['train_dataset_paths'] = NestedDefaultDict()
+        self.path_memory['val_dataset_paths'] = NestedDefaultDict()
+        self.path_memory['test_dataset_paths'] = NestedDefaultDict()
         with h5py.File(self.trainset_store_path, 'w') as h5_object:
             self.create_set(h5_object, self.train_set_cases, 'train', 'data')
             self.create_set(h5_object, self.train_set_cases, 'train', 'label')

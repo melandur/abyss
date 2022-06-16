@@ -2,8 +2,7 @@ from datetime import datetime
 
 from loguru import logger
 
-from abyss import ConfigManager, DataReader, CreateHDF5, PreProcessing, Training
-
+from abyss import ConfigManager, CreateHDF5, DataReader, PreProcessing, Training
 
 if __name__ == '__main__':
     start = datetime.now()

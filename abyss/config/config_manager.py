@@ -16,7 +16,7 @@ from abyss.utils import NestedDefaultDict
 class ConfigManager:
     """Manages config file and path memory file"""
 
-    _shared_state = {}
+    _shared_state = {}  # borg pattern is used, shared class state (params and path_memory state) with children
 
     def __init__(self, load_config_file_path: str = None):
         self.__dict__ = self._shared_state

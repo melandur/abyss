@@ -34,7 +34,7 @@ class Model(pl.LightningModule):
             self.val_set = Dataset(self.params, self.path_memory, 'val')
 
         if stage == 'test' or stage is None:
-            self.test_set = Dataset(self.params, self.path_memory, self.config_manager, 'test')
+            self.test_set = Dataset(self.params, self.path_memory, 'test')
 
     def compute_loss(self, output: torch.Tensor, ground_truth: torch.Tensor) -> torch.Tensor:
         """Returns loss"""
@@ -55,7 +55,7 @@ class Model(pl.LightningModule):
         self.log('train_loss', loss.item())
         return loss
 
-    def validation_step(self, batch: torch.Tensor) -> torch.Tensor:
+    def validation_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor:
         """Predict, compare, log"""
         data, label = batch
         output = self(data)
@@ -73,7 +73,7 @@ class Model(pl.LightningModule):
         # mean_val_loss = torch.tensor(val_loss / (num_items + 1e-4))
         # self.log('val_loss', mean_val_loss)
 
-    def test_step(self, batch: torch.Tensor) -> torch.Tensor:
+    def test_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor:
         """Predict, compare, log"""
         data, label = batch
         output = self(data)

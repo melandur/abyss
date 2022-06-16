@@ -22,6 +22,7 @@ class DataReader(ConfigManager):
     def __call__(self):
         """Run"""
         logger.info(f'Run: {self.__class__.__name__}')
+        self.path_memory['structured_dataset_paths'] = NestedDefaultDict()
         file_finder = FileFinder()
         self.data_path_store = file_finder()
         self.show_dict_findings()

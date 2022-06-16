@@ -17,8 +17,8 @@ class ConfigFile:
             'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
                 'data_reader': False,
-                'pre_processing': False,
-                'create_trainset': False,
+                'pre_processing': True,
+                'create_trainset': True,
                 'training': True,
                 'post_processing': False,  # TODO: Implement
             },
@@ -80,7 +80,7 @@ class ConfigFile:
                 },
                 'criterion': ['MSE_mean'],
                 'load_from_checkpoint_path': None,  # loads if valid *.ckpt provided
-                'dev_show_train_batch': True,
+                'dev_show_train_batch': False,
             },
             'trainer': {
                 'default_root_dir': os.path.join(experiment_path, '4_results'),
