@@ -1,5 +1,6 @@
 import os
 
+import torch
 from loguru import logger
 
 from abyss.config import ConfigManager
@@ -18,7 +19,10 @@ class Training(ConfigManager):
     def __call__(self):
         self.model = Model(self.params, self.path_memory)
         if self.params['training']['load_from_checkpoint_path']:
-            self.load_from_checkpoint()
+            self.load_checkpoint()
+
+        if self.params['training']['load_from_weights_path']:
+            self.load_weights()
 
         if self.params['training']['dev_show_train_batch']:
             self.model.show_train_batch()
@@ -27,10 +31,18 @@ class Training(ConfigManager):
         trainer.fit(self.model)
         trainer.test(self.model)
 
-    def load_from_checkpoint(self):
-        """Load checkpoint to proceed training"""
+    def load_checkpoint(self):
+        """Load checkpoint (weights, optimizer state) to proceed training"""
         ckpt_path = self.params['training']['load_from_checkpoint_path']
         if not os.path.isfile(ckpt_path):
             raise FileExistsError(f'Checkpoint file path not found -> {ckpt_path}')
         logger.info(f'Load checkpoint -> {ckpt_path}')
         self.model = self.model.load_from_checkpoint(ckpt_path)
+
+    def load_weights(self):
+        """Load only weights, resets optimizer state"""
+        weights_path = self.params['training']['load_from_weights_path']
+        if not os.path.isfile(weights_path):
+            raise FileExistsError(f'Checkpoint file path not found -> {weights_path}')
+        logger.info(f'Load weights -> {weights_path}')
+        self.model.load_state_dict(torch.load(weights_path, map_location='cuda:0'), strict=False)
