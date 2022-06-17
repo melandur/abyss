@@ -35,54 +35,51 @@ class Augmentation:
     def __init__(self):
         spatial_transforms = tf.Compose(
             [
-                tf.RandRotate(range_x=(-1, 1), range_y=(-1, 1), range_z=(-1, 1), prob=0.8),
-                # tf.OneOf([tio.RandomFlip(axes=0, flip_probability=1.0),
-                #           tio.RandomFlip(axes=1, flip_probability=1.0),
-                #           tio.RandomFlip(axes=2, flip_probability=1.0)]),
-                # tio.RandomElasticDeformation(max_displacement=7, locked_borders=2,
+                tf.RandRotated(keys=['data', 'label'], range_x=(-1, 1), range_y=(-1, 1), range_z=(-1, 1), prob=0.8),
+                tf.OneOf(
+                    [
+                        tio.RandomFlip(include=['data', 'label'], axes=0, flip_probability=1.0),
+                        tio.RandomFlip(include=['data', 'label'], axes=1, flip_probability=1.0),
+                        tio.RandomFlip(include=['data', 'label'], axes=2, flip_probability=1.0),
+                    ]
+                ),
+                # tio.RandomElasticDeformation(include=['data', 'label'], max_displacement=7, locked_borders=2,
                 #                              image_interpolation='bspline', label_interpolation='nearest'),
-                # tio.RandomElasticDeformation(max_displacement=2, locked_borders=2,
+                # tio.RandomElasticDeformation(include=['data', 'label'], max_displacement=2, locked_borders=2,
                 #                              image_interpolation='bspline', label_interpolation='nearest'),
             ]
         )
 
-        # spatial_transforms = [
-        #     tf.OneOf(
-        #     [
-        #
-        #     ]
-        #
-        # )]
         intensity_transforms = tf.OneOf(
             [
-                tf.RandAdjustContrast(prob=1.0, gamma=(1.0, 2.0)),
-                tf.RandBiasField(prob=1.0),
-                tf.RandGaussianNoise(prob=1.0),
+                tf.RandAdjustContrastd(keys=['data'], prob=1.0, gamma=(1.0, 2.0)),
+                tf.RandBiasFieldd(keys=['data'], prob=1.0),
+                tf.RandGaussianNoised(keys=['data'], prob=1.0),
             ]
         )
 
         artefact_transforms = tf.OneOf(
             [
-                # tf.RandGibbsNoise(prob=1.0, alpha=(0.1, 1.0), as_tensor_output=True),
-                # tf.RandKSpaceSpikeNoise(prob=1.0, intensity_range=(12, 12), channel_wise=False,
-                # as_tensor_output=True),
-                tio.RandomMotion(translation=0.1, degrees=2)
+                tf.RandGibbsNoised(keys=['data'], prob=1.0, alpha=(0.1, 1.0), as_tensor_output=True),
+                tf.RandKSpaceSpikeNoised(
+                    keys=['data'], prob=1.0, intensity_range=(4, 11), channel_wise=False, as_tensor_output=True
+                ),
+                tio.RandomMotion(include=['data'], translation=0.1, degrees=2),
             ]
         )
 
-        self.transform = tf.Compose(
+        self.data_transforms = tf.Compose(
             [
-                # orientation_transforms,,
                 spatial_transforms,
-                # intensity_transforms,
-                # artefact_transforms,
-                # tf.RandCoarseDropout(holes=100, spatial_size=10, fill_value=0, prob=0.5),
-                # tf.NormalizeIntensity(),
+                intensity_transforms,
+                artefact_transforms,
+                tf.RandCoarseDropoutd(keys=['data'], holes=100, spatial_size=10, fill_value=0, prob=0.5),
+                tf.NormalizeIntensityd(keys=['data']),
             ]
         )
 
     def __call__(self):
-        return self.transform
+        return self.data_transforms
 
         # if tr_name == 'RandGaussianNoise':
         #     transforms.append(tf.RandGaussianNoise(**tr_params, dtype=np.float32))

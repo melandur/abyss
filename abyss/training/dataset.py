@@ -1,4 +1,3 @@
-import copy
 import os
 import random
 
@@ -58,13 +57,10 @@ class Dataset(torch_Dataset):
         case_name = self.random_set_case_names[index]
         data = self.concatenate_data(case_name)
         label = self.retrieve_label(case_name)
-
+        sample = {'data': data, 'label': label}
         if self.transforms:
-            tmp_transforms = copy.deepcopy(self.transforms)  # torch.manuel_seed deos not work on monai transforms
-            data = self.transforms(data)
-            label = tmp_transforms(label)
-
-        return data, label
+            sample = self.transforms(sample)
+        return sample['data'], sample['label']
 
     def __len__(self) -> int:
         """Holds number of cases"""
