@@ -36,7 +36,8 @@ class Model(pl.LightningModule):
         if stage == 'test' or stage is None:
             self.test_set = Dataset(self.params, self.path_memory, 'test')
 
-    def compute_loss(self, output: torch.Tensor, ground_truth: torch.Tensor) -> torch.Tensor:
+    @staticmethod
+    def compute_loss(output: torch.Tensor, ground_truth: torch.Tensor) -> torch.Tensor:
         """Returns loss"""
         # loss = torch.tensor([0])
         # for criterion in self.params['training']['criterion']:

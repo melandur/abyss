@@ -22,6 +22,7 @@ class CreateHDF5(ConfigManager):
         self.test_set_cases = None
         self.use_val_fraction = False
         self.data_store_paths = None
+        self.tree_store = ''
         np.random.seed(self.params['meta']['seed'])
 
     def __call__(self):
@@ -142,17 +143,17 @@ class CreateHDF5(ConfigManager):
             self.create_set(h5_object, self.test_set_cases, 'test', 'data')
             self.create_set(h5_object, self.test_set_cases, 'test', 'label')
 
-    @staticmethod
-    def branch_helper(name: str, obj: h5py.Group or h5py.Dataset):
+    def branch_helper(self, name: str, obj: h5py.Group or h5py.Dataset):
         """Makes branches kinda pretty"""
         shift = name.count('/') * 3 * ' '
         item_name = name.split('/')[-1]
         branch = f'{shift}{item_name}'
         if isinstance(obj, h5py.Dataset):
             branch = f'{branch} {obj.shape}'
-        logger.info(branch)
+        self.tree_store += f'\n{branch}'
 
     def show_tree_structure(self):
         """Visualize tree structure of hdf5"""
         h5_object = h5py.File(self.trainset_store_path, 'r')
         h5_object.visititems(self.branch_helper)  # iterates over each branch
+        logger.info(self.tree_store)
