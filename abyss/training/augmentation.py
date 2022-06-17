@@ -36,9 +36,9 @@ class Augmentation:
         spatial_transforms = tf.Compose(
             [
                 tf.RandRotate(range_x=(-1, 1), range_y=(-1, 1), range_z=(-1, 1), prob=0.8),
-                # tf.OneOf([tf.RandFlip(prob=1.0, spatial_axis=0),
-                #           tf.RandFlip(prob=1.0, spatial_axis=1),
-                #           tf.RandFlip(prob=1.0, spatial_axis=2)]),
+                # tf.OneOf([tio.RandomFlip(axes=0, flip_probability=1.0),
+                #           tio.RandomFlip(axes=1, flip_probability=1.0),
+                #           tio.RandomFlip(axes=2, flip_probability=1.0)]),
                 # tio.RandomElasticDeformation(max_displacement=7, locked_borders=2,
                 #                              image_interpolation='bspline', label_interpolation='nearest'),
                 # tio.RandomElasticDeformation(max_displacement=2, locked_borders=2,
@@ -77,7 +77,7 @@ class Augmentation:
                 # intensity_transforms,
                 # artefact_transforms,
                 # tf.RandCoarseDropout(holes=100, spatial_size=10, fill_value=0, prob=0.5),
-                tf.NormalizeIntensity(),
+                # tf.NormalizeIntensity(),
             ]
         )
 

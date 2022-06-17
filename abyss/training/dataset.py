@@ -1,3 +1,4 @@
+import copy
 import os
 import random
 
@@ -40,8 +41,6 @@ class Dataset(torch_Dataset):
                 img = tmp_img
             else:
                 img = np.concatenate((img, tmp_img), axis=0)
-        if self.transforms:
-            img = self.transforms(img)
         return torch.from_numpy(img)
 
     def retrieve_label(self, case_name: str) -> torch.tensor:
@@ -50,13 +49,21 @@ class Dataset(torch_Dataset):
             raise NotImplementedError('Only 1 label tag supported, adjust this method to your needs')
         for file_tag in self.dataset_paths['label'][case_name]:
             label = self.h5_object.get(f'{self.set_name}/label/{case_name}/{file_tag}')
-            return torch.from_numpy(np.asarray(label))
+            label = np.asarray(label)
+            label = np.expand_dims(label, axis=0)
+            return torch.from_numpy(label)
 
     def __getitem__(self, index) -> tuple:
         """Returns data and corresponding label"""
         case_name = self.random_set_case_names[index]
         data = self.concatenate_data(case_name)
         label = self.retrieve_label(case_name)
+
+        if self.transforms:
+            tmp_transforms = copy.deepcopy(self.transforms)  # torch.manuel_seed deos not work on monai transforms
+            data = self.transforms(data)
+            label = tmp_transforms(label)
+
         return data, label
 
     def __len__(self) -> int:

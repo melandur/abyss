@@ -139,13 +139,17 @@ class Model(pl.LightningModule):
         plt.figure(figsize=(15, 10))
         plt.tight_layout()
         while True:
-            for (ori_data, _), (aug_data, _) in zip(ori_loader, aug_loader):
+            for (ori_data, ori_label), (aug_data, aug_label) in zip(ori_loader, aug_loader):
                 for modality in range(len(ori_data[0])):
-                    plt.subplot(2, 4, modality + 1)
+                    plt.subplot(4, 4, modality + 1)
                     plt.title('Original')
                     plt.imshow(ori_data[0, modality, slice_number], cmap='gray')
-                    plt.subplot(2, 4, modality + 5)
+                    plt.subplot(4, 4, modality + 5)
+                    plt.imshow(ori_label[0, 0, slice_number])
+                    plt.subplot(4, 4, modality + 9)
                     plt.title('Augmented')
                     plt.imshow(aug_data[0, modality, slice_number], cmap='gray')
+                    plt.subplot(4, 4, modality + 13)
+                    plt.imshow(aug_label[0, 0, slice_number])
                 plt.draw()
                 plt.waitforbuttonpress(0)
