@@ -48,7 +48,7 @@ class ConfigFile:
                     't2': ['t2.', 'T2.'],
                     't1': ['t1.', 'T1.'],
                 },
-                'val_fraction': 0.2,  # only used when cross_fold = 1/1
+                'val_fraction': 0.2,  # only used when cross_fold = 1/1, otherwise defined as 1/max_number_of_folds
                 'test_fraction': 0.2,
                 'cross_fold': '1/1',
             },
