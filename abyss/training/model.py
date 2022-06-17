@@ -150,6 +150,6 @@ class Model(pl.LightningModule):
                     plt.title('Augmented')
                     plt.imshow(aug_data[0, modality, slice_number], cmap='gray')
                     plt.subplot(4, 4, modality + 13)
-                    plt.imshow(aug_label[0, 0, slice_number])
+                    plt.imshow(aug_label[0, 1, slice_number])
                 plt.draw()
                 plt.waitforbuttonpress(0)

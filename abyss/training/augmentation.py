@@ -35,7 +35,7 @@ class Augmentation:
     def __init__(self):
         spatial_transforms = tf.Compose(
             [
-                tf.RandRotated(keys=['data', 'label'], range_x=(-1, 1), range_y=(-1, 1), range_z=(-1, 1), prob=0.8),
+                # tf.RandRotated(keys=['data', 'label'], range_x=(-1, 1), range_y=(-1, 1), range_z=(-1, 1), prob=0.8),
                 tf.OneOf(
                     [
                         tio.RandomFlip(include=['data', 'label'], axes=0, flip_probability=1.0),
@@ -43,10 +43,6 @@ class Augmentation:
                         tio.RandomFlip(include=['data', 'label'], axes=2, flip_probability=1.0),
                     ]
                 ),
-                # tio.RandomElasticDeformation(include=['data', 'label'], max_displacement=7, locked_borders=2,
-                #                              image_interpolation='bspline', label_interpolation='nearest'),
-                # tio.RandomElasticDeformation(include=['data', 'label'], max_displacement=2, locked_borders=2,
-                #                              image_interpolation='bspline', label_interpolation='nearest'),
             ]
         )
 
@@ -60,20 +56,22 @@ class Augmentation:
 
         artefact_transforms = tf.OneOf(
             [
-                tf.RandGibbsNoised(keys=['data'], prob=1.0, alpha=(0.1, 1.0), as_tensor_output=True),
-                tf.RandKSpaceSpikeNoised(
-                    keys=['data'], prob=1.0, intensity_range=(4, 11), channel_wise=False, as_tensor_output=True
-                ),
-                tio.RandomMotion(include=['data'], translation=0.1, degrees=2),
+                # tf.RandGibbsNoised(keys=['data'], prob=1.0, alpha=(0.1, 0.7), as_tensor_output=True),
+                # tf.RandKSpaceSpikeNoised(
+                #     keys=['data'], prob=1.0, intensity_range=(1, 11), channel_wise=False, as_tensor_output=True
+                # ),
+                # tio.RandomMotion(include=['data'], translation=0.05, degrees=2, image_interpolation='Bspline',
+                #                  num_transforms=1)
+                # tio.RandomGhosting(include='data', num_ghosts=(4, 10), axes=(0, 1, 2), intensity=(0.5, 1))
             ]
         )
 
         self.data_transforms = tf.Compose(
             [
                 spatial_transforms,
-                intensity_transforms,
-                artefact_transforms,
-                tf.RandCoarseDropoutd(keys=['data'], holes=100, spatial_size=10, fill_value=0, prob=0.5),
+                # intensity_transforms,
+                # artefact_transforms,
+                # tf.RandCoarseDropoutd(keys=['data'], holes=100, spatial_size=10, fill_value=0, prob=0.5),
                 tf.NormalizeIntensityd(keys=['data']),
             ]
         )

@@ -48,9 +48,10 @@ class Dataset(torch_Dataset):
             raise NotImplementedError('Only 1 label tag supported, adjust this method to your needs')
         for file_tag in self.dataset_paths['label'][case_name]:
             label = self.h5_object.get(f'{self.set_name}/label/{case_name}/{file_tag}')
-            label = np.asarray(label)
-            label = np.expand_dims(label, axis=0)
-            return torch.from_numpy(label)
+            label = np.array(label, dtype='int32')
+            label = self.one_hot_encoder(label)
+            label = torch.from_numpy(label)
+            return label
 
     def __getitem__(self, index) -> tuple:
         """Returns data and corresponding label"""
@@ -65,3 +66,19 @@ class Dataset(torch_Dataset):
     def __len__(self) -> int:
         """Holds number of cases"""
         return len(self.random_set_case_names)
+
+    @staticmethod
+    def one_hot_encoder(label_img):
+        """Encodes labelwise, first channel lowest label and so on"""
+        labels = np.unique(label_img)
+        labels = labels[labels != 0]
+        encoded_label = None
+        for idx, label in enumerate(labels):
+            holder = np.zeros(label_img.shape)
+            holder[label_img == label] = 1
+            holder = np.expand_dims(holder, axis=0)
+            if idx == 0:
+                encoded_label = holder
+            else:
+                encoded_label = np.concatenate((encoded_label, holder), axis=0)
+        return encoded_label
