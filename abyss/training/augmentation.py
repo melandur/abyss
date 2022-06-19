@@ -1,4 +1,6 @@
 import monai.transforms as tf
+import numpy as np
+import torch
 import torchio as tio
 
 # Spatialf
@@ -35,6 +37,13 @@ class Augmentation:
     def __init__(self):
         spatial_transforms = tf.Compose(
             [
+                # tf.RandSpatialCropd(
+                #     keys=['data', 'label'],
+                #     roi_size=(80, 80, 80),
+                #     max_roi_size=None,
+                #     random_center=True,
+                #     random_size=False,
+                # ),
                 tf.RandRotated(
                     keys=['data', 'label'],
                     range_x=(-1, 1),
@@ -133,16 +142,45 @@ class Augmentation:
 
         self.data_transforms = tf.Compose(
             [
-                spatial_transforms,
-                intensity_transforms,
-                artefact_transforms,
-                tf.NormalizeIntensityd(keys=['data']),
-                tf.RandCoarseDropoutd(keys=['data'], holes=100, spatial_size=10, fill_value=0.0, prob=0.5),
+                RandomChannelSkip(include=['data'], num_channels=1)
+                # tio.RandomAffine(include=['data', 'label'], image_interpolation='bspline',
+                #                  label_interpolation='label_gaussian'),
+                # tf.RandAffined(keys=['data', 'label'], translate_range=2, shear_range=1, prob=1.0)
+                # tf.Rand3DElasticd(keys=['data', 'label'], sigma_range=(12, 17), magnitude_range=(50, 300),
+                #                   shear_range=1, translate_range=1, scale_range=1)
+                # spatial_transforms,
+                # intensity_transforms,
+                # artefact_transforms,
+                # tf.NormalizeIntensityd(keys=['data']),
+                # tf.RandCoarseDropoutd(keys=['data'], holes=100, spatial_size=10, fill_value=0.0, prob=0.5),
             ]
         )
 
     def __call__(self):
         return self.data_transforms
+
+
+class RandomChannelSkip(tio.IntensityTransform):
+    """Blur an image using a random-sized Gaussian filter."""
+
+    def __init__(self, num_channels, **kwargs):
+        super().__init__(**kwargs)
+        self.num_channels = num_channels
+
+    def apply_transform(self, subject):
+        count_channels = self.get_images_dict(subject)['data'].num_channels
+        channels = list(range(count_channels))
+        transformed = self.skip_channel(subject, channels)
+        return transformed
+
+    def skip_channel(self, subject, channels):
+        subject_data = self.get_images_dict(subject)['data']
+        image_data = self.get_images_dict(subject)['data'].data
+        skip_channels = np.random.choice(channels, self.num_channels)
+        for skip_channel in skip_channels:
+            image_data[skip_channel] = torch.zeros(image_data[skip_channel].size())
+        subject_data.set_data(image_data)
+        return subject
 
 
 if __name__ == '__main__':
