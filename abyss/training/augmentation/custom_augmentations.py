@@ -6,7 +6,7 @@ import torchio as tio
 from torchio.transforms.augmentation.random_transform import RandomTransform
 
 
-class RandomChannelSkip(RandomTransform, tio.IntensityTransform):
+class RandomChannelDropout(RandomTransform, tio.IntensityTransform):
     """Skip random channel of image by replacing it with certain fill value"""
 
     def __init__(self, num_channels, fill_value=0.0, prob=0.1, **kwargs):

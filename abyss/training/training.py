@@ -24,9 +24,6 @@ class Training(ConfigManager):
         if self.params['training']['load_from_weights_path']:
             self.load_weights()
 
-        if self.params['training']['dev_show_train_batch']:
-            self.model.show_train_batch()
-
         trainer = Trainer()()
         trainer.fit(self.model)
         trainer.test(self.model)

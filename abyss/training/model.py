@@ -1,12 +1,11 @@
 from typing import Optional
 
-import matplotlib.pyplot as plt
 import pytorch_lightning as pl
 import torch
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 
-from abyss.training.augmentation.augmentation import Augmentation
+from abyss.training.augmentation.augmentation import data_transforms
 from abyss.training.dataset import Dataset
 from abyss.training.nets import resnet_10
 
@@ -22,7 +21,6 @@ class Model(pl.LightningModule):
         self.val_set = None
         self.test_set = None
         self.train_set = None
-        self.transforms = Augmentation()()
         self.net = resnet_10
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -30,7 +28,7 @@ class Model(pl.LightningModule):
 
     def setup(self, stage: Optional[str] = None) -> torch.utils.data:
         if stage == 'fit' or stage is None:
-            self.train_set = Dataset(self.params, self.path_memory, 'train', self.transforms)
+            self.train_set = Dataset(self.params, self.path_memory, 'train', data_transforms)
             self.val_set = Dataset(self.params, self.path_memory, 'val')
 
         if stage == 'test' or stage is None:
@@ -126,30 +124,3 @@ class Model(pl.LightningModule):
             batch_size=self.params['training']['batch_size'],
             num_workers=self.params['meta']['num_workers'],
         )
-
-    def show_train_batch(self):
-        """Visualize ce train batch"""
-        ori_dataset = Dataset(self.params, self.path_memory, 'train')
-        aug_dataset = Dataset(self.params, self.path_memory, 'train', self.transforms)
-
-        ori_loader = DataLoader(ori_dataset, 1)
-        aug_loader = DataLoader(aug_dataset, 1)
-
-        slice_number = 70
-        plt.figure(figsize=(15, 10))
-        plt.tight_layout()
-        while True:
-            for (ori_data, ori_label), (aug_data, aug_label) in zip(ori_loader, aug_loader):
-                for modality in range(len(ori_data[0])):
-                    plt.subplot(4, 4, modality + 1)
-                    plt.title('Original')
-                    plt.imshow(ori_data[0, modality, slice_number], cmap='gray')
-                    plt.subplot(4, 4, modality + 5)
-                    plt.imshow(ori_label[0, 0, slice_number])
-                    plt.subplot(4, 4, modality + 9)
-                    plt.title('Augmented')
-                    plt.imshow(aug_data[0, modality, slice_number], cmap='gray')
-                    plt.subplot(4, 4, modality + 13)
-                    plt.imshow(aug_label[0, 1, slice_number])
-                plt.draw()
-                plt.waitforbuttonpress(0)
