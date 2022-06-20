@@ -6,7 +6,7 @@ import torch
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 
-from abyss.training.augmentation import Augmentation
+from abyss.training.augmentation.augmentation import Augmentation
 from abyss.training.dataset import Dataset
 from abyss.training.nets import resnet_10
 

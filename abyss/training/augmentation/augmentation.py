@@ -1,13 +1,14 @@
 import monai.transforms as tf
-import numpy as np
-import torch
 import torchio as tio
+
+from abyss.training.augmentation.custom_augmentations import (
+    RandomChannelShuffle,
+    RandomChannelSkip,
+)
 
 # Spatialf
 #    tr_transforms.append(SpatialTransform_2(
-#        patch_size_spatial,
 #        patch_center_dist_from_border=None,
-#        do_elastic_deform=params.get("do_elastic"),
 #        deformation_scale=params.get("eldef_deformation_scale"),
 #        - do_rotation=params.get("do_rotation"),
 #        - angle_x=params.get("rotation_x"),
@@ -17,14 +18,10 @@ import torchio as tio
 #        scale=params.get("scale_range"),
 #        border_mode_data=params.get("border_mode_data"),
 #        border_cval_data=0,
-#        order_data=order_data,
 #        border_mode_seg="constant",
 #        border_cval_seg=border_val_seg,
-#        order_seg=order_seg,
-#        random_crop=params.get("random_crop"),
 #        p_el_per_sample=params.get("p_eldef"),
-#        p_scale_per_sample=params.get("p_scale"),
-#        p_rot_per_sample=params.get("p_rot"),
+#        p_scale_per_sample=params.get("p_scale")
 #        independent_scale_for_each_axis=params.get("independent_scale_factor_for_each_axis"),
 #        p_independent_scale_per_axis=params.get("p_independent_scale_per_axis")
 #     ))
@@ -142,7 +139,8 @@ class Augmentation:
 
         self.data_transforms = tf.Compose(
             [
-                RandomChannelSkip(include=['data'], num_channels=1)
+                # RandomChannelSkip(include=['data'], num_channels=1, fill_value=0.0, prob=0.5)
+                RandomChannelShuffle(include=['data'], prob=1)
                 # tio.RandomAffine(include=['data', 'label'], image_interpolation='bspline',
                 #                  label_interpolation='label_gaussian'),
                 # tf.RandAffined(keys=['data', 'label'], translate_range=2, shear_range=1, prob=1.0)
@@ -158,29 +156,6 @@ class Augmentation:
 
     def __call__(self):
         return self.data_transforms
-
-
-class RandomChannelSkip(tio.IntensityTransform):
-    """Blur an image using a random-sized Gaussian filter."""
-
-    def __init__(self, num_channels, **kwargs):
-        super().__init__(**kwargs)
-        self.num_channels = num_channels
-
-    def apply_transform(self, subject):
-        count_channels = self.get_images_dict(subject)['data'].num_channels
-        channels = list(range(count_channels))
-        transformed = self.skip_channel(subject, channels)
-        return transformed
-
-    def skip_channel(self, subject, channels):
-        subject_data = self.get_images_dict(subject)['data']
-        image_data = self.get_images_dict(subject)['data'].data
-        skip_channels = np.random.choice(channels, self.num_channels)
-        for skip_channel in skip_channels:
-            image_data[skip_channel] = torch.zeros(image_data[skip_channel].size())
-        subject_data.set_data(image_data)
-        return subject
 
 
 if __name__ == '__main__':

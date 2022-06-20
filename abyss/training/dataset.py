@@ -33,11 +33,7 @@ class Dataset(torch_Dataset):
     def concatenate_data(self, case_name: str) -> torch.tensor:
         """Load from hdf5 and stack data on new first dimensions"""
         img = None
-        file_tags = list(self.dataset_paths['data'][case_name].items())
-        if not self.params['training']['shuffle_input_channels']:
-            np.random.shuffle(file_tags)
-        file_tags = dict(file_tags)
-        for idx, file_tag in enumerate(file_tags):
+        for idx, file_tag in enumerate(self.dataset_paths['data'][case_name]):
             tmp_img = self.h5_object.get(f'{self.set_name}/data/{case_name}/{file_tag}')
             tmp_img = np.asarray(tmp_img)
             tmp_img = np.expand_dims(tmp_img, axis=0)
