@@ -42,17 +42,17 @@ spatial_transforms = tf.Compose(
                 ),
             ]
         ),
-        tf.Rand3DElasticd(
-            keys=['data', 'label'],
-            sigma_range=(5, 7),
-            shear_range=0.3,
-            translate_range=5,
-            magnitude_range=(50, 110),
-            mode='nearest',
-            padding_mode='zeros',
-            as_tensor_output=True,
-            prob=1.0,
-        ),
+        # tf.Rand3DElasticd(
+        #     keys=['data', 'label'],
+        #     sigma_range=(5, 7),
+        #     shear_range=0.3,
+        #     translate_range=5,
+        #     magnitude_range=(50, 110),
+        #     mode='nearest',
+        #     padding_mode='zeros',
+        #     as_tensor_output=True,
+        #     prob=1.0,
+        # ),
     ]
 )
 
@@ -111,7 +111,7 @@ artefact_transforms = tf.OneOf(
     ]
 )
 
-data_transforms = tf.Compose(
+transforms = tf.Compose(
     [
         spatial_transforms,
         intensity_transforms,

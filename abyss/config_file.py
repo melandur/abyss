@@ -79,7 +79,7 @@ class ConfigFile:
                     },  # tbd
                     'SGD': {'active': False, 'learning_rate': 1e-3, 'dropout': 0.5},
                 },
-                'criterion': ['MSE_mean'],
+                'criterion': ['mse'],
                 'load_from_checkpoint_path': None,  # loads if valid *.ckpt provided
                 'load_from_weights_path': None,  # loads if valid *.pth provided
             },
