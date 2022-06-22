@@ -9,18 +9,18 @@ from torchio.transforms.augmentation.random_transform import RandomTransform
 class RandomChannelDropout(RandomTransform, tio.IntensityTransform):
     """Skip random channel of image by replacing it with a certain fill value"""
 
-    def __init__(self, num_channels, fill_value=0.0, prob=0.1, **kwargs):
+    def __init__(self, num_channels: int, fill_value: float = 0.0, prob: float = 0.1, **kwargs) -> None:
         super().__init__(**kwargs)
         self.num_channels = num_channels
         self.fill_value = fill_value
         self.probability = self.parse_probability(prob)
 
-    def apply_transform(self, subject):
+    def apply_transform(self, subject: tio.Subject) -> tio.Subject:
         """Transform image data of subject"""
         transformed = self.skip_channel(subject)
         return transformed
 
-    def skip_channel(self, subject):
+    def skip_channel(self, subject: tio.Subject) -> tio.Subject:
         """Overwrite values of random channel with certain fill value"""
         count_channels = self.get_images_dict(subject)['data'].num_channels
         channels = list(range(count_channels))
@@ -37,16 +37,16 @@ class RandomChannelDropout(RandomTransform, tio.IntensityTransform):
 class RandomChannelShuffle(RandomTransform, tio.IntensityTransform):
     """Shuffle Channels"""
 
-    def __init__(self, prob=0.1, **kwargs):
+    def __init__(self, prob: float = 0.1, **kwargs) -> None:
         super().__init__(**kwargs)
         self.probability = self.parse_probability(prob)
 
-    def apply_transform(self, subject):
+    def apply_transform(self, subject: tio.Subject) -> tio.Subject:
         """Transform image data of subject"""
         transformed = self.shuffle_channels(subject)
         return transformed
 
-    def shuffle_channels(self, subject):
+    def shuffle_channels(self, subject: tio.Subject) -> tio.Subject:
         """Shuffle order of channels"""
         count_channels = self.get_images_dict(subject)['data'].num_channels
         channels = list(range(count_channels))

@@ -16,7 +16,7 @@ from abyss.config import ConfigManager
 class Trainer(ConfigManager):
     """Based on pytorch_lightning trainer"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__()
         self._shared_state.update(kwargs)
 
@@ -62,7 +62,7 @@ class Trainer(ConfigManager):
 
         torchmetrics.Metric.full_state_update = False  # will be default False in v0.1
 
-    def __call__(self):
+    def __call__(self) -> LightningTrainer:
         return LightningTrainer(
             logger=self.logger,
             enable_checkpointing=True,

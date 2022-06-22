@@ -13,7 +13,7 @@ from abyss.utils import NestedDefaultDict
 class CreateHDF5(ConfigManager):
     """Create train, val, and test set for training"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__()
         self._shared_state.update(kwargs)
         self.trainset_store_path = os.path.join(self.params['project']['trainset_store_path'], 'data.h5')
@@ -25,7 +25,7 @@ class CreateHDF5(ConfigManager):
         self.tree_store = ''
         np.random.seed(self.params['meta']['seed'])
 
-    def __call__(self):
+    def __call__(self) -> None:
         logger.info(f'Run: {self.__class__.__name__}')
         self.data_store_paths = self.get_data_store_paths()
         self.check_fold_settings()
@@ -36,7 +36,7 @@ class CreateHDF5(ConfigManager):
         self.show_tree_structure()
         self.store_path_memory_file()
 
-    def get_data_store_paths(self):
+    def get_data_store_paths(self) -> None:
         """Returns the current data store path, with prio 1: preprocessed, prio 2: structured dataset"""
         if len(self.path_memory['preprocessed_dataset_paths']['data']) != 0:
             logger.info('HDF5 file will be created from preprocessed dataset')
@@ -48,7 +48,7 @@ class CreateHDF5(ConfigManager):
             'Path memory file is empty for structured and preprocessed data, check config_file -> pipeline_steps'
         )
 
-    def train_test_split(self):
+    def train_test_split(self) -> None:
         """Creates a list with case names for train and test set each"""
         count_cases = len(self.data_store_paths['data'])
         if count_cases < 10:
@@ -60,7 +60,7 @@ class CreateHDF5(ConfigManager):
         self.train_set_cases = [x for x in self.data_store_paths['data'] if x not in self.test_set_cases]
         logger.info(f'Test set, counts: {len(self.test_set_cases)}, cases: {self.test_set_cases}')
 
-    def check_fold_settings(self):
+    def check_fold_settings(self) -> None:
         """Check for valid fold settings"""
         if '/' not in self.params['dataset']['cross_fold']:
             raise ValueError('config_file -> dataset -> cross_fold: fold_number/max_number_of_folds')
@@ -79,7 +79,7 @@ class CreateHDF5(ConfigManager):
         if fold_number > max_folds:
             raise ValueError('fold_number exceeded max_number_of_folds, check cross_fold settings')
 
-    def train_val_split(self):
+    def train_val_split(self) -> None:
         """Split train data into train and val data, determined by val_fraction or by cross_fold"""
         count_cases = len(self.train_set_cases)
         if self.use_val_fraction:
@@ -99,7 +99,7 @@ class CreateHDF5(ConfigManager):
         logger.info(f'Train set, counts: {len(self.train_set_cases)}, cases: {self.train_set_cases}')
         logger.info(f'Val set, counts: {len(self.val_set_cases)}, cases: {self.val_set_cases}')
 
-    def contamination_check(self):
+    def contamination_check(self) -> None:
         """Assures that cases are unique in each dataset"""
         contamination = set(self.test_set_cases) & set(self.train_set_cases)
         if contamination:
@@ -112,14 +112,14 @@ class CreateHDF5(ConfigManager):
             raise AssertionError(f'Contamination in test & val-set split -> {contamination}')
 
     @staticmethod
-    def writer(h5_object, group, set_type, case_name, file_tag, file_path):
+    def writer(h5_object: h5py.File, group: str, set_type: str, case_name: str, file_tag: str, file_path) -> None:
         """Convert data to numpy array and write it hdf5 file"""
         img = sitk.ReadImage(file_path)
         img_arr = sitk.GetArrayFromImage(img)
         group = h5_object.require_group(f'{group}/{set_type}/{case_name}')
         group.create_dataset(file_tag, data=img_arr)
 
-    def create_set(self, h5_object, set_cases, set_tag, data_type):
+    def create_set(self, h5_object: h5py.File, set_cases: str, set_tag: str, data_type: str) -> None:
         """Create data set and append location to path memory"""
         for case_name in set_cases:
             file_tags = self.data_store_paths[data_type][case_name]
@@ -129,7 +129,7 @@ class CreateHDF5(ConfigManager):
                 train_file_path = f'{set_tag}/{data_type}/{case_name}/{file_tag}'
                 self.path_memory[f'{set_tag}_dataset_paths'][data_type][case_name][file_tag] = train_file_path
 
-    def execute_dataset_split(self):
+    def execute_dataset_split(self) -> None:
         """Write files to train/validation/test folders in hdf5"""
         logger.info(f'Write hdf5 file -> {self.trainset_store_path}')
         self.path_memory['train_dataset_paths'] = NestedDefaultDict()
@@ -143,7 +143,7 @@ class CreateHDF5(ConfigManager):
             self.create_set(h5_object, self.test_set_cases, 'test', 'data')
             self.create_set(h5_object, self.test_set_cases, 'test', 'label')
 
-    def branch_helper(self, name: str, obj: h5py.Group or h5py.Dataset):
+    def branch_helper(self, name: str, obj: h5py.Group or h5py.Dataset) -> None:
         """Makes branches kinda pretty"""
         shift = name.count('/') * 3 * ' '
         item_name = name.split('/')[-1]
@@ -152,7 +152,7 @@ class CreateHDF5(ConfigManager):
             branch = f'{branch} {obj.shape}'
         self.tree_store += f'\n{branch}'
 
-    def show_tree_structure(self):
+    def show_tree_structure(self) -> None:
         """Visualize tree structure of hdf5"""
         h5_object = h5py.File(self.trainset_store_path, 'r')
         h5_object.visititems(self.branch_helper)  # iterates over each branch

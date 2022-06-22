@@ -9,7 +9,7 @@ from abyss.utils import NestedDefaultDict, assure_instance_type
 class FileFinder(ConfigManager):
     """Creates a nested dictionary, which holds keys:case_names, values: label and image paths"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__()
         self._shared_state.update(kwargs)
         self.dataset_folder_path = self.params['dataset']['folder_path']
@@ -73,7 +73,7 @@ class FileFinder(ConfigManager):
                 return key
         raise ValueError(f'No search tag in file: {file_name} found. Config-file -> check search tags: {search_tags}')
 
-    def scan_folder(self):
+    def scan_folder(self) -> None:
         """Walk through the data set folder and assigns file paths to the nested dict"""
         for root, _, files in os.walk(self.dataset_folder_path):
             for file in files:
@@ -86,7 +86,7 @@ class FileFinder(ConfigManager):
                         found_tag = self.get_file_search_tag(file, self.data_search_tags)
                         self.data_path_store['data'][self.get_case_name(root, file)][found_tag] = file_path
 
-    def check_for_missing_files(self, search_tag: dict, data_type: str):
+    def check_for_missing_files(self, search_tag: dict, data_type: str) -> None:
         """Check if there are any data/label files are missing"""
         for case_name in self.data_path_store[data_type].keys():
             for tag_name in search_tag.keys():

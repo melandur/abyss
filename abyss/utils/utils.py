@@ -13,8 +13,8 @@ class NestedDefaultDict(defaultdict):
     """Nested dict, which can be dynamically expanded
     https://stackoverflow.com/questions/19189274/nested-defaultdict-of-defaultdict"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(NestedDefaultDict, *args, **kwargs)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(dict(self))

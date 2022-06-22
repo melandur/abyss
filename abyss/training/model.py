@@ -15,7 +15,7 @@ from abyss.training.nets import resnet_10
 class Model(pl.LightningModule):
     """Holds model definitions"""
 
-    def __init__(self, params, path_memory):
+    def __init__(self, params, path_memory) -> None:
         super().__init__()
         self.params = params
         self.path_memory = path_memory

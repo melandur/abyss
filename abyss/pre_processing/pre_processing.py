@@ -13,14 +13,14 @@ class PreProcessing(ConfigManager):
 
     # TODO: Subject wise preprocessing
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__()
         self._shared_state.update(kwargs)
         self.data_transformation = None
         self.label_transformation = None
         np.random.seed(self.params['meta']['seed'])
 
-    def __call__(self):
+    def __call__(self) -> None:
         logger.info(f'Run: {self.__class__.__name__}')
         self.path_memory['preprocessed_dataset_paths'] = NestedDefaultDict()
         self.aggregate_data_transformations()
@@ -29,7 +29,7 @@ class PreProcessing(ConfigManager):
         self.process(self.data_transformation, 'data')
         self.store_path_memory_file()
 
-    def aggregate_data_transformations(self):
+    def aggregate_data_transformations(self) -> None:
         """Add data filter"""
         transforms = []
         params = self.params['pre_processing']['data']
@@ -45,7 +45,7 @@ class PreProcessing(ConfigManager):
             transforms.append(tio.RescaleIntensity())
         self.data_transformation = tio.Compose(transforms)
 
-    def aggregate_label_transformations(self):
+    def aggregate_label_transformations(self) -> None:
         """Add label filters"""
         transforms = []
         params = self.params['pre_processing']['label']
@@ -57,7 +57,7 @@ class PreProcessing(ConfigManager):
             )
         self.label_transformation = tio.Compose(transforms)
 
-    def process(self, transformation: tio.Transform, data_type: str):
+    def process(self, transformation: tio.Transform, data_type: str) -> None:
         """Applies pre-processing task on data"""
         preprocessed_dataset_store_path = self.params['project']['preprocessed_dataset_store_path']
         structured_dataset_paths = self.path_memory['structured_dataset_paths']
@@ -71,7 +71,14 @@ class PreProcessing(ConfigManager):
                 subject = transformation(subject)
                 self.save_data(subject, preprocessed_dataset_store_path, case_name, file_tag, data_type)
 
-    def save_data(self, subject: tio.Subject, preproc_store_path: str, case_name: str, file_tag: str, data_type: str):
+    def save_data(
+        self,
+        subject: tio.Subject,
+        preproc_store_path: str,
+        case_name: str,
+        file_tag: str,
+        data_type: str,
+    ) -> None:
         """Save data to preprocessed data folder as nifti file"""
         new_file_dir = os.path.join(preproc_store_path, data_type)
         os.makedirs(new_file_dir, exist_ok=True)

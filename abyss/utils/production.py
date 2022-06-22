@@ -11,17 +11,17 @@ from abyss.training.model import Model
 class Production(ConfigManager):
     """Read and clean original data"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__()
         self._shared_state.update(kwargs)
         self.best_checkpoint_path = None
         self.file_name = f"{self.params['project']['name']}_{self.params['project']['experiment_name']}"
 
-    def __call__(self):
+    def __call__(self) -> None:
         self.get_best_checkpoint()
         self.extract_model()
 
-    def get_best_checkpoint(self):
+    def get_best_checkpoint(self) -> None:
         """Get checkpoint with the lowest val_loss"""
         checkpoints_path = os.path.join(self.params['project']['result_store_path'], 'checkpoints')
         checkpoints = os.listdir(checkpoints_path)
@@ -37,7 +37,7 @@ class Production(ConfigManager):
                 pass
         logger.info(f'Identified best checkpoint -> {self.best_checkpoint_path}')
 
-    def extract_model(self):
+    def extract_model(self) -> None:
         """Extract weights from best checkpoint"""
         model = Model(self.params, self.path_memory)
         model_ckpt = model.load_from_checkpoint(

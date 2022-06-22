@@ -10,7 +10,7 @@ from torch.utils.data import Dataset as torch_Dataset
 class Dataset(torch_Dataset):
     """Can be used to create dataset for train, val & test set"""
 
-    def __init__(self, params: dict, path_memory: dict, set_name: str, transforms=None):
+    def __init__(self, params: dict, path_memory: dict, set_name: str, transforms=None) -> None:
         self.params = params
         self.set_name = set_name
         self.transforms = transforms
@@ -25,7 +25,7 @@ class Dataset(torch_Dataset):
         else:
             raise FileExistsError(f'HDF5 file is missing -> {h5_file_path}')
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Close hdf5 file in the end"""
         if isinstance(self.h5_object, h5py.File):
             self.h5_object.close()
@@ -69,7 +69,7 @@ class Dataset(torch_Dataset):
         return len(self.random_set_case_names)
 
     @staticmethod
-    def one_hot_encoder(label_img):
+    def one_hot_encoder(label_img: np.array) -> np.array:
         """Encodes labelwise, first channel lowest label and so on"""
         labels = np.unique(label_img)
         labels = labels[labels != 0]

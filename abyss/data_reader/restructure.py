@@ -10,19 +10,19 @@ from abyss.utils import NestedDefaultDict, assure_instance_type
 class Restructure(ConfigManager):
     """Restructure original data -> to data/label folder"""
 
-    def __init__(self, data_path_store: NestedDefaultDict, **kwargs):
+    def __init__(self, data_path_store: NestedDefaultDict, **kwargs) -> None:
         super().__init__()
         self.data_path_store = data_path_store
         self._shared_state.update(kwargs)
         self.label_search_tags = assure_instance_type(self.params['dataset']['label_search_tags'], dict)
         self.data_search_tags = assure_instance_type(self.params['dataset']['data_search_tags'], dict)
 
-    def __call__(self):
+    def __call__(self) -> None:
         logger.info(f'Run: {self.__class__.__name__}')
         self.create_structured_dataset(self.label_search_tags, 'label')
         self.create_structured_dataset(self.data_search_tags, 'data')
 
-    def create_structured_dataset(self, search_tags: list, data_type: str):
+    def create_structured_dataset(self, search_tags: list, data_type: str) -> None:
         """Copy files from original dataset to structured dataset and create file path dict"""
         logger.info(f'Copying original {data_type} to new structure -> 2_pre_processed_dataset')
         for case_name in sorted(self.data_path_store[data_type]):

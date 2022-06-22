@@ -12,14 +12,14 @@ from abyss.utils import NestedDefaultDict, assure_instance_type
 class DataReader(ConfigManager):
     """Read and clean original data"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__()
         self._shared_state.update(kwargs)
         self.label_search_tags = assure_instance_type(self.params['dataset']['label_search_tags'], dict)
         self.data_search_tags = assure_instance_type(self.params['dataset']['data_search_tags'], dict)
         self.data_path_store = NestedDefaultDict()
 
-    def __call__(self):
+    def __call__(self) -> None:
         """Run"""
         logger.info(f'Run: {self.__class__.__name__}')
         self.path_memory['structured_dataset_paths'] = NestedDefaultDict()
@@ -30,7 +30,7 @@ class DataReader(ConfigManager):
         data_restruct()
         self.store_path_memory_file()
 
-    def show_dict_findings(self):
+    def show_dict_findings(self) -> None:
         """Summaries the findings"""
         logger.trace(f'Dataset scan found: {json.dumps(self.data_path_store, indent=4)}')
         count_labels = {}

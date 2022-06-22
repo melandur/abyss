@@ -11,12 +11,12 @@ from abyss.training.trainer import Trainer
 class Training(ConfigManager):
     """That's were the gpu is getting sweaty"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__()
         self._shared_state.update(kwargs)
         self.model = None
 
-    def __call__(self):
+    def __call__(self) -> None:
         self.model = Model(self.params, self.path_memory)
         if self.params['training']['load_from_checkpoint_path']:
             self.load_checkpoint()
@@ -28,7 +28,7 @@ class Training(ConfigManager):
         trainer.fit(self.model)
         trainer.test(self.model)
 
-    def load_checkpoint(self):
+    def load_checkpoint(self) -> None:
         """Load checkpoint (weights, optimizer state) to proceed training"""
         ckpt_path = self.params['training']['load_from_checkpoint_path']
         if not os.path.isfile(ckpt_path):
@@ -36,7 +36,7 @@ class Training(ConfigManager):
         logger.info(f'Load checkpoint -> {ckpt_path}')
         self.model = self.model.load_from_checkpoint(ckpt_path)
 
-    def load_weights(self):
+    def load_weights(self) -> None:
         """Load only weights, resets optimizer state"""
         weights_path = self.params['training']['load_from_weights_path']
         if not os.path.isfile(weights_path):
