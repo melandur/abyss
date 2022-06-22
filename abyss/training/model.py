@@ -3,12 +3,14 @@ from typing import Optional
 import pytorch_lightning as pl
 import torch
 import torchmetrics
-from monai.losses import DiceCELoss, DiceLoss
-from torch.nn import functional as F
 from torch.utils.data import DataLoader
 
 from abyss.training.augmentation.augmentation import transforms
 from abyss.training.dataset import Dataset
+from abyss.training.helpers.model_helpers import (
+    apply_criterion,
+    get_configured_optimizer,
+)
 from abyss.training.nets import resnet_10
 
 
@@ -39,18 +41,7 @@ class Model(pl.LightningModule):
 
     def compute_loss(self, output: torch.Tensor, ground_truth: torch.Tensor) -> torch.Tensor:
         """Returns loss / sum of losses"""
-        loss = torch.tensor([0], dtype=torch.float32)
-        for criterion in self.params['training']['criterion']:
-            if 'mse' == criterion:
-                loss += F.mse_loss(output, ground_truth)
-            if 'dice' == criterion:
-                dice_loss = DiceLoss()
-                loss += dice_loss(output, ground_truth)  # TODO: Not tested
-            if 'cross_entropy' == criterion:
-                loss += F.cross_entropy(output, ground_truth)
-            if 'cross_entropy_dice' == criterion:
-                dice_ce_loss = DiceCELoss()
-                loss += dice_ce_loss(output, ground_truth)  # TODO: Not tested
+        loss = apply_criterion(self.params, output, ground_truth)
         return loss
 
     def training_step(self, batch: torch.Tensor) -> torch.Tensor:
@@ -86,23 +77,7 @@ class Model(pl.LightningModule):
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         """Configure optimizers"""
-        optimizer_params = self.params['training']['optimizers']
-        if optimizer_params['Adam']['active']:
-            return torch.optim.Adam(
-                params=self.parameters(),
-                lr=optimizer_params['Adam']['learning_rate'],
-                betas=optimizer_params['Adam']['betas'],
-                weight_decay=optimizer_params['Adam']['weight_decay'],
-                eps=optimizer_params['Adam']['eps'],
-                amsgrad=optimizer_params['Adam']['amsgrad'],
-            )
-        if optimizer_params['SGD']['active']:
-            return torch.optim.SGD(
-                params=self.parameters(),
-                lr=optimizer_params['Adam']['learning_rate'],
-                weight_decay=optimizer_params['Adam']['weight_decay'],
-            )
-        raise ValueError('Invalid optimizer settings -> conf.py -> training -> optimizers -> ')
+        return get_configured_optimizer(self.params, self.parameters)
 
     def train_dataloader(self) -> DataLoader:
         """Train dataloader"""

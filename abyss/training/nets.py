@@ -1,3 +1,5 @@
+# pylint: disable-all
+
 from monai.networks.nets import UNet, resnet10
 
 unet = UNet(
