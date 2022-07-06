@@ -20,9 +20,8 @@ class Trainer(ConfigManager):
         super().__init__()
         self._shared_state.update(kwargs)
 
-        # Integrated loggers: TBoard, MLflow, Comet, Neptune, WandB
         results_store_path = self.params['project']['result_store_path']
-        self.logger = TensorBoardLogger(save_dir=results_store_path)
+        self.logger = TensorBoardLogger(save_dir=results_store_path)  # Options: TBoard, MLflow, Comet, Neptune, WandB
         logger.info(f'tensorboard --logdir={os.path.join(results_store_path, "lightning_logs")}')
 
         # Define callbacks

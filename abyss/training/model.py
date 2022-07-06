@@ -11,7 +11,9 @@ from abyss.training.helpers.model_helpers import (
     apply_criterion,
     get_configured_optimizer,
 )
-from abyss.training.nets import resnet_10
+from abyss.training.nets import nn_unet
+
+
 
 
 class Model(pl.LightningModule):
@@ -25,7 +27,7 @@ class Model(pl.LightningModule):
         self.val_set = None
         self.test_set = None
         self.train_set = None
-        self.net = resnet_10
+        self.net = nn_unet
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.net(x)
@@ -59,7 +61,6 @@ class Model(pl.LightningModule):
         """Predict, compare, log"""
         data, label = batch
         output = self(data)
-        label = torch.tensor([1]).to(torch.int8)
         loss = self.compute_loss(output, label)
         self.log('val_loss', loss, prog_bar=True, on_epoch=True)
         x = torchmetrics.functional.classification.accuracy(label.type(torch.float32), label)
@@ -69,7 +70,6 @@ class Model(pl.LightningModule):
         """Predict, compare, log"""
         data, label = batch
         output = self(data)
-        label = torch.tensor([1]).to(torch.float32)
         loss = self.compute_loss(output, label)
         self.log('test_loss', loss, prog_bar=True, on_epoch=True)
         x = torchmetrics.functional.classification.accuracy(label.type(torch.float32), label)
