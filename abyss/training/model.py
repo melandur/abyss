@@ -1,11 +1,9 @@
 from typing import Optional
 
+import pytorch_lightning as pl
 import torch
 import torchmetrics
 from torch.utils.data import DataLoader
-
-import pytorch_lightning as pl
-
 
 from abyss.training.augmentation.augmentation import transforms
 from abyss.training.dataset import Dataset

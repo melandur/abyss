@@ -49,8 +49,7 @@ profile = "black"
 
 [tool.autohooks]
 mode = "poetry"
-pre-commit = ["autohooks.plugins.isort"]
-pre-commit = ["autohooks.plugins.black"]
+pre-commit = ["autohooks.plugins.isort", "autohooks.plugins.black"]
 
 
 
