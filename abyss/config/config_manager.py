@@ -1,6 +1,6 @@
 import json
-import os
 import sys
+import os
 
 from loguru import logger
 
