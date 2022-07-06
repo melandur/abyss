@@ -48,6 +48,7 @@ skip-string-normalization = true
 profile = "black"
 
 [tool.autohooks]
+mode = "poetry"
 pre-commit = ["autohooks.plugins.isort"]
 pre-commit = ["autohooks.plugins.black"]
 

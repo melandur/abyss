@@ -14,8 +14,6 @@ from abyss.training.helpers.model_helpers import (
 from abyss.training.nets import nn_unet
 
 
-
-
 class Model(pl.LightningModule):
     """Holds model definitions"""
 
