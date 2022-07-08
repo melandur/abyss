@@ -2,11 +2,11 @@ from typing import Optional
 
 import pytorch_lightning as pl
 import torch
-import torchmetrics
 from torch.utils.data import DataLoader
 
 from abyss.training.augmentation.augmentation import transforms
 from abyss.training.dataset import Dataset
+from abyss.training.helpers.log_metrics import log_accuracy, log_dice
 from abyss.training.helpers.model_helpers import apply_criterion, get_optimizer
 from abyss.training.nets import nn_unet
 
@@ -37,38 +37,34 @@ class Model(pl.LightningModule):
         if stage == 'test' or stage is None:
             self.test_set = Dataset(self.params, self.path_memory, 'test')
 
-    def compute_loss(self, output: torch.Tensor, ground_truth: torch.Tensor) -> torch.Tensor:
+    def compute_loss(self, output: torch.Tensor, ground_truth: torch.Tensor, stage: str) -> torch.Tensor:
         """Returns loss / sum of losses"""
         loss = apply_criterion(self.params, output, ground_truth)
+        self.log(f'{stage}_loss', loss.item(), prog_bar=True, on_epoch=True)
         return loss
 
     def training_step(self, batch: torch.Tensor) -> torch.Tensor:
         """Predict, compare, log, backprop"""
         data, label = batch
         output = self(data)
-        loss = self.compute_loss(output, label)
-        self.log('train_loss', loss.item(), prog_bar=True, on_epoch=True)
-        x = torchmetrics.functional.classification.accuracy(label.type(torch.float32), label.to(torch.int8))
-        self.log('train_accuracy', x, prog_bar=True, on_epoch=True)
+        loss = self.compute_loss(output, label, 'train')
+        log_accuracy(self, output, label, 'train')
+        log_dice(self, output, label, 'train')
         return loss
 
     def validation_step(self, batch: torch.Tensor, batch_idx: int) -> None:
         """Predict, compare, log"""
         data, label = batch
         output = self(data)
-        loss = self.compute_loss(output, label)
-        self.log('val_loss', loss, prog_bar=True, on_epoch=True)
-        x = torchmetrics.functional.classification.accuracy(label.type(torch.float32), label.to(torch.int8))
-        self.log('val_acc', x, prog_bar=True, on_epoch=True)
+        _ = self.compute_loss(output, label, 'val')
+        log_accuracy(self, output, label, 'val')
 
     def test_step(self, batch: torch.Tensor, batch_idx: int) -> None:
         """Predict, compare, log"""
         data, label = batch
         output = self(data)
-        loss = self.compute_loss(output, label)
-        self.log('test_loss', loss, prog_bar=True, on_epoch=True)
-        x = torchmetrics.functional.classification.accuracy(label.type(torch.float32), label.to(torch.int8))
-        self.log('test_acc', x, prog_bar=True, on_epoch=True)
+        _ = self.compute_loss(output, label, 'test')
+        log_accuracy(self, output, label, 'test')
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         """Configure optimizers"""
