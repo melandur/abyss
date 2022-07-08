@@ -5,19 +5,19 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 
 from abyss.config import ConfigManager
-from abyss.training.augmentation.augmentation import data_transforms
+from abyss.training.augmentation.augmentation import transforms
 from abyss.training.dataset import Dataset
 
 
 def show_train_batch(save_path: Optional[str] = None):
     """Visualize ce train batch"""
 
-    cm = ConfigManager()
-    cm()
-    params = cm.params
-    path_memory = cm.path_memory
+    config_manager = ConfigManager()
+    config_manager()
+    params = config_manager.params
+    path_memory = config_manager.path_memory
     ori_dataset = Dataset(params, path_memory, 'train')
-    aug_dataset = Dataset(params, path_memory, 'train', data_transforms)
+    aug_dataset = Dataset(params, path_memory, 'train', transforms)
 
     ori_loader = DataLoader(ori_dataset, 1)
     aug_loader = DataLoader(aug_dataset, 1)
@@ -25,9 +25,9 @@ def show_train_batch(save_path: Optional[str] = None):
     slice_numbers = [60, 70, 80]
     plt.figure(figsize=(10, 10))
     plt.tight_layout()
-    ax = plt.gca()
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
+    axes = plt.gca()
+    axes.get_xaxis().set_visible(False)
+    axes.get_yaxis().set_visible(False)
     idx = 0
     while True:
         for (ori_data, ori_label), (aug_data, aug_label) in zip(ori_loader, aug_loader):

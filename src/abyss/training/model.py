@@ -49,7 +49,7 @@ class Model(pl.LightningModule):
         """Predict, compare, log, backprop"""
         data, label = batch
         output = self(data)
-        label = torch.tensor([1]).to(torch.float32)
+        # label = torch.tensor([1]).to(torch.float32)
         loss = self.compute_loss(output, label)
         self.log('train_loss', loss.item(), prog_bar=True, on_epoch=True)
         x = torchmetrics.functional.classification.accuracy(label.type(torch.float32), label.to(torch.int8))
@@ -70,7 +70,7 @@ class Model(pl.LightningModule):
         """Predict, compare, log"""
         data, label = batch
         output = self(data)
-        label = torch.tensor([1]).to(torch.float32)
+        # label = torch.tensor([1]).to(torch.float32)
         loss = self.compute_loss(output, label)
         self.log('test_loss', loss, prog_bar=True, on_epoch=True)
         x = torchmetrics.functional.classification.accuracy(label.type(torch.float32), label)

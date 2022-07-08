@@ -25,6 +25,7 @@ def get_configured_optimizer(params, parameters):
 
 
 def apply_criterion(params, output, ground_truth):
+    """Calculate loss according to criterion"""
     loss = torch.tensor([0], dtype=torch.float32)
     for criterion in params['training']['criterion']:
         if 'mse' == criterion:
