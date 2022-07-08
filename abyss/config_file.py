@@ -8,7 +8,7 @@ class ConfigFile:
         self.project_name = 'aby'  # tbd
         self.experiment_name = '1'  # tbd
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')  # tbd
-        self.dataset_folder_path = '/home/melandur/Data/small'  # tbd
+        self.dataset_folder_path = '/home/melandur/Data/small_train'  # tbd
 
     def __call__(self) -> dict:
         """Returns config file"""
@@ -36,7 +36,7 @@ class ConfigFile:
             },
             'meta': {
                 'seed': 42,  # find the truth in randomness
-                'num_workers': 8,
+                'num_workers': 4,
             },
             'dataset': {
                 'folder_path': self.dataset_folder_path,

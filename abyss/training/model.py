@@ -28,6 +28,7 @@ class Model(pl.LightningModule):
         self.net = resnet_10
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward step"""
         return self.net(x)
 
     def setup(self, stage: Optional[str] = None) -> torch.utils.data:

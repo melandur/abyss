@@ -36,7 +36,7 @@ class CreateHDF5(ConfigManager):
         self.show_tree_structure()
         self.store_path_memory_file()
 
-    def get_data_store_paths(self) -> None:
+    def get_data_store_paths(self) -> NestedDefaultDict:
         """Returns the current data store path, with prio 1: preprocessed, prio 2: structured dataset"""
         if len(self.path_memory['preprocessed_dataset_paths']['data']) != 0:
             logger.info('HDF5 file will be created from preprocessed dataset')
@@ -145,7 +145,7 @@ class CreateHDF5(ConfigManager):
 
     def branch_helper(self, name: str, obj: h5py.Group or h5py.Dataset) -> None:
         """Makes branches kinda pretty"""
-        shift = name.count('/') * 3 * ' '
+        shift = name.count('/') * 3 * ' '  # convert / to and shift offset
         item_name = name.split('/')[-1]
         branch = f'{shift}{item_name}'
         if isinstance(obj, h5py.Dataset):

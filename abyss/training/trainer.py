@@ -1,5 +1,6 @@
 import os
 
+import torch
 import torchmetrics
 from loguru import logger
 from pytorch_lightning import Trainer as LightningTrainer
@@ -60,6 +61,8 @@ class Trainer(ConfigManager):
         if self.params['meta']['seed']:
             seed_everything(self.params['meta']['seed'])
 
+
+        torch.set_num_threads(self.params['meta']['num_workers'])
         torchmetrics.Metric.full_state_update = False  # will be default False in v0.1
 
     def __call__(self) -> LightningTrainer:

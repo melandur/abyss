@@ -1,8 +1,11 @@
 from datetime import datetime
+import os
 
 from loguru import logger
 
 from abyss import ConfigManager, CreateHDF5, DataReader, PreProcessing, Training
+
+os.environ['OMP_NUM_THREADS'] = '1'
 
 if __name__ == '__main__':
     start = datetime.now()
