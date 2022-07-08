@@ -5,10 +5,10 @@ class ConfigFile:
     """The pipelines control center, all parameters can be found here"""
 
     def __init__(self):
-        self.project_name = 'aby'  # tbd
-        self.experiment_name = '1'  # tbd
-        self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')  # tbd
-        self.dataset_folder_path = '/home/melandur/Data/small_train'  # tbd
+        self.project_name = 'aby'
+        self.experiment_name = '1'
+        self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
+        self.dataset_folder_path = '/home/melandur/Data/small_train'
 
     def __call__(self) -> dict:
         """Returns config file"""
@@ -16,9 +16,9 @@ class ConfigFile:
         return {
             'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_reader': True,
-                'pre_processing': True,
-                'create_trainset': True,
+                'data_reader': False,
+                'pre_processing': False,
+                'create_trainset': False,
                 'training': True,
                 'post_processing': False,  # TODO: Implement
             },
@@ -36,7 +36,7 @@ class ConfigFile:
             },
             'meta': {
                 'seed': 42,  # find the truth in randomness
-                'num_workers': 4,
+                'num_workers': 8,
             },
             'dataset': {
                 'folder_path': self.dataset_folder_path,
@@ -56,30 +56,36 @@ class ConfigFile:
             'pre_processing': {
                 'data': {
                     'orient_to_ras': {'active': True},
-                    'resize': {'active': True, 'dim': (100, 100, 100), 'interpolator': 'linear'},
+                    'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'linear'},
                     'z_score': {'active': True},
                     'rescale_intensity': {'active': True},
                 },
                 'label': {
                     'orient_to_ras': {'active': True},
-                    'resize': {'active': True, 'dim': (100, 100, 100), 'interpolator': 'nearest'},
+                    'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'nearest'},
+                    'remap_labels': {'active': True, 'label_dict': {1: 1, 2: 2, 4: 3}},  # original : new
                 },
             },
             'training': {
-                'batch_size': 1,  # tbd
+                'batch_size': 1,
                 'optimizers': {
                     'Adam': {
-                        'active': True,
-                        'learning_rate': 1e-3,  # tbd
-                        'betas': (0.9, 0.999),  # tbd
+                        'active': False,
+                        'learning_rate': 0.001,
+                        'betas': (0.9, 0.999),
                         'eps': 1e-8,
-                        'weight_decay': 1e-5,  # tbd
-                        'amsgrad': True,
-                        'dropout': 0.5,
-                    },  # tbd
-                    'SGD': {'active': False, 'learning_rate': 1e-3, 'dropout': 0.5},
+                        'weight_decay': 0,
+                        'amsgrad': False,
+                    },
+                    'SGD': {
+                        'active': True,
+                        'learning_rate': 0.01,
+                        'momentum': 0.9,
+                        'weight_decay': 0.99,
+                        'nesterov': True,
+                    },
                 },
-                'criterion': ['mse'],
+                'criterion': 'cross_entropy_dice',
                 'load_from_checkpoint_path': None,  # loads if valid *.ckpt provided
                 'load_from_weights_path': None,  # loads if valid *.pth provided
             },
@@ -91,15 +97,14 @@ class ConfigFile:
                 'check_val_every_n_epoch': 1,
                 'enable_progress_bar': True,
                 'stochastic_weight_avg': False,
-                'accelerator': None,
-                'deterministic': True,
-                'devices': None,
+                'accelerator': 'gpu',
+                'deterministic': False,
+                'devices': 1,
                 'gpus': None,
                 'auto_select_gpus': False,
                 'tpu_cores': None,
                 'fast_dev_run': False,
                 'resume_from_checkpoint': None,
-                'auto_lr_find': False,
                 'model_summary_depth': -1,
                 'early_stop': {'min_delta': 0.01, 'patience': 5, 'verbose': False, 'mode': 'max'},
             },

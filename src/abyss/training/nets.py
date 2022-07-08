@@ -987,7 +987,7 @@ class Generic_UNet(nn.Module):
 nn_unet = Generic_UNet(
     input_channels=4,
     base_num_features=30,
-    num_classes=4,
+    num_classes=3,
     num_pool=5,
     num_conv_per_stage=2,
     feat_map_mul_on_downscale=2,
@@ -1010,11 +1010,11 @@ nn_unet = Generic_UNet(
     max_num_features=None,
 )
 
-STORAGE_BASE_PATH = os.path.join(os.path.expanduser('~'), '.deepbratumia', 'storage')
-MODELS_STORAGE_PATH = os.path.join(STORAGE_BASE_PATH, 'models')
-HD_GLIO_MODELS = os.path.join(MODELS_STORAGE_PATH, 'hd_glio', 'hd_glio_params')
-
-weight_path = os.path.join(HD_GLIO_MODELS, 'fold_0', 'model_best.model')
-param = torch.load(weight_path, map_location=lambda storage, loc: storage)['state_dict']
-nn_unet.load_state_dict(param, strict=True)
-print(nn_unet)
+# STORAGE_BASE_PATH = os.path.join(os.path.expanduser('~'), '.deepbratumia', 'storage')
+# MODELS_STORAGE_PATH = os.path.join(STORAGE_BASE_PATH, 'models')
+# HD_GLIO_MODELS = os.path.join(MODELS_STORAGE_PATH, 'hd_glio', 'hd_glio_params')
+#
+# weight_path = os.path.join(HD_GLIO_MODELS, 'fold_0', 'model_best.model')
+# param = torch.load(weight_path, map_location=lambda storage, loc: storage)['state_dict']
+# nn_unet.load_state_dict(param, strict=True)
+# print(nn_unet)

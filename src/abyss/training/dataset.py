@@ -46,7 +46,7 @@ class Dataset(torch_Dataset):
     def retrieve_label(self, case_name: str) -> torch.tensor:
         """Load label from hdf5"""
         if len(self.dataset_paths['label'][case_name]) > 1:
-            raise NotImplementedError('Only 1 label tag supported, adjust this method to your needs')
+            raise NotImplementedError('Only 1 label tag is supported, adjust this method to your needs')
         for file_tag in self.dataset_paths['label'][case_name]:
             label = self.h5_object.get(f'{self.set_name}/label/{case_name}/{file_tag}')
             label = np.array(label, dtype='int32')
@@ -70,7 +70,7 @@ class Dataset(torch_Dataset):
 
     @staticmethod
     def one_hot_encoder(label_img: np.array) -> np.array:
-        """Encodes labelwise, first channel lowest label and so on"""
+        """Encodes label wise, first channel lowest label and so on, skip zero background channel"""
         labels = np.unique(label_img)
         labels = labels[labels != 0]
         encoded_label = None

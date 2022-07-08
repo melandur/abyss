@@ -5,7 +5,11 @@ import torchmetrics
 from loguru import logger
 from pytorch_lightning import Trainer as LightningTrainer
 from pytorch_lightning import seed_everything
-from pytorch_lightning.callbacks import RichModelSummary, RichProgressBar
+from pytorch_lightning.callbacks import (
+    LearningRateMonitor,
+    RichModelSummary,
+    RichProgressBar,
+)
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTheme
@@ -42,6 +46,10 @@ class Trainer(ConfigManager):
             mode=self.params['trainer']['early_stop']['mode'],
         )
 
+        self.lr_monitor_cb = LearningRateMonitor(
+            logging_interval='step',
+        )
+
         self.model_summary_cb = RichModelSummary(self.params['trainer']['model_summary_depth'])
 
         self.progress_bar_cb = RichProgressBar(
@@ -68,7 +76,13 @@ class Trainer(ConfigManager):
         return LightningTrainer(
             logger=self.logger,
             enable_checkpointing=True,
-            callbacks=[self.checkpoint_cb, self.early_stop_cb, self.model_summary_cb, self.progress_bar_cb],
+            callbacks=[
+                self.checkpoint_cb,
+                self.early_stop_cb,
+                self.lr_monitor_cb,
+                self.model_summary_cb,
+                self.progress_bar_cb,
+            ],
             default_root_dir=self.params['trainer']['default_root_dir'],
             gradient_clip_val=None,
             gradient_clip_algorithm=None,
@@ -112,7 +126,7 @@ class Trainer(ConfigManager):
             benchmark=None,
             deterministic=self.params['trainer']['deterministic'],
             reload_dataloaders_every_n_epochs=0,
-            auto_lr_find=self.params['trainer']['auto_lr_find'],
+            auto_lr_find=False,
             replace_sampler_ddp=True,
             detect_anomaly=False,
             auto_scale_batch_size=False,

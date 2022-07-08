@@ -55,6 +55,8 @@ class PreProcessing(ConfigManager):
             transforms.append(
                 tio.Resize(target_shape=params['resize']['dim'], image_interpolation=params['resize']['interpolator'])
             )
+        if params['remap_labels']['active']:
+            transforms.append(tio.RemapLabels(remapping=params['remap_labels']['label_dict']))
         self.label_transformation = tio.Compose(transforms)
 
     def process(self, transformation: tio.Transform, data_type: str) -> None:
@@ -67,7 +69,10 @@ class PreProcessing(ConfigManager):
             logger.debug(f'{data_type}: {case_name}')
             for file_tag in structured_dataset_paths[data_type][case_name]:
                 file_path = structured_dataset_paths[data_type][case_name][file_tag]
-                subject = tio.Subject(data=tio.ScalarImage(file_path))
+                if data_type == 'data':
+                    subject = tio.Subject(data=tio.ScalarImage(file_path))
+                else:
+                    subject = tio.Subject(data=tio.LabelMap(file_path))
                 subject = transformation(subject)
                 self.save_data(subject, preprocessed_dataset_store_path, case_name, file_tag, data_type)
 
