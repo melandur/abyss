@@ -3,6 +3,7 @@ import os
 import numpy as np
 import SimpleITK as sitk
 import torch
+from loguru import logger
 
 from abyss.config import ConfigManager
 from abyss.training.nets import nn_unet
@@ -17,6 +18,7 @@ class Inference(ConfigManager):
         self.model = nn_unet
 
     def __call__(self) -> None:
+        logger.info(f'Run: {self.__class__.__name__}')
         self.load_weights()
         self.model.eval()
         self.predict_case_wise()
@@ -25,9 +27,10 @@ class Inference(ConfigManager):
     def load_weights(self):
         """Load weights from defined path"""
         torch.cuda.empty_cache()
-        weights_path = self.params['inference']['weights_path']
-        if weights_path is None:
+        weights_name = self.params['inference']['weights_name']
+        if weights_name is None:
             raise AssertionError('Weights file is not defined -> config_file -> training -> load_from_weights_path')
+        weights_path = os.path.join(self.params['project']['production_store_path'], weights_name)
         if not os.path.isfile(weights_path):
             raise ValueError('Weights file path is not valid -> config_file -> training -> load_from_weights_path')
         self.model.load_state_dict(torch.load(weights_path, map_location='cuda:0'), strict=False)  # TODO: map_location
@@ -35,8 +38,16 @@ class Inference(ConfigManager):
     def predict_case_wise(self):
         """Predict pre processed data"""
         for case_name in self.path_memory['preprocessed_dataset_paths']['data']:
+            logger.info(case_name)
             data = self.concat_data(case_name)
+            data = self.add_batch_dimension(data)
             self.predict(data, case_name)
+
+    @staticmethod
+    def add_batch_dimension(data):
+        """Extend current data with batch dimension"""
+        data = data[None]
+        return data
 
     def concat_data(self, case_name: str) -> torch.tensor:
         """This needs to be adapted to training/dataset.py -> concat function"""
@@ -54,6 +65,8 @@ class Inference(ConfigManager):
     def predict(self, data, case_name):
         """Predict and store results"""
         output = self.model(data)
+        output = output.detach().numpy()
+        output = sitk.GetImageFromArray(output)
         file_path = os.path.join(self.params['project']['inference_store_path'], f'{case_name}.nii.gz')
         sitk.WriteImage(output, file_path)
-        self.path_memory['inference_dataset_paths'][case_name] = file_path
+        self.path_memory['inference_paths'][case_name] = file_path

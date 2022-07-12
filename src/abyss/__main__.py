@@ -10,6 +10,7 @@ from abyss import (
     Inference,
     PostProcessing,
     PreProcessing,
+    Production,
     Training,
 )
 
@@ -25,6 +26,7 @@ def run_pipeline():
     pre_processing = PreProcessing()
     create_hdf5 = CreateHDF5()
     training = Training()
+    production = Production()
     inference = Inference()
     post_processing = PostProcessing()
 
@@ -37,6 +39,8 @@ def run_pipeline():
         create_hdf5()
     if config_manager.params['pipeline_steps']['training']:
         training()
+    if config_manager.params['pipeline_steps']['production']:
+        production()
     if config_manager.params['pipeline_steps']['inference']:
         inference()
     if config_manager.params['pipeline_steps']['post_processing']:

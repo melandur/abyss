@@ -1,6 +1,7 @@
 import os
 
 import SimpleITK as sitk
+from loguru import logger
 
 from abyss.config import ConfigManager
 
@@ -13,18 +14,20 @@ class PostProcessing(ConfigManager):
         self._shared_state.update(kwargs)
 
     def __call__(self):
+        logger.info(f'Run: {self.__class__.__name__}')
         self.process_case_wise()
 
     def process_case_wise(self):
         """Process case wise"""
-        for case_name in self.path_memory['inference_store_path']:
+        for case_name in self.path_memory['inference_paths']:
+            logger.info(case_name)
             data = self.load_data(case_name)
             self.apply_largest_connected_component_filter(data, case_name)
             self.store_results(data, case_name)
 
     def load_data(self, case_name):
         """Load data from inference store"""
-        data = sitk.ReadImage(self.path_memory['inference_store_path'][case_name])
+        data = sitk.ReadImage(self.path_memory['inference_paths'][case_name])
         return data
 
     @staticmethod
@@ -43,4 +46,4 @@ class PostProcessing(ConfigManager):
         """Store processed data"""
         file_path = os.path.join(self.params['project']['postprocessed_store_path'], f'{case_name}.nii.gz')
         sitk.WriteImage(data, file_path)
-        self.path_memory['postprocessed_dataset_paths'][case_name] = file_path
+        self.path_memory['postprocessed_paths'][case_name] = file_path

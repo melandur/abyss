@@ -33,7 +33,7 @@ class Trainer(ConfigManager):
         # Define callbacks
         self.checkpoint_cb = ModelCheckpoint(
             dirpath=os.path.join(self.params['project']['result_store_path'], 'checkpoints'),
-            filename=self.params['project']['name'] + '_{epoch:02d}_{val_loss:.2f}',
+            filename=self.params['project']['name'] + '_best_{epoch:02d}_{val_loss:.2f}',
             save_last=True,
             monitor='val_loss',
         )

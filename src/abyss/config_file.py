@@ -20,9 +20,9 @@ class ConfigFile:
                 'pre_processing': False,
                 'create_trainset': False,
                 'training': False,
-                'production': True,
-                'inference': True,
-                'post_processing': False,
+                'production': False,
+                'inference': False,
+                'post_processing': True,
             },
             'project': {
                 'name': self.project_name,
@@ -112,8 +112,8 @@ class ConfigFile:
                 'model_summary_depth': -1,
                 'early_stop': {'min_delta': 0.01, 'patience': 5, 'verbose': False, 'mode': 'max'},
             },
-            'production': {'checkpoint_path': None},
-            'inference': {'weights_path': None},
+            'production': {'checkpoint_name': None},
+            'inference': {'weights_name': f'{self.project_name}_{self.experiment_name}.pth'},
         }
 
     def __str__(self) -> str:

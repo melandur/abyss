@@ -11,8 +11,9 @@ def check_and_create_folder_structure(params: dict) -> None:
         params['project']['preprocessed_dataset_store_path'],
         params['project']['trainset_store_path'],
         params['project']['result_store_path'],
+        params['project']['production_store_path'],
         params['project']['inference_store_path'],
-        params['project']['postprecessed_store_path'],
+        params['project']['postprocessed_store_path'],
     ]
     for folder in folders:
         os.makedirs(folder, exist_ok=True)
