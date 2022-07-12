@@ -19,8 +19,10 @@ class ConfigFile:
                 'data_reader': False,
                 'pre_processing': False,
                 'create_trainset': False,
-                'training': True,
-                'post_processing': False,  # TODO: Implement
+                'training': False,
+                'production': True,
+                'inference': True,
+                'post_processing': False,
             },
             'project': {
                 'name': self.project_name,
@@ -33,6 +35,8 @@ class ConfigFile:
                 'trainset_store_path': os.path.join(experiment_path, '3_trainset'),
                 'result_store_path': os.path.join(experiment_path, '4_results'),
                 'production_store_path': os.path.join(experiment_path, '5_production'),
+                'inference_store_path': os.path.join(experiment_path, '6_inference'),
+                'postprocessed_store_path': os.path.join(experiment_path, '7_post_processed'),
             },
             'meta': {
                 'seed': 42,  # find the truth in randomness
@@ -58,7 +62,7 @@ class ConfigFile:
                     'orient_to_ras': {'active': True},
                     'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'linear'},
                     'z_score': {'active': True},
-                    'rescale_intensity': {'active': True},
+                    'rescale_intensity': {'active': False},
                 },
                 'label': {
                     'orient_to_ras': {'active': True},
@@ -85,7 +89,7 @@ class ConfigFile:
                         'nesterov': True,
                     },
                 },
-                'criterion': 'cross_entropy_dice',
+                'criterion': 'cross_entropy_dice',  # mse, cross_entropy, dice, cross_entropy_dice
                 'load_from_checkpoint_path': None,  # loads if valid *.ckpt provided
                 'load_from_weights_path': None,  # loads if valid *.pth provided
             },
@@ -108,7 +112,8 @@ class ConfigFile:
                 'model_summary_depth': -1,
                 'early_stop': {'min_delta': 0.01, 'patience': 5, 'verbose': False, 'mode': 'max'},
             },
-            'post_processing': {},
+            'production': {'checkpoint_path': None},
+            'inference': {'weights_path': None},
         }
 
     def __str__(self) -> str:

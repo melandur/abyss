@@ -42,4 +42,4 @@ class Training(ConfigManager):
         if not os.path.isfile(weights_path):
             raise FileExistsError(f'Checkpoint file path not found -> {weights_path}')
         logger.info(f'Load weights -> {weights_path}')
-        self.model.load_state_dict(torch.load(weights_path, map_location='cuda:0'), strict=False)
+        self.model.load_state_dict(torch.load(weights_path, map_location='cuda:0'), strict=False)  # TODO: map_location

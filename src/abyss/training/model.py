@@ -18,7 +18,6 @@ class Model(pl.LightningModule):
         super().__init__()
         self.params = params
         self.path_memory = path_memory
-        self.net = None
         self.val_set = None
         self.test_set = None
         self.train_set = None
@@ -38,7 +37,7 @@ class Model(pl.LightningModule):
             self.test_set = Dataset(self.params, self.path_memory, 'test')
 
     def compute_loss(self, output: torch.Tensor, ground_truth: torch.Tensor, stage: str) -> torch.Tensor:
-        """Returns loss / sum of losses"""
+        """Calculate and return loss"""
         loss = apply_criterion(self.params, output, ground_truth)
         self.log(f'{stage}_loss', loss.item(), prog_bar=True, on_epoch=True)
         return loss

@@ -70,7 +70,7 @@ class Dataset(torch_Dataset):
 
     @staticmethod
     def one_hot_encoder(label_img: np.array) -> np.array:
-        """Encodes label wise, first channel lowest label and so on, skip zero background channel"""
+        """Encodes label wise, first channel is the lowest label and so on, skip zero background channel"""
         labels = np.unique(label_img)
         labels = labels[labels != 0]
         encoded_label = None
