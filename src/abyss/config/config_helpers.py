@@ -8,12 +8,10 @@ def check_and_create_folder_structure(params: dict) -> None:
     folders = [
         params['project']['config_store_path'],
         params['project']['structured_dataset_store_path'],
-        params['project']['preprocessed_dataset_store_path'],
+        params['project']['pre_processed_dataset_store_path'],
         params['project']['trainset_store_path'],
         params['project']['result_store_path'],
         params['project']['production_store_path'],
-        params['project']['inference_store_path'],
-        params['project']['postprocessed_store_path'],
     ]
     for folder in folders:
         os.makedirs(folder, exist_ok=True)

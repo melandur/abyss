@@ -37,15 +37,15 @@ class CreateHDF5(ConfigManager):
         self.store_path_memory_file()
 
     def get_data_store_paths(self) -> NestedDefaultDict:
-        """Returns the current data store path, with prio 1: preprocessed, prio 2: structured dataset"""
-        if len(self.path_memory['preprocessed_dataset_paths']['data']) != 0:
-            logger.info('HDF5 file will be created from preprocessed dataset')
-            return self.path_memory['preprocessed_dataset_paths']
+        """Returns the current data store path, with prio 1: pre processed, prio 2: structured dataset"""
+        if len(self.path_memory['pre_processed_dataset_paths']['data']) != 0:
+            logger.info('HDF5 file will be created from pre processed dataset')
+            return self.path_memory['pre_processed_dataset_paths']
         if len(self.path_memory['structured_dataset_paths']['data']) != 0:
             logger.info('HDF5 file will be created from structured dataset')
             return self.path_memory['structured_dataset_paths']
         raise ValueError(
-            'Path memory file is empty for structured and preprocessed data, check config_file -> pipeline_steps'
+            'Path memory file is empty for structured and pre processed data, check config_file -> pipeline_steps'
         )
 
     def train_test_split(self) -> None:

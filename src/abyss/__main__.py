@@ -7,10 +7,10 @@ from abyss import (
     ConfigManager,
     CreateHDF5,
     DataReader,
+    ExtractWeights,
     Inference,
     PostProcessing,
     PreProcessing,
-    Production,
     Training,
 )
 
@@ -26,7 +26,7 @@ def run_pipeline():
     pre_processing = PreProcessing()
     create_hdf5 = CreateHDF5()
     training = Training()
-    production = Production()
+    extract_weights = ExtractWeights()
     inference = Inference()
     post_processing = PostProcessing()
 
@@ -39,11 +39,12 @@ def run_pipeline():
         create_hdf5()
     if config_manager.params['pipeline_steps']['training']:
         training()
-    if config_manager.params['pipeline_steps']['production']:
-        production()
-    if config_manager.params['pipeline_steps']['inference']:
+
+    if config_manager.params['pipeline_steps']['production']['extract_weights']:
+        extract_weights()
+    if config_manager.params['pipeline_steps']['production']['inference']:
         inference()
-    if config_manager.params['pipeline_steps']['post_processing']:
+    if config_manager.params['pipeline_steps']['production']['post_processing']:
         post_processing()
 
     logger.info(f'Execution time -> {datetime.now() - start}')

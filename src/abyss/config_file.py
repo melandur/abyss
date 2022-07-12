@@ -16,13 +16,11 @@ class ConfigFile:
         return {
             'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_reader': False,
-                'pre_processing': False,
-                'create_trainset': False,
-                'training': False,
-                'production': False,
-                'inference': False,
-                'post_processing': True,
+                'data_reader': True,
+                'pre_processing': True,
+                'create_trainset': True,
+                'training': True,
+                'production': {'extract_weights': True, 'inference': True, 'post_processing': True},
             },
             'project': {
                 'name': self.project_name,
@@ -31,12 +29,10 @@ class ConfigFile:
                 'dataset_folder_path': self.dataset_folder_path,
                 'config_store_path': os.path.join(experiment_path, '0_config_data'),
                 'structured_dataset_store_path': os.path.join(experiment_path, '1_structured_dataset'),
-                'preprocessed_dataset_store_path': os.path.join(experiment_path, '2_pre_processed_dataset'),
+                'pre_processed_dataset_store_path': os.path.join(experiment_path, '2_pre_processed_dataset'),
                 'trainset_store_path': os.path.join(experiment_path, '3_trainset'),
                 'result_store_path': os.path.join(experiment_path, '4_results'),
                 'production_store_path': os.path.join(experiment_path, '5_production'),
-                'inference_store_path': os.path.join(experiment_path, '6_inference'),
-                'postprocessed_store_path': os.path.join(experiment_path, '7_post_processed'),
             },
             'meta': {
                 'seed': 42,  # find the truth in randomness
@@ -112,8 +108,10 @@ class ConfigFile:
                 'model_summary_depth': -1,
                 'early_stop': {'min_delta': 0.01, 'patience': 5, 'verbose': False, 'mode': 'max'},
             },
-            'production': {'checkpoint_name': None},
-            'inference': {'weights_name': f'{self.project_name}_{self.experiment_name}.pth'},
+            'production': {
+                'checkpoint_name': None,
+                'weights_name': f'{self.project_name}_{self.experiment_name}.pth',
+            },
         }
 
     def __str__(self) -> str:

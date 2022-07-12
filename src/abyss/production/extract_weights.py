@@ -7,7 +7,7 @@ from abyss.config import ConfigManager
 from abyss.training.model import Model
 
 
-class Production(ConfigManager):
+class ExtractWeights(ConfigManager):
     """Extract weights from checkpoint"""
 
     def __init__(self, **kwargs) -> None:
@@ -19,7 +19,7 @@ class Production(ConfigManager):
         self.get_best_checkpoint_path()
         self.extract_model()
 
-    def get_best_checkpoint_path(self):
+    def get_best_checkpoint_path(self) -> None:
         """Returns specific named checkpoint or the one with the _best tag"""
         check_point_store = os.path.join(self.params['project']['result_store_path'], 'checkpoints')
         checkpoint_name = self.params['production']['checkpoint_name']
@@ -50,6 +50,8 @@ class Production(ConfigManager):
         )
         os.makedirs(self.params['project']['production_store_path'], exist_ok=True)
         file_name = f"{self.params['project']['name']}_{self.params['project']['experiment_name']}"
-        export_file_path = os.path.join(self.params['project']['production_store_path'], f'{file_name}.pth')
+        export_folder_path = os.path.join(self.params['project']['production_store_path'], 'weights')
+        os.makedirs(export_folder_path, exist_ok=True)
+        export_file_path = os.path.join(export_folder_path, f'{file_name}.pth')
         torch.save(model_ckpt.state_dict(), export_file_path)
         logger.info(f'Extracted model from checkpoint -> {export_file_path}')

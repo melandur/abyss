@@ -13,19 +13,19 @@ class PostProcessing(ConfigManager):
         super().__init__()
         self._shared_state.update(kwargs)
 
-    def __call__(self):
+    def __call__(self) -> None:
         logger.info(f'Run: {self.__class__.__name__}')
         self.process_case_wise()
 
-    def process_case_wise(self):
+    def process_case_wise(self) -> None:
         """Process case wise"""
         for case_name in self.path_memory['inference_paths']:
             logger.info(case_name)
             data = self.load_data(case_name)
-            self.apply_largest_connected_component_filter(data, case_name)
+            # self.apply_largest_connected_component_filter(data, case_name)
             self.store_results(data, case_name)
 
-    def load_data(self, case_name):
+    def load_data(self, case_name: str) -> sitk.Image:
         """Load data from inference store"""
         data = sitk.ReadImage(self.path_memory['inference_paths'][case_name])
         return data
@@ -42,8 +42,10 @@ class PostProcessing(ConfigManager):
         filtered_mask = sitk.BinaryThreshold(lesions, label, label, label, 0)
         return filtered_mask
 
-    def store_results(self, data, case_name):
+    def store_results(self, data: sitk.Image, case_name: str) -> None:
         """Store processed data"""
-        file_path = os.path.join(self.params['project']['postprocessed_store_path'], f'{case_name}.nii.gz')
+        folder_path = os.path.join(self.params['project']['production_store_path'], 'post_processed')
+        os.makedirs(folder_path, exist_ok=True)
+        file_path = os.path.join(folder_path, f'{case_name}.nii.gz')
         sitk.WriteImage(data, file_path)
-        self.path_memory['postprocessed_paths'][case_name] = file_path
+        self.path_memory['post_processed_paths'][case_name] = file_path

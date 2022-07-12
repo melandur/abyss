@@ -22,7 +22,7 @@ class PreProcessing(ConfigManager):
 
     def __call__(self) -> None:
         logger.info(f'Run: {self.__class__.__name__}')
-        self.path_memory['preprocessed_dataset_paths'] = NestedDefaultDict()
+        self.path_memory['pre_processed_dataset_paths'] = NestedDefaultDict()
         self.aggregate_data_transformations()
         self.aggregate_label_transformations()
         self.process(self.label_transformation, 'label')
@@ -61,7 +61,7 @@ class PreProcessing(ConfigManager):
 
     def process(self, transformation: tio.Transform, data_type: str) -> None:
         """Applies pre-processing task on data"""
-        preprocessed_dataset_store_path = self.params['project']['preprocessed_dataset_store_path']
+        pre_processed_dataset_store_path = self.params['project']['pre_processed_dataset_store_path']
         structured_dataset_paths = self.path_memory['structured_dataset_paths']
         if len(structured_dataset_paths['data']) == 0:
             raise ValueError('Path memory file is empty for structured data, check config_file -> pipeline_steps')
@@ -74,7 +74,7 @@ class PreProcessing(ConfigManager):
                 else:
                     subject = tio.Subject(data=tio.LabelMap(file_path))
                 subject = transformation(subject)
-                self.save_data(subject, preprocessed_dataset_store_path, case_name, file_tag, data_type)
+                self.save_data(subject, pre_processed_dataset_store_path, case_name, file_tag, data_type)
 
     def save_data(
         self,
@@ -84,9 +84,9 @@ class PreProcessing(ConfigManager):
         file_tag: str,
         data_type: str,
     ) -> None:
-        """Save data to preprocessed data folder as nifti file"""
+        """Save data to pre processed data folder as nifti file"""
         new_file_dir = os.path.join(preproc_store_path, data_type)
         os.makedirs(new_file_dir, exist_ok=True)
         new_file_path = os.path.join(new_file_dir, f'{case_name}_{file_tag}.nii.gz')
-        self.path_memory['preprocessed_dataset_paths'][data_type][case_name][file_tag] = new_file_path
+        self.path_memory['pre_processed_dataset_paths'][data_type][case_name][file_tag] = new_file_path
         subject.data.save(new_file_path)
