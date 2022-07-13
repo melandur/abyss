@@ -8,7 +8,7 @@ class ConfigFile:
         self.project_name = 'aby'
         self.experiment_name = '1'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_folder_path = '/home/melandur/Data/small_train'
+        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Data', 'small_train')
 
     def __call__(self) -> dict:
         """Returns config file"""
@@ -20,7 +20,7 @@ class ConfigFile:
                 'pre_processing': True,
                 'create_trainset': True,
                 'training': True,
-                'production': {'extract_weights': True, 'inference': True, 'post_processing': True},
+                'production': {'extract_weights': False, 'inference': False, 'post_processing': False},
             },
             'project': {
                 'name': self.project_name,
@@ -106,7 +106,7 @@ class ConfigFile:
                 'fast_dev_run': False,
                 'resume_from_checkpoint': None,
                 'model_summary_depth': -1,
-                'early_stop': {'min_delta': 0.01, 'patience': 5, 'verbose': False, 'mode': 'max'},
+                'early_stop': {'min_delta': 0.01, 'patience': 1, 'verbose': False, 'mode': 'max'},
             },
             'production': {
                 'checkpoint_name': None,

@@ -15,10 +15,12 @@ class Inference(ConfigManager):
     def __init__(self, **kwargs) -> None:
         super().__init__()
         self._shared_state.update(kwargs)
-        self.model = nn_unet
+        self.model = None
 
     def __call__(self) -> None:
         logger.info(f'Run: {self.__class__.__name__}')
+        torch.cuda.empty_cache()
+        self.model = nn_unet
         self.load_weights()
         self.model.eval()
         self.predict_case_wise()
@@ -26,13 +28,13 @@ class Inference(ConfigManager):
 
     def load_weights(self) -> None:
         """Load weights from defined path"""
-        torch.cuda.empty_cache()
         weights_name = self.params['production']['weights_name']
         if weights_name is None:
             raise AssertionError('Weights file is not defined -> config_file -> training -> load_from_weights_path')
         weights_path = os.path.join(self.params['project']['production_store_path'], 'weights', weights_name)
         if not os.path.isfile(weights_path):
             raise ValueError('Weights file path is not valid -> config_file -> training -> load_from_weights_path')
+        logger.info(f'Load weights -> {weights_path}')
         self.model.load_state_dict(torch.load(weights_path, map_location='cuda:0'), strict=False)  # TODO: map_location
 
     def predict_case_wise(self) -> None:

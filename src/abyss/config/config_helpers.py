@@ -38,3 +38,12 @@ def check_search_tag_uniqueness(params: dict, data_type: str) -> None:
                 f'The {data_type} search tag {vague_tag} is not expressive/unique enough. '
                 f'Try to add additional information to the search tag like " ", ".", "_"'
             )
+
+
+def check_pipeline_steps(params: dict) -> None:
+    """Check for training & production collision"""
+    if params['pipeline_steps']['training'] and any(params['pipeline_steps']['production'].values()):
+        raise ValueError(
+            'Current pipeline_steps are invalid: deactivate -> config_file -> pipeline_steps ->'
+            ' "training" or "production" step'
+        )

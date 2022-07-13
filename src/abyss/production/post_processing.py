@@ -16,13 +16,14 @@ class PostProcessing(ConfigManager):
     def __call__(self) -> None:
         logger.info(f'Run: {self.__class__.__name__}')
         self.process_case_wise()
+        self.store_path_memory_file()
 
     def process_case_wise(self) -> None:
         """Process case wise"""
         for case_name in self.path_memory['inference_paths']:
             logger.info(case_name)
             data = self.load_data(case_name)
-            # self.apply_largest_connected_component_filter(data, case_name)
+            self.apply_largest_connected_component_filter(data, case_name)
             self.store_results(data, case_name)
 
     def load_data(self, case_name: str) -> sitk.Image:

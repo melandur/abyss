@@ -6,6 +6,7 @@ from loguru import logger
 
 from abyss.config.config_helpers import (
     check_and_create_folder_structure,
+    check_pipeline_steps,
     check_search_tag_redundancy,
     check_search_tag_uniqueness,
 )
@@ -48,6 +49,7 @@ class ConfigManager:
         check_search_tag_uniqueness(self.params, 'data')
         check_search_tag_redundancy(self.params, 'label')
         check_search_tag_uniqueness(self.params, 'label')
+        check_pipeline_steps(self.params)
         check_and_create_folder_structure(self.params)
 
     def __store_config_file(self) -> None:

@@ -16,6 +16,7 @@ class ExtractWeights(ConfigManager):
         self.best_checkpoint_path = None
 
     def __call__(self) -> None:
+        logger.info(f'Run: {self.__class__.__name__}')
         self.get_best_checkpoint_path()
         self.extract_model()
 
@@ -25,9 +26,11 @@ class ExtractWeights(ConfigManager):
         checkpoint_name = self.params['production']['checkpoint_name']
         if checkpoint_name is None:
             found_checkpoint_name = [x for x in os.listdir(check_point_store) if '_best' in x]
-            if len(found_checkpoint_name) != 1:
+            if len(found_checkpoint_name) == 0:
+                raise ValueError('No checkpoint with "_best" tag, maybe you need to train first')
+            if len(found_checkpoint_name) > 1:
                 raise ValueError(
-                    'Multiple or None checkpoints with "_best" tag, set specific name -> '
+                    'Multiple checkpoints with "_best" tag. Delete obsolete ones or set specific name -> '
                     'config_file -> production -> checkpoint_name'
                 )
             self.best_checkpoint_path = os.path.join(check_point_store, found_checkpoint_name[0])
@@ -54,4 +57,4 @@ class ExtractWeights(ConfigManager):
         os.makedirs(export_folder_path, exist_ok=True)
         export_file_path = os.path.join(export_folder_path, f'{file_name}.pth')
         torch.save(model_ckpt.state_dict(), export_file_path)
-        logger.info(f'Extracted model from checkpoint -> {export_file_path}')
+        logger.info(f'Extracted weights -> {export_file_path}')
