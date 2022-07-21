@@ -42,17 +42,17 @@ class Inference(ConfigManager):
         """Predict pre processed data"""
         for case_name in self.path_memory['pre_processed_dataset_paths']['data']:
             logger.info(case_name)
-            data = self.concat_data(case_name)
-            data = self.add_batch_dimension(data)
+            data = self.prepare_data(case_name)
+            data = self.add_channel_dimension(data)
             self.predict(data, case_name)
 
     @staticmethod
-    def add_batch_dimension(data: torch.Tensor) -> torch.Tensor:
+    def add_channel_dimension(data: torch.Tensor) -> torch.Tensor:
         """Extend current data with batch dimension"""
         data = data[None]  # add dimension at the beginning
         return data
 
-    def concat_data(self, case_name: str) -> torch.tensor:
+    def prepare_data(self, case_name: str) -> torch.tensor:
         """This needs to be adapted to training/dataset.py -> concat function"""
         img = None
         for idx, file_tag in enumerate(self.path_memory['pre_processed_dataset_paths']['data'][case_name]):

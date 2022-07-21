@@ -54,8 +54,19 @@ class DataReader(ConfigManager):
                     count_labels[label_tag] += 1
 
         stats_dict = {
-            'Total cases': len(self.data_path_store['data'].keys()),
+            'Total cases': sum(count_data.values()),
             'Label': count_labels,
             'Data': count_data,
         }
         logger.info(f'Dataset scan overview: {json.dumps(stats_dict, indent=4)}')
+
+        n_data = sum(count_data.values())
+        n_label = sum(count_labels.values())
+        if n_data == 0:
+            raise ValueError('Data not found, check -> config_file -> dataset -> data_search_tags')
+        if n_label == 0:
+            raise ValueError('Labels not found, check -> config_file -> dataset -> label_search_tags')
+        if n_data % n_label != 0:
+            raise ValueError(
+                'Not every label has the same multiple of data, check for missing data or adapt search tags',
+            )

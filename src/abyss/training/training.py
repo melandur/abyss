@@ -15,20 +15,34 @@ class Training(ConfigManager):
         super().__init__()
         self._shared_state.update(kwargs)
         self.model = None
+        self.checkpoint_is_loaded = False
 
     def __call__(self) -> None:
-        if self.params['pipeline_steps']['training']:
+        if any(self.params['pipeline_steps']['training'].values()):
             logger.info(f'Run: {self.__class__.__name__}')
             self.model = Model(self.params, self.path_memory)
+
             if self.params['training']['load_from_checkpoint_path']:
                 self.load_checkpoint()
+                self.checkpoint_is_loaded = True
 
             if self.params['training']['load_from_weights_path']:
                 self.load_weights()
+                self.checkpoint_is_loaded = True
 
             trainer = Trainer()()
-            trainer.fit(self.model)
-            trainer.test(self.model)
+
+            if self.params['pipeline_steps']['training']['fit']:
+                trainer.fit(self.model)
+                self.checkpoint_is_loaded = True
+
+            if self.params['pipeline_steps']['training']['test']:
+                if not self.checkpoint_is_loaded:
+                    raise ValueError(
+                        'Missing checkpoint/weights, set loading path -> config_file -> training -> '
+                        'load_from_weights_path or load_from_checkpoint_path'
+                    )
+                trainer.test(self.model)
 
     def load_checkpoint(self) -> None:
         """Load checkpoint (weights, optimizer state) to proceed training"""

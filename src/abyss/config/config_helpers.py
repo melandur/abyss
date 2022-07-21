@@ -42,7 +42,7 @@ def check_search_tag_uniqueness(params: dict, data_type: str) -> None:
 
 def check_pipeline_steps(params: dict) -> None:
     """Check for training & production collision"""
-    if params['pipeline_steps']['training'] and any(params['pipeline_steps']['production'].values()):
+    if any(params['pipeline_steps']['training'].values()) and any(params['pipeline_steps']['production'].values()):
         raise ValueError(
             'Current pipeline_steps are invalid: deactivate -> config_file -> pipeline_steps ->'
             ' "training" or "production" step'

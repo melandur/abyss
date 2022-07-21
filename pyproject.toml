@@ -25,9 +25,9 @@ pytorch-ignite = "^0.4.9"
 monai = "^0.8.1"
 rich = "^12.4.4"
 matplotlib = "^3.5.2"
-autohooks = "^22.7.2"
 torchio = "^0.18.83"
 numpyencoder = "^0.3.0"
+torch = "1.11.0"
 
 
 [tool.poetry.dev-dependencies]

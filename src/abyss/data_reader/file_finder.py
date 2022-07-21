@@ -27,7 +27,7 @@ class FileFinder(ConfigManager):
             self.check_for_missing_files(self.data_search_tags, 'data')
             self.check_for_missing_files(self.label_search_tags, 'label')
             return self.data_path_store
-        raise NotADirectoryError(str(self.dataset_folder_path))
+        raise NotADirectoryError(f'check -> {self.dataset_folder_path}')
 
     @staticmethod
     def get_case_name(root: str, file_name: str) -> str:
