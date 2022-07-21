@@ -135,15 +135,11 @@
 
 1. Clone the repo
    ```sh
-   git clone https://github.com/ubern-mia/abyss.git
+   git clone https://github.com/melandur/abyss.git
    ```
 2. Install with poetry
    ```sh
    poetry install
-   ```
-   or install with pip
-   ```sh
-   pip install -r requirements.txt
    ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "deep_temple"
+name = "abyss"
 version = "0.1.0"
 description = "Another deep learning template"
 authors = ["melandur <account@qunit.ch>"]
@@ -13,7 +13,6 @@ loguru = "^0.6.0"
 itk = "^5.2.1"
 
 nibabel = "^3.2.2"
-
 numpy = "^1.22.3"
 
 Pillow = "^9.1.0"
@@ -22,12 +21,13 @@ pytorch-lightning = "^1.6.1"
 
 setuptools = "^62.1.0"
 h5py = "^3.7.0"
-torchio = "^0.18.77"
 pytorch-ignite = "^0.4.9"
 monai = "^0.8.1"
 rich = "^12.4.4"
 matplotlib = "^3.5.2"
 autohooks = "^22.7.2"
+torchio = "^0.18.83"
+numpyencoder = "^0.3.0"
 
 
 [tool.poetry.dev-dependencies]
