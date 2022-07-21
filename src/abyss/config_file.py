@@ -4,11 +4,11 @@ import os
 class ConfigFile:
     """The pipelines control center, all parameters can be found here"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.project_name = 'aby'
-        self.experiment_name = '1'
+        self.experiment_name = '2'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Data', 'small_train')
+        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'kira')
 
     def __call__(self) -> dict:
         """Returns config file"""
@@ -17,9 +17,9 @@ class ConfigFile:
             'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
                 'data_reader': True,
-                'pre_processing': True,
-                'create_trainset': True,
-                'training': True,
+                'pre_processing': False,
+                'create_trainset': False,
+                'training': False,
                 'production': {'extract_weights': False, 'inference': False, 'post_processing': False},
             },
             'project': {
@@ -41,13 +41,12 @@ class ConfigFile:
             'dataset': {
                 'folder_path': self.dataset_folder_path,
                 'label_file_type': ['.nii.gz'],
-                'label_search_tags': {'mask': ['seg', 'Seg']},
+                'label_search_tags': {
+                    'mask': ['_seg'],
+                },
                 'data_file_type': ['.nii.gz'],
                 'data_search_tags': {
-                    'flair': ['flair.', 'FLAIR.'],
-                    't1c': ['t1ce.', 'T1CE.'],
-                    't2': ['t2.', 'T2.'],
-                    't1': ['t1.', 'T1.'],
+                    'img': ['_img'],
                 },
                 'val_fraction': 0.2,  # only used when cross_fold = 1/1, otherwise defined as 1/max_number_of_folds
                 'test_fraction': 0.2,
@@ -58,34 +57,34 @@ class ConfigFile:
                     'orient_to_ras': {'active': True},
                     'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'linear'},
                     'z_score': {'active': True},
-                    'rescale_intensity': {'active': False},
+                    'rescale_intensity': {'active': True},
                 },
                 'label': {
                     'orient_to_ras': {'active': True},
                     'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'nearest'},
-                    'remap_labels': {'active': True, 'label_dict': {1: 1, 2: 2, 4: 3}},  # original : new
+                    'remap_labels': {'active': False, 'label_dict': {1: 1, 2: 2, 4: 3}},  # original : new
                 },
             },
             'training': {
-                'batch_size': 1,
+                'batch_size': 80,
                 'optimizers': {
                     'Adam': {
-                        'active': False,
+                        'active': True,
                         'learning_rate': 0.001,
                         'betas': (0.9, 0.999),
                         'eps': 1e-8,
-                        'weight_decay': 0,
+                        'weight_decay': 1e-2,
                         'amsgrad': False,
                     },
                     'SGD': {
                         'active': True,
                         'learning_rate': 0.01,
                         'momentum': 0.9,
-                        'weight_decay': 0.99,
+                        'weight_decay': 1e-2,
                         'nesterov': True,
                     },
                 },
-                'criterion': 'cross_entropy_dice',  # mse, cross_entropy, dice, cross_entropy_dice
+                'criterion': 'dice',  # mse, cross_entropy, dice, cross_entropy_dice
                 'load_from_checkpoint_path': None,  # loads if valid *.ckpt provided
                 'load_from_weights_path': None,  # loads if valid *.pth provided
             },
@@ -106,7 +105,7 @@ class ConfigFile:
                 'fast_dev_run': False,
                 'resume_from_checkpoint': None,
                 'model_summary_depth': -1,
-                'early_stop': {'min_delta': 0.01, 'patience': 1, 'verbose': False, 'mode': 'max'},
+                'early_stop': {'min_delta': 0.01, 'patience': 5, 'verbose': False, 'mode': 'max'},
             },
             'production': {
                 'checkpoint_name': None,

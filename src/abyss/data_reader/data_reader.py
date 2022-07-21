@@ -4,6 +4,7 @@ import os
 from loguru import logger
 
 from abyss.config import ConfigManager
+from abyss.data_analyzer import DataAnalyzer
 from abyss.data_reader.file_finder import FileFinder
 from abyss.data_reader.restructure import Restructure
 from abyss.utils import NestedDefaultDict, assure_instance_type
@@ -21,14 +22,16 @@ class DataReader(ConfigManager):
 
     def __call__(self) -> None:
         """Run"""
-        logger.info(f'Run: {self.__class__.__name__}')
-        self.path_memory['structured_dataset_paths'] = NestedDefaultDict()
-        file_finder = FileFinder()
-        self.data_path_store = file_finder()
-        self.show_dict_findings()
-        data_restruct = Restructure(self.data_path_store)
-        data_restruct()
-        self.store_path_memory_file()
+        if self.params['pipeline_steps']['data_reader']:
+            logger.info(f'Run: {self.__class__.__name__}')
+            self.path_memory['structured_dataset_paths'] = NestedDefaultDict()
+            file_finder = FileFinder()
+            self.data_path_store = file_finder()
+            self.show_dict_findings()
+            data_restruct = Restructure(self.data_path_store)
+            data_restruct()
+            self.store_path_memory_file()
+            DataAnalyzer(self.params, self.path_memory)('structured_dataset')
 
     def show_dict_findings(self) -> None:
         """Summaries the findings"""

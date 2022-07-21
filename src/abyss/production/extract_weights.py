@@ -16,9 +16,10 @@ class ExtractWeights(ConfigManager):
         self.best_checkpoint_path = None
 
     def __call__(self) -> None:
-        logger.info(f'Run: {self.__class__.__name__}')
-        self.get_best_checkpoint_path()
-        self.extract_model()
+        if self.params['pipeline_steps']['production']['extract_weights']:
+            logger.info(f'Run: {self.__class__.__name__}')
+            self.get_best_checkpoint_path()
+            self.extract_model()
 
     def get_best_checkpoint_path(self) -> None:
         """Returns specific named checkpoint or the one with the _best tag"""

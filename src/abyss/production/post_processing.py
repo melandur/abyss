@@ -14,9 +14,10 @@ class PostProcessing(ConfigManager):
         self._shared_state.update(kwargs)
 
     def __call__(self) -> None:
-        logger.info(f'Run: {self.__class__.__name__}')
-        self.process_case_wise()
-        self.store_path_memory_file()
+        if self.params['pipeline_steps']['production']['post_processing']:
+            logger.info(f'Run: {self.__class__.__name__}')
+            self.process_case_wise()
+            self.store_path_memory_file()
 
     def process_case_wise(self) -> None:
         """Process case wise"""

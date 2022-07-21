@@ -3,7 +3,7 @@ import os
 
 import h5py
 import numpy as np
-import SimpleITK as sitk
+import torchio as tio
 from loguru import logger
 
 from abyss.config import ConfigManager
@@ -26,15 +26,16 @@ class CreateHDF5(ConfigManager):
         np.random.seed(self.params['meta']['seed'])
 
     def __call__(self) -> None:
-        logger.info(f'Run: {self.__class__.__name__}')
-        self.data_store_paths = self.get_data_store_paths()
-        self.check_fold_settings()
-        self.train_test_split()
-        self.train_val_split()
-        self.contamination_check()
-        self.execute_dataset_split()
-        self.show_tree_structure()
-        self.store_path_memory_file()
+        if self.params['pipeline_steps']['create_trainset']:
+            logger.info(f'Run: {self.__class__.__name__}')
+            self.data_store_paths = self.get_data_store_paths()
+            self.check_fold_settings()
+            self.train_test_split()
+            self.train_val_split()
+            self.contamination_check()
+            self.execute_dataset_split()
+            self.show_tree_structure()
+            self.store_path_memory_file()
 
     def get_data_store_paths(self) -> NestedDefaultDict:
         """Returns the current data store path, with prio 1: pre processed, prio 2: structured dataset"""
@@ -111,46 +112,50 @@ class CreateHDF5(ConfigManager):
         if contamination:
             raise AssertionError(f'Contamination in test & val-set split -> {contamination}')
 
-    @staticmethod
-    def writer(h5_object: h5py.File, group: str, set_type: str, case_name: str, file_tag: str, file_path) -> None:
+    def writer(
+        self, data_type: str, set_type: str, case_name: str, file_type: str, array_data: np.array, h5_object: h5py.File
+    ) -> None:
         """Convert data to numpy array and write it hdf5 file"""
-        img = sitk.ReadImage(file_path)
-        img_arr = sitk.GetArrayFromImage(img)
-        group = h5_object.require_group(f'{group}/{set_type}/{case_name}')
-        group.create_dataset(file_tag, data=img_arr)
+        for slice_idx in range(np.shape(array_data)[0]):  # TODO: Store as whole Volume or Slice wise
+            new_file_path = f'{set_type}/{data_type}/{case_name}/{slice_idx}'
+            group = h5_object.require_group(new_file_path)
+            group.create_dataset(file_type, data=array_data[slice_idx])
+            train_file_path = f'{new_file_path}/{file_type}'
+            self.path_memory[f'{set_type}_dataset_paths'][data_type][case_name][file_type][slice_idx] = train_file_path
 
-    def create_set(self, h5_object: h5py.File, set_cases: str, set_tag: str, data_type: str) -> None:
+    @staticmethod
+    def load_data_type(file_path: str) -> np.array:
+        """ "Read data as array"""
+        return tio.ScalarImage(file_path).data
+
+    def create_set(self, set_type: str, set_cases: str, h5_object: h5py.File) -> None:
         """Create data set and append location to path memory"""
-        for case_name in set_cases:
-            file_tags = self.data_store_paths[data_type][case_name]
-            for file_tag in file_tags:
-                file_path = self.data_store_paths[data_type][case_name][file_tag]
-                self.writer(h5_object, set_tag, data_type, case_name, file_tag, file_path)
-                train_file_path = f'{set_tag}/{data_type}/{case_name}/{file_tag}'
-                self.path_memory[f'{set_tag}_dataset_paths'][data_type][case_name][file_tag] = train_file_path
+        self.path_memory[f'{set_type}_dataset_paths'] = NestedDefaultDict()
+        for data_type in ['data', 'label']:
+            for case_name in set_cases:
+                file_types = self.data_store_paths[data_type][case_name]
+                for file_type in file_types:
+                    file_path = self.data_store_paths[data_type][case_name][file_type]
+                    array_data = self.load_data_type(file_path)
+                    self.writer(data_type, set_type, case_name, file_type, array_data, h5_object)
 
     def execute_dataset_split(self) -> None:
         """Write files to train/validation/test folders in hdf5"""
         logger.info(f'Write hdf5 file -> {self.trainset_store_path}')
-        self.path_memory['train_dataset_paths'] = NestedDefaultDict()
-        self.path_memory['val_dataset_paths'] = NestedDefaultDict()
-        self.path_memory['test_dataset_paths'] = NestedDefaultDict()
         with h5py.File(self.trainset_store_path, 'w') as h5_object:
-            self.create_set(h5_object, self.train_set_cases, 'train', 'data')
-            self.create_set(h5_object, self.train_set_cases, 'train', 'label')
-            self.create_set(h5_object, self.val_set_cases, 'val', 'data')
-            self.create_set(h5_object, self.val_set_cases, 'val', 'label')
-            self.create_set(h5_object, self.test_set_cases, 'test', 'data')
-            self.create_set(h5_object, self.test_set_cases, 'test', 'label')
+            self.create_set('train', self.train_set_cases, h5_object)
+            self.create_set('val', self.val_set_cases, h5_object)
+            self.create_set('test', self.test_set_cases, h5_object)
 
-    def branch_helper(self, name: str, obj: h5py.Group or h5py.Dataset) -> None:
+    @staticmethod
+    def branch_helper(name: str, obj: h5py.Group or h5py.Dataset) -> None:
         """Makes branches kinda pretty"""
         shift = name.count('/') * 3 * ' '  # convert / to and shift offset
         item_name = name.split('/')[-1]
         branch = f'{shift}{item_name}'
         if isinstance(obj, h5py.Dataset):
             branch = f'{branch} {obj.shape}'
-        self.tree_store += f'\n{branch}'
+        logger.info(branch)
 
     def show_tree_structure(self) -> None:
         """Visualize tree structure of hdf5"""

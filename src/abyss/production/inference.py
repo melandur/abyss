@@ -6,7 +6,7 @@ import torch
 from loguru import logger
 
 from abyss.config import ConfigManager
-from abyss.training.nets import nn_unet
+from abyss.training.nets import unet
 
 
 class Inference(ConfigManager):
@@ -18,13 +18,14 @@ class Inference(ConfigManager):
         self.model = None
 
     def __call__(self) -> None:
-        logger.info(f'Run: {self.__class__.__name__}')
-        torch.cuda.empty_cache()
-        self.model = nn_unet
-        self.load_weights()
-        self.model.eval()
-        self.predict_case_wise()
-        self.store_path_memory_file()
+        if self.params['pipeline_steps']['production']['inference']:
+            logger.info(f'Run: {self.__class__.__name__}')
+            torch.cuda.empty_cache()
+            self.model = unet
+            self.load_weights()
+            self.model.eval()
+            self.predict_case_wise()
+            self.store_path_memory_file()
 
     def load_weights(self) -> None:
         """Load weights from defined path"""

@@ -5,11 +5,7 @@ import torchmetrics
 from loguru import logger
 from pytorch_lightning import Trainer as LightningTrainer
 from pytorch_lightning import seed_everything
-from pytorch_lightning.callbacks import (
-    LearningRateMonitor,
-    RichModelSummary,
-    RichProgressBar,
-)
+from pytorch_lightning.callbacks import RichModelSummary, RichProgressBar
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTheme
@@ -46,10 +42,6 @@ class Trainer(ConfigManager):
             mode=self.params['trainer']['early_stop']['mode'],
         )
 
-        self.lr_monitor_cb = LearningRateMonitor(
-            logging_interval='step',
-        )
-
         self.model_summary_cb = RichModelSummary(self.params['trainer']['model_summary_depth'])
 
         self.progress_bar_cb = RichProgressBar(
@@ -79,7 +71,6 @@ class Trainer(ConfigManager):
             callbacks=[
                 self.checkpoint_cb,
                 self.early_stop_cb,
-                self.lr_monitor_cb,
                 self.model_summary_cb,
                 self.progress_bar_cb,
             ],

@@ -5,6 +5,7 @@ import torchio as tio
 from loguru import logger
 
 from abyss.config import ConfigManager
+from abyss.data_analyzer import DataAnalyzer
 from abyss.utils import NestedDefaultDict
 
 
@@ -21,13 +22,15 @@ class PreProcessing(ConfigManager):
         np.random.seed(self.params['meta']['seed'])
 
     def __call__(self) -> None:
-        logger.info(f'Run: {self.__class__.__name__}')
-        self.path_memory['pre_processed_dataset_paths'] = NestedDefaultDict()
-        self.aggregate_data_transformations()
-        self.aggregate_label_transformations()
-        self.process(self.label_transformation, 'label')
-        self.process(self.data_transformation, 'data')
-        self.store_path_memory_file()
+        if self.params['pipeline_steps']['pre_processing']:
+            logger.info(f'Run: {self.__class__.__name__}')
+            self.path_memory['pre_processed_dataset_paths'] = NestedDefaultDict()
+            self.aggregate_data_transformations()
+            self.aggregate_label_transformations()
+            self.process(self.label_transformation, 'label')
+            self.process(self.data_transformation, 'data')
+            self.store_path_memory_file()
+            DataAnalyzer(self.params, self.path_memory)('pre_processing')
 
     def aggregate_data_transformations(self) -> None:
         """Add data filter"""

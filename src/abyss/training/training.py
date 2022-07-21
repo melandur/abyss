@@ -17,16 +17,18 @@ class Training(ConfigManager):
         self.model = None
 
     def __call__(self) -> None:
-        self.model = Model(self.params, self.path_memory)
-        if self.params['training']['load_from_checkpoint_path']:
-            self.load_checkpoint()
+        if self.params['pipeline_steps']['training']:
+            logger.info(f'Run: {self.__class__.__name__}')
+            self.model = Model(self.params, self.path_memory)
+            if self.params['training']['load_from_checkpoint_path']:
+                self.load_checkpoint()
 
-        if self.params['training']['load_from_weights_path']:
-            self.load_weights()
+            if self.params['training']['load_from_weights_path']:
+                self.load_weights()
 
-        trainer = Trainer()()
-        trainer.fit(self.model)
-        trainer.test(self.model)
+            trainer = Trainer()()
+            trainer.fit(self.model)
+            trainer.test(self.model)
 
     def load_checkpoint(self) -> None:
         """Load checkpoint (weights, optimizer state) to proceed training"""

@@ -1,16 +1,91 @@
 # pylint: disable-all
 
-# from monai.networks.nets import UNet, resnet10
-#
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from monai.networks.nets import UNet, resnet10
+
 # unet = UNet(
-#     spatial_dims=3,
-#     in_channels=4,
-#     out_channels=1,
+#     spatial_dims=128,
+#     in_channels=1,
+#     out_channels=2,
 #     channels=(16, 32, 64, 128, 256),
 #     strides=(2, 2, 2, 2),
-#     num_res_units=2,
+#     num_res_units=0,
 # )
-#
+
+
+class Downsample_block(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(Downsample_block, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, out_channels, 3, padding=1)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, 3, padding=1)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+
+    def forward(self, x):
+        x = F.relu(self.bn1(self.conv1(x)))
+        y = F.relu(self.bn2(self.conv2(x)))
+        x = F.max_pool2d(y, 2, stride=2)
+
+        return x, y
+
+
+class Upsample_block(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(Upsample_block, self).__init__()
+        self.transconv = nn.ConvTranspose2d(in_channels, out_channels, 4, padding=1, stride=2)
+        self.conv1 = nn.Conv2d(in_channels, out_channels, 3, padding=1)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, 3, padding=1)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+
+    def forward(self, x, y):
+        x = self.transconv(x)
+        x = torch.cat((x, y), dim=1)
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn2(self.conv2(x)))
+
+        return x
+
+
+class Unet(nn.Module):
+    def __init__(self, in_chan=1, out_chan=1):
+        super(Unet, self).__init__()
+
+        self.down1 = Downsample_block(in_chan, 64)
+        self.down2 = Downsample_block(64, 128)
+        self.down3 = Downsample_block(128, 256)
+        self.down4 = Downsample_block(256, 512)
+        self.conv1 = nn.Conv2d(512, 1024, 3, padding=1)
+        self.bn1 = nn.BatchNorm2d(1024)
+        self.conv2 = nn.Conv2d(1024, 1024, 3, padding=1)
+        self.bn2 = nn.BatchNorm2d(1024)
+        self.up4 = Upsample_block(1024, 512)
+        self.up3 = Upsample_block(512, 256)
+        self.up2 = Upsample_block(256, 128)
+        self.up1 = Upsample_block(128, 64)
+        self.outconv = nn.Conv2d(64, out_chan, 1)
+        self.outconvp1 = nn.Conv2d(64, out_chan, 1)
+        self.outconvm1 = nn.Conv2d(64, out_chan, 1)
+
+    def forward(self, x):
+        x, y1 = self.down1(x)
+        x, y2 = self.down2(x)
+        x, y3 = self.down3(x)
+        x, y4 = self.down4(x)
+        x = F.dropout2d(F.relu(self.bn1(self.conv1(x))))
+        x = F.dropout2d(F.relu(self.bn2(self.conv2(x))))
+        x = self.up4(x, y4)
+        x = self.up3(x, y3)
+        x = self.up2(x, y2)
+        x = self.up1(x, y1)
+        x1 = self.outconv(x)
+        return x1
+
+
+unet = Unet()
+
 # resnet_10 = resnet10(
 #     pretrained=False,
 #     spatial_dims=3,
@@ -984,31 +1059,32 @@ class Generic_UNet(nn.Module):
         return result_torch
 
 
-nn_unet = Generic_UNet(
-    input_channels=4,
-    base_num_features=30,
-    num_classes=3,
-    num_pool=5,
-    num_conv_per_stage=2,
-    feat_map_mul_on_downscale=2,
-    conv_op=torch.nn.Conv3d,
-    norm_op=torch.nn.InstanceNorm3d,
-    norm_op_kwargs={'eps': 1e-5, 'affine': True},
-    dropout_op=torch.nn.Dropout3d,
-    dropout_op_kwargs={'p': 0, 'inplace': True},
-    nonlin=torch.nn.LeakyReLU,
-    nonlin_kwargs={'negative_slope': 1e-2, 'inplace': True},
-    deep_supervision=False,
-    dropout_in_localization=False,
-    final_nonlin=lambda x: x,
-    weightInitializer=InitWeights_He(1e-2),
-    pool_op_kernel_sizes=[[2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]],
-    conv_kernel_sizes=[[3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3]],
-    upscale_logits=False,
-    convolutional_pooling=True,
-    convolutional_upsampling=True,
-    max_num_features=None,
-)
+#
+# nn_unet = Generic_UNet(
+#     input_channels=4,
+#     base_num_features=30,
+#     num_classes=3,
+#     num_pool=5,
+#     num_conv_per_stage=2,
+#     feat_map_mul_on_downscale=2,
+#     conv_op=torch.nn.Conv3d,
+#     norm_op=torch.nn.InstanceNorm3d,
+#     norm_op_kwargs={'eps': 1e-5, 'affine': True},
+#     dropout_op=torch.nn.Dropout3d,
+#     dropout_op_kwargs={'p': 0, 'inplace': True},
+#     nonlin=torch.nn.LeakyReLU,
+#     nonlin_kwargs={'negative_slope': 1e-2, 'inplace': True},
+#     deep_supervision=False,
+#     dropout_in_localization=False,
+#     final_nonlin=lambda x: x,
+#     weightInitializer=InitWeights_He(1e-2),
+#     pool_op_kernel_sizes=[[2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]],
+#     conv_kernel_sizes=[[3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3]],
+#     upscale_logits=False,
+#     convolutional_pooling=True,
+#     convolutional_upsampling=True,
+#     max_num_features=None,
+# )
 
 # STORAGE_BASE_PATH = os.path.join(os.path.expanduser('~'), '.deepbratumia', 'storage')
 # MODELS_STORAGE_PATH = os.path.join(STORAGE_BASE_PATH, 'models')

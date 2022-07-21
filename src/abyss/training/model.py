@@ -1,14 +1,15 @@
 from typing import Optional
 
+import matplotlib.pyplot as plt
 import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader
 
 from abyss.training.augmentation.augmentation import transforms
 from abyss.training.dataset import Dataset
-from abyss.training.helpers.log_metrics import log_accuracy, log_dice
+from abyss.training.helpers.log_metrics import log_dice
 from abyss.training.helpers.model_helpers import apply_criterion, get_optimizer
-from abyss.training.nets import nn_unet
+from abyss.training.nets import unet
 
 
 class Model(pl.LightningModule):
@@ -21,7 +22,7 @@ class Model(pl.LightningModule):
         self.val_set = None
         self.test_set = None
         self.train_set = None
-        self.net = nn_unet
+        self.net = unet
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward step"""
@@ -39,31 +40,36 @@ class Model(pl.LightningModule):
     def compute_loss(self, output: torch.Tensor, ground_truth: torch.Tensor, stage: str) -> torch.Tensor:
         """Calculate and return loss"""
         loss = apply_criterion(self.params, output, ground_truth)
-        self.log(f'{stage}_loss', loss.item(), prog_bar=True, on_epoch=True)
+        self.log(f'{stage}_loss', loss.item(), prog_bar=True, on_step=False, on_epoch=True)
         return loss
 
     def training_step(self, batch: torch.Tensor) -> torch.Tensor:
-        """Predict, compare, log, backprop"""
+        """Predict, loss, log, (backprop and optimizer step done by lightning)"""
         data, label = batch
+        plt.imshow(data.detach().cpu().numpy()[0, 0], cmap='gray')
+        # plt.imshow(label.detach().cpu().numpy()[0,0], cmap='gray', alpha=0.1)
+        plt.show()
         output = self(data)
+        plt.imshow(data.detach().cpu().numpy()[0, 0], cmap='gray')
+        plt.imshow(output.detach().cpu().numpy()[0, 0], cmap='gray')
+        plt.show()
         loss = self.compute_loss(output, label, 'train')
-        log_accuracy(self, output, label, 'train')
         log_dice(self, output, label, 'train')
         return loss
 
     def validation_step(self, batch: torch.Tensor, batch_idx: int) -> None:
-        """Predict, compare, log"""
+        """Predict, loss, log"""
         data, label = batch
         output = self(data)
         _ = self.compute_loss(output, label, 'val')
-        log_accuracy(self, output, label, 'val')
+        log_dice(self, output, label, 'val')
 
     def test_step(self, batch: torch.Tensor, batch_idx: int) -> None:
-        """Predict, compare, log"""
+        """Predict, loss, log"""
         data, label = batch
         output = self(data)
         _ = self.compute_loss(output, label, 'test')
-        log_accuracy(self, output, label, 'test')
+        log_dice(self, output, label, 'test')
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         """Configure optimizers"""
