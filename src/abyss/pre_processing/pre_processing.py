@@ -30,7 +30,7 @@ class PreProcessing(ConfigManager):
             self.process(self.label_transformation, 'label')
             self.process(self.data_transformation, 'data')
             self.store_path_memory_file()
-            DataAnalyzer(self.params, self.path_memory)('pre_processing')
+            DataAnalyzer(self.params, self.path_memory)('pre_processed_dataset')
 
     def aggregate_data_transformations(self) -> None:
         """Add data filter"""

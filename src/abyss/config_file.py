@@ -6,18 +6,18 @@ class ConfigFile:
 
     def __init__(self) -> None:
         self.project_name = 'aby'
-        self.experiment_name = '2'
+        self.experiment_name = '3'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Data', 'small')
+        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Data', 'small_train')
 
     def __call__(self) -> dict:
         """Returns config file"""
         experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
         return {
-            'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
+            'logger': {'level': 'TRACE'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
                 'data_reader': True,
-                'pre_processing': False,
+                'pre_processing': True,
                 'create_trainset': False,
                 'training': {'fit': False, 'test': False},
                 'production': {'extract_weights': False, 'inference': False, 'post_processing': False},

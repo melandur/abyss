@@ -25,9 +25,9 @@ class DataAnalyzer:
             logger.info(f'Run: {self.__class__.__name__} -> {state}')
             for case_name in self.path_memory[f'{state}_paths']['data']:
                 for data_type in self.path_memory[f'{state}_paths']['data'][case_name]:
-                    logger.info(f'-> {case_name} -> {data_type}')
                     file_path = self.path_memory[f'{state}_paths']['data'][case_name][data_type]
                     self.analyse_case(case_name, data_type, file_path)
+                    logger.info(f'-> {case_name} -> {data_type} -> {self.stats_cases[case_name][data_type]}')
 
             self.analyse_dataset()
             export_folder = os.path.join(self.params['project'][f'{state}_store_path'], 'stats')
@@ -38,19 +38,26 @@ class DataAnalyzer:
     def analyse_case(self, case_name: str, data_type: str, file_path: str) -> None:
         """Analyse data case wise"""
         data = self.read_file(file_path)
-        self.stats_cases[case_name][data_type]['min'] = np.min(data)
-        self.stats_cases[case_name][data_type]['max'] = np.max(data)
-        self.stats_cases[case_name][data_type]['mean'] = np.mean(data)
-        self.stats_cases[case_name][data_type]['median'] = np.median(data)
-        self.stats_cases[case_name][data_type]['std'] = np.std(data)
-        hist, bin_edges = np.histogram(data, bins=self.hist_bins)
+        self.stats_cases[case_name][data_type]['type'] = data.type
+        self.stats_cases[case_name][data_type]['origin'] = data.origin
+        self.stats_cases[case_name][data_type]['spacing'] = data.spacing
+        self.stats_cases[case_name][data_type]['direction'] = data.direction
+        self.stats_cases[case_name][data_type]['orientation'] = data.orientation
+        self.stats_cases[case_name][data_type]['spatial_shape'] = data.spatial_shape
+        data_arr = data.affine
+        self.stats_cases[case_name][data_type]['min'] = np.min(data_arr)
+        self.stats_cases[case_name][data_type]['max'] = np.max(data_arr)
+        self.stats_cases[case_name][data_type]['mean'] = np.mean(data_arr)
+        self.stats_cases[case_name][data_type]['median'] = np.median(data_arr)
+        self.stats_cases[case_name][data_type]['std'] = np.std(data_arr)
+        hist, bin_edges = np.histogram(data_arr, bins=self.hist_bins)
         self.stats_cases[case_name][data_type]['hist'] = hist
         self.stats_cases[case_name][data_type]['bin_edges'] = bin_edges
 
     @staticmethod
     def read_file(file_path: str) -> np.array:
         """Read file path as array"""
-        return tio.ScalarImage(file_path).affine
+        return tio.ScalarImage(file_path)
 
     def analyse_dataset(self) -> None:
         """Analyse the whole dataset"""
