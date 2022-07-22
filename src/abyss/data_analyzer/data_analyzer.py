@@ -47,9 +47,9 @@ class DataAnalyzer:
         data_arr = data.affine
         self.stats_cases[case_name][data_type]['min'] = np.min(data_arr)
         self.stats_cases[case_name][data_type]['max'] = np.max(data_arr)
+        self.stats_cases[case_name][data_type]['std'] = np.std(data_arr)
         self.stats_cases[case_name][data_type]['mean'] = np.mean(data_arr)
         self.stats_cases[case_name][data_type]['median'] = np.median(data_arr)
-        self.stats_cases[case_name][data_type]['std'] = np.std(data_arr)
         hist, bin_edges = np.histogram(data_arr, bins=self.hist_bins)
         self.stats_cases[case_name][data_type]['hist'] = hist
         self.stats_cases[case_name][data_type]['bin_edges'] = bin_edges
