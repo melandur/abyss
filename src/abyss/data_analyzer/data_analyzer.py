@@ -27,7 +27,7 @@ class DataAnalyzer:
                 for data_type in self.path_memory[f'{state}_paths']['data'][case_name]:
                     file_path = self.path_memory[f'{state}_paths']['data'][case_name][data_type]
                     self.analyse_case(case_name, data_type, file_path)
-                    logger.info(f'-> {case_name} -> {data_type} -> {self.stats_cases[case_name][data_type]}')
+                    self.format_output(self.stats_cases, case_name, data_type)
 
             self.analyse_dataset()
             export_folder = os.path.join(self.params['project'][f'{state}_store_path'], 'stats')
@@ -58,6 +58,16 @@ class DataAnalyzer:
     def read_file(file_path: str) -> np.array:
         """Read file path as array"""
         return tio.ScalarImage(file_path)
+
+    @staticmethod
+    def format_output(stats_cases: NestedDefaultDict, case_name: str, data_type: str) -> None:
+        """Reduce the output, no need to flood the terminal"""
+        show_keys = ['spatial_shape', 'origin', 'spacing', 'orientation', 'min', 'max', 'std']
+        tmp_store = {}
+        for key, value in stats_cases[case_name][data_type].items():
+            if key in show_keys:
+                tmp_store[key] = value
+        logger.info(f'-> {case_name} -> {data_type} -> {json.dumps(tmp_store, indent=4, cls=NumpyEncoder)}')
 
     def analyse_dataset(self) -> None:
         """Analyse the whole dataset"""

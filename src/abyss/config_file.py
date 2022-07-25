@@ -8,13 +8,13 @@ class ConfigFile:
         self.project_name = 'aby'
         self.experiment_name = '3'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Data', 'small_train')
+        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'kitten_12')
 
     def __call__(self) -> dict:
         """Returns config file"""
         experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
         return {
-            'logger': {'level': 'TRACE'},  # 'TRACE', 'DEBUG', 'INFO'
+            'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
                 'data_reader': True,
                 'pre_processing': True,
@@ -46,7 +46,7 @@ class ConfigFile:
                 },
                 'data_file_type': ['.nii.gz'],
                 'data_search_tags': {
-                    'img': ['_t1.'],
+                    'img': ['_img'],
                 },
                 'val_fraction': 0.2,  # only used when cross_fold = 1/1, otherwise defined as 1/max_number_of_folds
                 'test_fraction': 0.2,
