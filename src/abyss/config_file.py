@@ -16,10 +16,10 @@ class ConfigFile:
         return {
             'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_reader': True,
-                'pre_processing': True,
+                'data_reader': False,
+                'pre_processing': False,
                 'create_trainset': False,
-                'training': {'fit': False, 'test': False},
+                'training': {'fit': True, 'test': False},
                 'production': {'extract_weights': False, 'inference': False, 'post_processing': False},
             },
             'project': {
@@ -100,7 +100,6 @@ class ConfigFile:
                 'deterministic': False,
                 'devices': 1,
                 'gpus': None,
-                'auto_select_gpus': False,
                 'tpu_cores': None,
                 'fast_dev_run': False,
                 'resume_from_checkpoint': None,

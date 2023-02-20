@@ -5,6 +5,7 @@ description = "Another deep learning template"
 authors = ["melandur <account@qunit.ch>"]
 license = "MIT"
 
+
 [tool.poetry.dependencies]
 gdown = "^4.4.0"
 
@@ -28,6 +29,7 @@ matplotlib = "^3.5.2"
 torchio = "^0.18.83"
 numpyencoder = "^0.3.0"
 torch = "1.11.0"
+tensorboardx = "^2.6"
 
 
 [tool.poetry.dev-dependencies]
@@ -41,9 +43,11 @@ vulture = "^2.3"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+
 [tool.black]
 line-length = 120
 skip-string-normalization = true
+
 
 [tool.isort]
 profile = "black"

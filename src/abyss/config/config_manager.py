@@ -14,7 +14,6 @@ from abyss.config_file import ConfigFile
 from abyss.utils import NestedDefaultDict
 
 
-
 class ConfigManager:
     """Manages config file and path memory file"""
 
