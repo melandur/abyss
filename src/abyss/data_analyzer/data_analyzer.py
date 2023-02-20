@@ -67,7 +67,7 @@ class DataAnalyzer:
         for key, value in stats_cases[case_name][data_type].items():
             if key in show_keys:
                 tmp_store[key] = value
-        logger.info(f'-> {case_name} -> {data_type} -> {json.dumps(tmp_store, indent=4, cls=NumpyEncoder)}')
+        logger.trace(f'-> {case_name} -> {data_type} -> {json.dumps(tmp_store, indent=4, cls=NumpyEncoder)}')
 
     def analyse_dataset(self) -> None:
         """Analyse the whole dataset"""
