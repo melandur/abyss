@@ -35,12 +35,14 @@ def show_train_batch(save_path: Optional[str] = None):
         for (ori_data, ori_label), (aug_data, aug_label) in zip(ori_loader, aug_loader):
 
             plt.subplot(1, 2, 1)
-            plt.imshow(ori_data[0], cmap='gray')
-            plt.imshow(ori_label[0], cmap='gray', alpha=0.5)
+            plt.title('Original')
+            plt.imshow(ori_data[0, 0], cmap='gray')
+            plt.imshow(ori_label[0, 0], cmap='gray', alpha=0.5)
 
             plt.subplot(1, 2, 2)
-            plt.imshow(aug_data[0], cmap='gray')
-            plt.imshow(aug_label[0], cmap='gray', alpha=0.5)
+            plt.title('Augmented')
+            plt.imshow(aug_data[0, 0], cmap='gray')
+            plt.imshow(aug_label[0, 0], cmap='gray', alpha=0.5)
 
             if save_path:
                 idx += 1
