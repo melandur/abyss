@@ -104,7 +104,7 @@ class Trainer(ConfigManager):
             strategy=None,
             sync_batchnorm=False,
             precision=self.params['trainer']['precision'],
-            enable_model_summary=False,  # deprecated, now bey model summary callback
+            enable_model_summary=False,
             num_sanity_val_steps=2,
             resume_from_checkpoint=self.params['trainer']['resume_from_checkpoint'],
             profiler=None,

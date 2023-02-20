@@ -33,8 +33,10 @@ class Dataset(torch_Dataset):
     def prepare_data(self, case_name: str, slice_index: int) -> torch.tensor:
         """Load from hdf5 and stack/add_dimension or what ever"""
         img = self.h5_object.get(f'{self.set_name}/data/{case_name}/{slice_index}/img')
+        if img is None:
+            raise FileNotFoundError(f'Image not found in hdf5-file -> {case_name}/{slice_index}/img')
         img = np.asarray(img)
-        img = np.expand_dims(img, axis=0)  # add channel
+        # img = np.expand_dims(img, axis=0)  # todo: add channel to params
         return torch.from_numpy(img)
 
     def prepare_label(self, case_name: str, slice_index: int) -> torch.tensor:
@@ -43,15 +45,15 @@ class Dataset(torch_Dataset):
             raise NotImplementedError('Only 1 label tag is supported, adjust this method to your needs')
         label = self.h5_object.get(f'{self.set_name}/label/{case_name}/{slice_index}/mask')
         label = np.asarray(label, dtype='int32')
-        label = np.expand_dims(label, axis=0)  # add channel
+        # label = np.expand_dims(label, axis=0)  # todo: add channel to params
         return torch.from_numpy(label)
 
     def __getitem__(self, index) -> tuple:
         """Returns data and corresponding label"""
-        slices = 128
+        slices = 128  # todo: get from params
         case_index, slice_index = divmod(index, slices)
         case_name = self.random_set_case_names[case_index]
-        # random.seed(self.params['meta']['seed'])
+
         data = self.prepare_data(case_name, slice_index)
         label = self.prepare_label(case_name, slice_index)
         sample = {'data': data, 'label': label}
@@ -61,5 +63,5 @@ class Dataset(torch_Dataset):
 
     def __len__(self) -> int:
         """Holds number of cases"""
-        slices = 128
+        slices = 128  # todo: get from params
         return len(self.random_set_case_names) * slices

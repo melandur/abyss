@@ -26,7 +26,8 @@ class Model(pl.LightningModule):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward step"""
-        return self.net(x)
+        x = self.net(x)
+        return x
 
     def setup(self, stage: Optional[str] = None) -> torch.utils.data:
         """Define model behaviours"""
@@ -46,13 +47,18 @@ class Model(pl.LightningModule):
     def training_step(self, batch: torch.Tensor) -> torch.Tensor:
         """Predict, loss, log, (backprop and optimizer step done by lightning)"""
         data, label = batch
-        plt.imshow(data.detach().cpu().numpy()[0, 0], cmap='gray')
-        # plt.imshow(label.detach().cpu().numpy()[0,0], cmap='gray', alpha=0.1)
-        plt.show()
         output = self(data)
-        plt.imshow(data.detach().cpu().numpy()[0, 0], cmap='gray')
-        plt.imshow(output.detach().cpu().numpy()[0, 0], cmap='gray')
-        plt.show()
+        # plt.subplots(1, 3)
+        # plt.subplot(1, 3, 1)
+        # plt.imshow(data.detach().cpu().numpy()[0, 0, :, :], cmap='gray')
+        # plt.title('data')
+        # plt.subplot(1, 3, 2)
+        # plt.imshow(label.detach().cpu().numpy()[0, 0, :, :], cmap='gray')
+        # plt.title('label')
+        # plt.subplot(1, 3, 3)
+        # plt.imshow(output.detach().cpu().numpy()[0, 0, :, :], cmap='gray')
+        # plt.title('output')
+        # plt.show()
         loss = self.compute_loss(output, label, 'train')
         log_dice(self, output, label, 'train')
         return loss

@@ -113,13 +113,19 @@ class CreateHDF5(ConfigManager):
             raise AssertionError(f'Contamination in test & val-set split -> {contamination}')
 
     def writer(
-        self, data_type: str, set_type: str, case_name: str, file_type: str, array_data: np.array, h5_object: h5py.File
+        self,
+        data_type: str,
+        set_type: str,
+        case_name: str,
+        file_type: str,
+        array_data: np.array,
+        h5_object: h5py.File,
     ) -> None:
         """Convert data to numpy array and write it hdf5 file"""
-        for slice_idx in range(np.shape(array_data)[0]):  # TODO: Store as whole Volume or Slice wise
+        for slice_idx in range(0, np.shape(array_data)[1]):
             new_file_path = f'{set_type}/{data_type}/{case_name}/{slice_idx}'
             group = h5_object.require_group(new_file_path)
-            group.create_dataset(file_type, data=array_data[slice_idx])
+            group.create_dataset(file_type, data=array_data[:, slice_idx, :, :])
             train_file_path = f'{new_file_path}/{file_type}'
             self.path_memory[f'{set_type}_dataset_paths'][data_type][case_name][file_type][slice_idx] = train_file_path
 

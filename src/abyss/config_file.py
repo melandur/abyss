@@ -55,18 +55,26 @@ class ConfigFile:
             'pre_processing': {
                 'data': {
                     'orient_to_ras': {'active': True},
-                    'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'linear'},
+                    'resize': {
+                        'active': True,
+                        'dim': (128, 128, 128),
+                        'interpolator': 'linear',
+                    },  # (height, width, depth)
                     'z_score': {'active': True},
                     'rescale_intensity': {'active': True},
                 },
                 'label': {
                     'orient_to_ras': {'active': True},
-                    'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'nearest'},
+                    'resize': {
+                        'active': True,
+                        'dim': (128, 128, 128),
+                        'interpolator': 'nearest',
+                    },  # (height, width, depth)
                     'remap_labels': {'active': False, 'label_dict': {1: 1, 2: 2, 4: 3}},  # original : new
                 },
             },
             'training': {
-                'batch_size': 80,
+                'batch_size': 2,
                 'optimizers': {
                     'Adam': {
                         'active': True,
@@ -76,13 +84,13 @@ class ConfigFile:
                         'weight_decay': 1e-2,
                         'amsgrad': False,
                     },
-                    'SGD': {
-                        'active': True,
-                        'learning_rate': 0.01,
-                        'momentum': 0.9,
-                        'weight_decay': 1e-2,
-                        'nesterov': True,
-                    },
+                    # 'SGD': {
+                    #     'active': True,
+                    #     'learning_rate': 0.01,
+                    #     'momentum': 0.9,
+                    #     'weight_decay': 1e-2,
+                    #     'nesterov': True,
+                    # },
                 },
                 'criterion': 'dice',  # mse, cross_entropy, dice, cross_entropy_dice
                 'load_from_checkpoint_path': None,  # loads if valid *.ckpt provided
@@ -95,7 +103,6 @@ class ConfigFile:
                 'precision': 32,
                 'check_val_every_n_epoch': 1,
                 'enable_progress_bar': True,
-                'stochastic_weight_avg': False,
                 'accelerator': 'gpu',
                 'deterministic': False,
                 'devices': 1,

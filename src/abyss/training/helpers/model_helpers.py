@@ -35,7 +35,7 @@ def apply_criterion(params, output, ground_truth):
         dice_loss = DiceLoss()
         return dice_loss(output, ground_truth)  # TODO: Not tested
     if 'cross_entropy' == criterion:
-        return F.cross_entropy(output, ground_truth)
+        return F.cross_entropy(output.to(torch.float32), ground_truth.to(torch.float32))
     if 'cross_entropy_dice' == criterion:
         dice_ce_loss = DiceCELoss()
         return dice_ce_loss(output, ground_truth)  # TODO: Not tested

@@ -80,8 +80,8 @@ class Unet(nn.Module):
         x = self.up3(x, y3)
         x = self.up2(x, y2)
         x = self.up1(x, y1)
-        x1 = self.outconv(x)
-        return x1
+        x = self.outconv(x)
+        return x
 
 
 unet = Unet()

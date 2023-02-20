@@ -44,7 +44,7 @@ class DataAnalyzer:
         self.stats_cases[case_name][data_type]['direction'] = data.direction
         self.stats_cases[case_name][data_type]['orientation'] = data.orientation
         self.stats_cases[case_name][data_type]['spatial_shape'] = data.spatial_shape
-        data_arr = data.affine
+        data_arr = data.numpy()
         self.stats_cases[case_name][data_type]['min'] = np.min(data_arr)
         self.stats_cases[case_name][data_type]['max'] = np.max(data_arr)
         self.stats_cases[case_name][data_type]['std'] = np.std(data_arr)
