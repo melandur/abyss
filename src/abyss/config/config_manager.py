@@ -39,7 +39,7 @@ class ConfigManager:
     def __init_logger(self) -> None:
         """Init logger definitions"""
         logger.remove()
-        logger.add(sys.stderr, level=self.params['logger']['level'])
+        logger.add(sys.stderr, level=self.params['logger'])
         log_file_path = os.path.join(self.params['project']['result_store_path'], 'pipeline.log')
         logger.add(log_file_path, mode='w', level='TRACE', format='{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}')
 

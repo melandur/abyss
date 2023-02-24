@@ -32,9 +32,11 @@ class Dataset(torch_Dataset):
 
     def prepare_data(self, case_name: str, slice_index: int) -> torch.tensor:
         """Load from hdf5 and stack/add_dimension or what ever"""
-        img = self.h5_object.get(f'{self.set_name}/data/{case_name}/{slice_index}/img')
+        img = self.h5_object.get(f'{self.set_name}/data/{case_name}/img')
+        # img = self.h5_object.get(f'{self.set_name}/data/{case_name}/{slice_index}/img')
         if img is None:
-            raise FileNotFoundError(f'Image not found in hdf5-file -> {case_name}/{slice_index}/img')
+            # raise FileNotFoundError(f'Image not found in hdf5-file -> {case_name}/{slice_index}/img')
+            raise FileNotFoundError(f'Image not found in hdf5-file -> {case_name}/img')
         img = np.asarray(img)
         # img = np.expand_dims(img, axis=0)  # todo: add channel to params
         return torch.from_numpy(img)
@@ -43,7 +45,8 @@ class Dataset(torch_Dataset):
         """Load label from hdf5 and stack/add_dimension or what ever"""
         if len(self.dataset_paths['label'][case_name]) > 1:
             raise NotImplementedError('Only 1 label tag is supported, adjust this method to your needs')
-        label = self.h5_object.get(f'{self.set_name}/label/{case_name}/{slice_index}/mask')
+        # label = self.h5_object.get(f'{self.set_name}/label/{case_name}/{slice_index}/mask')
+        label = self.h5_object.get(f'{self.set_name}/label/{case_name}/mask')
         label = np.asarray(label, dtype='int32')
         # label = np.expand_dims(label, axis=0)  # todo: add channel to params
         return torch.from_numpy(label)

@@ -122,12 +122,18 @@ class CreateHDF5(ConfigManager):
         h5_object: h5py.File,
     ) -> None:
         """Convert data to numpy array and write it hdf5 file"""
-        for slice_idx in range(0, np.shape(array_data)[1]):
-            new_file_path = f'{set_type}/{data_type}/{case_name}/{slice_idx}'
-            group = h5_object.require_group(new_file_path)
-            group.create_dataset(file_type, data=array_data[:, slice_idx, :, :])
-            train_file_path = f'{new_file_path}/{file_type}'
-            self.path_memory[f'{set_type}_dataset_paths'][data_type][case_name][file_type][slice_idx] = train_file_path
+        new_file_path = f'{set_type}/{data_type}/{case_name}'
+        group = h5_object.require_group(new_file_path)
+        group.create_dataset(file_type, data=array_data)
+        train_file_path = f'{new_file_path}/{file_type}'
+        self.path_memory[f'{set_type}_dataset_paths'][data_type][case_name][file_type] = train_file_path
+        # for 2D slice wise data
+        # for slice_idx in range(0, np.shape(array_data)[1]):
+        #     new_file_path = f'{set_type}/{data_type}/{case_name}/{slice_idx}'
+        #     group = h5_object.require_group(new_file_path)
+        #     group.create_dataset(file_type, data=array_data[:, slice_idx, :, :])
+        #     train_file_path = f'{new_file_path}/{file_type}'
+        #     self.path_memory[f'{set_type}_dataset_paths'][data_type][case_name][file_type][slice_idx] = train_file_path
 
     @staticmethod
     def load_data_type(file_path: str) -> np.array:

@@ -14,7 +14,7 @@ class ConfigFile:
         """Returns config file"""
         experiment_path = os.path.join(self.project_base_path, self.project_name, self.experiment_name)
         return {
-            'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
+            'logger': 'INFO',  # 'TRACE', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
             'pipeline_steps': {
                 'data_reader': False,
                 'pre_processing': False,

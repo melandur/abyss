@@ -48,17 +48,6 @@ class Model(pl.LightningModule):
         """Predict, loss, log, (backprop and optimizer step done by lightning)"""
         data, label = batch
         output = self(data)
-        # plt.subplots(1, 3)
-        # plt.subplot(1, 3, 1)
-        # plt.imshow(data.detach().cpu().numpy()[0, 0, :, :], cmap='gray')
-        # plt.title('data')
-        # plt.subplot(1, 3, 2)
-        # plt.imshow(label.detach().cpu().numpy()[0, 0, :, :], cmap='gray')
-        # plt.title('label')
-        # plt.subplot(1, 3, 3)
-        # plt.imshow(output.detach().cpu().numpy()[0, 0, :, :], cmap='gray')
-        # plt.title('output')
-        # plt.show()
         loss = self.compute_loss(output, label, 'train')
         log_dice(self, output, label, 'train')
         return loss

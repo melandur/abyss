@@ -9,7 +9,7 @@ from abyss.training.trainer import Trainer
 
 
 class Training(ConfigManager):
-    """That's were the gpu is getting sweaty"""
+    """Were the gpu is getting sweaty"""
 
     def __init__(self, **kwargs) -> None:
         super().__init__()
