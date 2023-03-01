@@ -35,6 +35,7 @@ class CreateHDF5(ConfigManager):
             self.contamination_check()
             self.execute_dataset_split()
             self.show_tree_structure()
+            self.store_tree_structure()
             self.store_path_memory_file()
 
     def get_data_store_paths(self) -> NestedDefaultDict:
@@ -159,8 +160,7 @@ class CreateHDF5(ConfigManager):
             self.create_set('val', self.val_set_cases, h5_object)
             self.create_set('test', self.test_set_cases, h5_object)
 
-    @staticmethod
-    def branch_helper(name: str, obj: h5py.Group or h5py.Dataset) -> None:
+    def branch_helper(self, name: str, obj: h5py.Group or h5py.Dataset) -> None:
         """Makes branches kinda pretty"""
         shift = name.count('/') * 3 * ' '  # convert / to and shift offset
         item_name = name.split('/')[-1]
@@ -168,9 +168,16 @@ class CreateHDF5(ConfigManager):
         if isinstance(obj, h5py.Dataset):
             branch = f'{branch} {obj.shape}'
         logger.info(branch)
+        self.tree_store += f'{branch}\n'
 
     def show_tree_structure(self) -> None:
         """Visualize tree structure of hdf5"""
         h5_object = h5py.File(self.trainset_store_path, 'r')
         h5_object.visititems(self.branch_helper)  # iterates over each branch
-        logger.info(self.tree_store)
+
+    def store_tree_structure(self) -> None:
+        """Export tree structure of hdf5"""
+        tree_structure = os.path.join(self.params['project']['trainset_store_path'], 'data_structure.txt')
+        with open(tree_structure, '+w') as f:
+            f.write(self.tree_store)
+
