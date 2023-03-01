@@ -1,6 +1,6 @@
 # pylint: disable-all
 
-from typing import Sequence, Union
+import typing as t
 
 import torch
 import torch.nn as nn
@@ -208,10 +208,10 @@ class AttentionUnet(nn.Module):
         spatial_dims: int,
         in_channels: int,
         out_channels: int,
-        channels: Sequence[int],
-        strides: Sequence[int],
-        kernel_size: Union[Sequence[int], int] = 3,
-        up_kernel_size: Union[Sequence[int], int] = 3,
+        channels: t.Sequence[int],
+        strides: t.Sequence[int],
+        kernel_size: t.Union[t.Sequence[int], int] = 3,
+        up_kernel_size: t.Union[t.Sequence[int], int] = 3,
         dropout: float = 0.0,
     ):
         super().__init__()
@@ -235,7 +235,7 @@ class AttentionUnet(nn.Module):
         )
         self.up_kernel_size = up_kernel_size
 
-        def _create_block(channels: Sequence[int], strides: Sequence[int]) -> nn.Module:
+        def _create_block(channels: t.Sequence[int], strides: t.Sequence[int]) -> nn.Module:
             if len(channels) > 2:
                 subblock = _create_block(channels[1:], strides[1:])
                 return AttentionLayer(

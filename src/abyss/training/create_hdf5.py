@@ -128,13 +128,6 @@ class CreateHDF5(ConfigManager):
         group.create_dataset(file_type, data=array_data)
         train_file_path = f'{new_file_path}/{file_type}'
         self.path_memory[f'{set_type}_dataset_paths'][data_type][case_name][file_type] = train_file_path
-        # for 2D slice wise data
-        # for slice_idx in range(0, np.shape(array_data)[1]):
-        #     new_file_path = f'{set_type}/{data_type}/{case_name}/{slice_idx}'
-        #     group = h5_object.require_group(new_file_path)
-        #     group.create_dataset(file_type, data=array_data[:, slice_idx, :, :])
-        #     train_file_path = f'{new_file_path}/{file_type}'
-        #     self.path_memory[f'{set_type}_dataset_paths'][data_type][case_name][file_type][slice_idx] = train_file_path
 
     @staticmethod
     def load_data_type(file_path: str) -> np.array:
@@ -178,5 +171,5 @@ class CreateHDF5(ConfigManager):
     def store_tree_structure(self) -> None:
         """Export tree structure of hdf5"""
         tree_structure = os.path.join(self.params['project']['trainset_store_path'], 'data_structure.txt')
-        with open(tree_structure, '+w') as f:
-            f.write(self.tree_store)
+        with open(tree_structure, '+w', encoding='utf-8') as file:
+            file.write(self.tree_store)

@@ -1,13 +1,12 @@
-from typing import Optional
+import typing as t
 
-import matplotlib.pyplot as plt
 import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader
 
 from abyss.training.augmentation.augmentation import transforms
 from abyss.training.dataset import Dataset
-from abyss.training.helpers.log_metrics import log_dice
+from abyss.training.helpers.log_metrics import log
 from abyss.training.helpers.model_helpers import apply_criterion, get_optimizer
 from abyss.training.nets import nn_unet
 
@@ -29,7 +28,7 @@ class Model(pl.LightningModule):
         x = self.net(x)
         return x
 
-    def setup(self, stage: Optional[str] = None) -> torch.utils.data:
+    def setup(self, stage: t.Optional[str] = None) -> torch.utils.data:
         """Define model behaviours"""
         if stage == 'fit' or stage is None:
             self.train_set = Dataset(self.params, self.path_memory, 'train', transforms)
@@ -49,7 +48,7 @@ class Model(pl.LightningModule):
         data, label = batch
         output = self(data)
         loss = self.compute_loss(output, label, 'train')
-        log_dice(self, output, label, 'train')
+        log(self, output, label, 'train')
         return loss
 
     def validation_step(self, batch: torch.Tensor, batch_idx: int) -> None:
@@ -57,14 +56,14 @@ class Model(pl.LightningModule):
         data, label = batch
         output = self(data)
         _ = self.compute_loss(output, label, 'val')
-        log_dice(self, output, label, 'val')
+        log(self, output, label, 'val')
 
     def test_step(self, batch: torch.Tensor, batch_idx: int) -> None:
         """Predict, loss, log"""
         data, label = batch
         output = self(data)
         _ = self.compute_loss(output, label, 'test')
-        log_dice(self, output, label, 'test')
+        log(self, output, label, 'test')
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         """Configure optimizers"""

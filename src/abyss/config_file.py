@@ -7,7 +7,7 @@ class ConfigFile:
     def __init__(self) -> None:
         self.project_name = 'abyss_test'
         self.experiment_name = '1'
-        self.run_name = 'other'
+        self.run_name = 'new_run'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
         self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'kitten_12')
 
@@ -33,7 +33,8 @@ class ConfigFile:
                 'pre_processed_dataset_store_path': os.path.join(experiment_path, '2_pre_processed_dataset'),
                 'trainset_store_path': os.path.join(experiment_path, '3_trainset'),
                 'result_store_path': os.path.join(experiment_path, '4_results'),
-                'result_train_store_path': os.path.join(experiment_path, '4_results', 'train_logs', self.run_name),
+                'train_log_store_path': os.path.join(experiment_path, '4_results', 'train_logs', self.run_name),
+                'checkpoint_store_path': os.path.join(experiment_path, '4_results', 'checkpoints', self.run_name),
                 'production_store_path': os.path.join(experiment_path, '5_production'),
             },
             'meta': {
@@ -98,6 +99,7 @@ class ConfigFile:
                     # },
                 },
                 'criterion': 'cross_entropy',  # mse, cross_entropy, dice, cross_entropy_dice
+                'log_metrics': ['dice'],  # dice, accuracy
                 'load_from_checkpoint_path': None,  # loads if valid *.ckpt provided
                 'load_from_weights_path': None,  # loads if valid *.pth provided
             },

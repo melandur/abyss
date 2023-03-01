@@ -1,8 +1,8 @@
 from collections import defaultdict
-from typing import Any
+import typing as t
 
 
-def assure_instance_type(data, check_type=list) -> Any:
+def assure_instance_type(data, check_type=list) -> t.Any:
     """Checks and corrects instance type"""
     if not isinstance(data, check_type):
         raise ValueError(f'{data} is type: {type(data)}, expected: {check_type}')

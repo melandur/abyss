@@ -26,13 +26,13 @@ class Trainer(ConfigManager):
         self.logger = TensorBoardLogger(
             save_dir=results_store_path,
             name='train_logs',
-            version=self.params['project']['result_train_store_path'],
+            version=self.params['project']['train_log_store_path'],
         )
         logger.info(f'tensorboard --logdir={os.path.join(results_store_path, "train_logs")}')
 
         # Define callbacks
         self.checkpoint_cb = ModelCheckpoint(
-            dirpath=os.path.join(self.params['project']['result_store_path'], 'checkpoints'),
+            dirpath=self.params['project']['checkpoint_store_path'],
             filename=self.params['project']['name'] + '_best_{epoch:02d}_{val_loss:.2f}',
             save_last=True,
             monitor='val_loss',

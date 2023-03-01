@@ -1,7 +1,7 @@
 # pylint: disable-all
 
 import os
-from typing import Optional
+import typing as t
 
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
@@ -11,7 +11,7 @@ from abyss.training.augmentation.augmentation import transforms
 from abyss.training.dataset import Dataset
 
 
-def show_train_batch(save_path: Optional[str] = None):
+def show_train_batch(save_path: t.Optional[str] = None):
     """Visualize ce train batch"""
 
     config_manager = ConfigManager()
