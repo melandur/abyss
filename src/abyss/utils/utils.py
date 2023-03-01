@@ -1,5 +1,5 @@
-from collections import defaultdict
 import typing as t
+from collections import defaultdict
 
 
 def assure_instance_type(data, check_type=list) -> t.Any:

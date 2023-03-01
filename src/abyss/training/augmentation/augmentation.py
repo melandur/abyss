@@ -124,7 +124,7 @@ artefact_transforms = tf.OneOf(
 
 transforms = tf.Compose(
     [
-        # spatial_transforms,
+        spatial_transforms,
         intensity_transforms,
         artefact_transforms,
         # RandomChannelDropout(include=['data'], num_channels=1, fill_value=0.0, prob=0.8),

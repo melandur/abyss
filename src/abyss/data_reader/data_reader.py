@@ -54,7 +54,7 @@ class DataReader(ConfigManager):
                     count_labels[label_tag] += 1
 
         stats_dict = {
-            'Total cases': sum(count_data.values()),
+            'Total files': sum(count_data.values()),
             'Label': count_labels,
             'Data': count_data,
         }

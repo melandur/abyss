@@ -5,11 +5,11 @@ class ConfigFile:
     """The pipelines control center, all parameters can be found here"""
 
     def __init__(self) -> None:
-        self.project_name = 'abyss_test'
+        self.project_name = 'abyss_small'
         self.experiment_name = '1'
         self.run_name = 'new_run'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'kitten_12')
+        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'kitten_11')
 
     def __call__(self) -> dict:
         """Returns config file"""
@@ -17,11 +17,18 @@ class ConfigFile:
         return {
             'logger': 'INFO',  # 'TRACE', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
             'pipeline_steps': {
-                'data_reader': False,
-                'pre_processing': False,
-                'create_trainset': False,
-                'training': {'fit': True, 'test': False},
-                'production': {'extract_weights': False, 'inference': False, 'post_processing': False},
+                'data_reader': True,
+                'pre_processing': True,
+                'create_trainset': True,
+                'training': {
+                    'fit': False,
+                    'test': False,
+                },
+                'production': {
+                    'extract_weights': False,
+                    'inference': False,
+                    'post_processing': False,
+                },
             },
             'project': {
                 'name': self.project_name,
@@ -76,11 +83,14 @@ class ConfigFile:
                         'dim': (128, 128, 128),
                         'interpolator': 'nearest',
                     },  # (height, width, depth)
-                    'remap_labels': {'active': False, 'label_dict': {1: 1, 2: 2, 3: 3}},  # original : new
+                    'remap_labels': {
+                        'active': False,
+                        'label_dict': {1: 1, 2: 2, 3: 3},
+                    },  # original : new
                 },
             },
             'training': {
-                'batch_size': 2,
+                'batch_size': 10,
                 'optimizers': {
                     'Adam': {
                         'active': True,
@@ -105,7 +115,7 @@ class ConfigFile:
             },
             'trainer': {
                 'default_root_dir': os.path.join(experiment_path, '4_results'),
-                'max_epochs': 10,
+                'max_epochs': 1000,
                 'log_every_n_steps': 1,
                 'precision': 32,
                 'check_val_every_n_epoch': 1,
