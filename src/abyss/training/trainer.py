@@ -35,11 +35,11 @@ class Trainer(ConfigManager):
             dirpath=self.params['project']['checkpoint_store_path'],
             filename=self.params['project']['name'] + '_best_{epoch:02d}_{val_loss:.2f}',
             save_last=True,
-            monitor='val_loss',
+            monitor=self.params['trainer']['early_stop']['monitor'],
         )
 
         self.early_stop_cb = EarlyStopping(
-            monitor='val_loss',
+            monitor=self.params['trainer']['early_stop']['monitor'],
             min_delta=self.params['trainer']['early_stop']['min_delta'],
             patience=self.params['trainer']['early_stop']['patience'],
             verbose=self.params['trainer']['early_stop']['verbose'],

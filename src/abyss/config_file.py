@@ -5,7 +5,7 @@ class ConfigFile:
     """The pipelines control center, all parameters can be found here"""
 
     def __init__(self) -> None:
-        self.project_name = 'abyss_small'
+        self.project_name = 'abyss_test'
         self.experiment_name = '1'
         self.run_name = 'new_run'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
@@ -17,11 +17,11 @@ class ConfigFile:
         return {
             'logger': 'INFO',  # 'TRACE', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
             'pipeline_steps': {
-                'data_reader': True,
-                'pre_processing': True,
-                'create_trainset': True,
+                'data_reader': False,
+                'pre_processing': False,
+                'create_trainset': False,
                 'training': {
-                    'fit': False,
+                    'fit': True,
                     'test': False,
                 },
                 'production': {
@@ -108,7 +108,7 @@ class ConfigFile:
                     #     'nesterov': True,
                     # },
                 },
-                'criterion': 'cross_entropy',  # mse, cross_entropy, dice, cross_entropy_dice
+                'criterion': 'cross_entropy_dice',  # mse, cross_entropy, dice, cross_entropy_dice
                 'log_metrics': ['dice'],  # dice, accuracy
                 'load_from_checkpoint_path': None,  # loads if valid *.ckpt provided
                 'load_from_weights_path': None,  # loads if valid *.pth provided
@@ -128,7 +128,13 @@ class ConfigFile:
                 'fast_dev_run': False,
                 'resume_from_checkpoint': None,
                 'model_summary_depth': -1,
-                'early_stop': {'min_delta': 0.01, 'patience': 5, 'verbose': False, 'mode': 'max'},
+                'early_stop': {
+                    'monitor': 'val_dice',
+                    'min_delta': 0.01,
+                    'patience': 5,
+                    'verbose': False,
+                    'mode': 'max',
+                },
             },
             'production': {
                 'checkpoint_name': None,

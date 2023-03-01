@@ -46,9 +46,8 @@ class Dataset(torch_Dataset):
         if len(self.dataset_paths['label'][case_name]) > 1:
             raise NotImplementedError('Only 1 label tag is supported, adjust this method to your needs')
         label = self.h5_object.get(f'{self.set_name}/label/{case_name}/mask')
-        # label = np.squeeze(label, axis=0)
         label = np.asarray(label)
-        return torch.from_numpy(label).type(torch.LongTensor)
+        return torch.from_numpy(label).type(torch.IntTensor)
 
     def __getitem__(self, index) -> tuple:
         """Returns data and corresponding label"""
@@ -61,9 +60,8 @@ class Dataset(torch_Dataset):
         sample = {'data': data, 'label': label}
         if self.transforms:
             sample = self.transforms(sample)
-        sample['label'] = torch.squeeze(sample['label'], dim=0).type(
-            torch.LongTensor
-        )  # todo: maybe monai can do this in augmentation
+        # sample['label'] = torch.squeeze(sample['label'], dim=0).type(torch.LongTensor)  # todo: do better
+        sample['label'] = sample['label'].type(torch.LongTensor)
         return sample['data'], sample['label']
 
     def __len__(self) -> int:

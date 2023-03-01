@@ -32,11 +32,11 @@ def apply_criterion(params, output, ground_truth):
     if 'mse' == criterion:
         return F.mse_loss(output, ground_truth)
     if 'dice' == criterion:
-        dice_loss = DiceLoss()
-        return dice_loss(output, ground_truth)  # TODO: Not tested
+        dice_loss = DiceLoss(include_background=False, to_onehot_y=True, softmax=True)
+        return dice_loss(output, ground_truth)
     if 'cross_entropy' == criterion:
         return F.cross_entropy(output, ground_truth)
     if 'cross_entropy_dice' == criterion:
-        dice_ce_loss = DiceCELoss()
-        return dice_ce_loss(output, ground_truth)  # TODO: Not tested
+        dice_ce_loss = DiceCELoss(include_background=False, to_onehot_y=True, softmax=True)
+        return dice_ce_loss(output, ground_truth)
     raise ValueError('Invalid criterion settings -> conf.py -> training -> criterion')

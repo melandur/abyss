@@ -5,7 +5,7 @@ import torchmetrics
 def log(self, output: torch.Tensor, label: torch.Tensor, stage: str = '') -> None:
     """Log metrics"""
     if 'dice' in self.params['training']['log_metrics']:
-        x = torchmetrics.functional.classification.dice(output.to(torch.float32), label.to(torch.uint8))
+        x = torchmetrics.functional.classification.dice(output, label)
         self.log(f'{stage}_dice', x, prog_bar=True, on_step=False, on_epoch=True)
 
     if 'accuracy' in self.params['training']['log_metrics']:
