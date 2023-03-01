@@ -9,7 +9,7 @@ from abyss.training.augmentation.augmentation import transforms
 from abyss.training.dataset import Dataset
 from abyss.training.helpers.log_metrics import log_dice
 from abyss.training.helpers.model_helpers import apply_criterion, get_optimizer
-from abyss.training.nets import unet
+from abyss.training.nets import nn_unet
 
 
 class Model(pl.LightningModule):
@@ -22,7 +22,7 @@ class Model(pl.LightningModule):
         self.val_set = None
         self.test_set = None
         self.train_set = None
-        self.net = unet
+        self.net = nn_unet
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward step"""

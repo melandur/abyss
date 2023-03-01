@@ -32,24 +32,23 @@ class Dataset(torch_Dataset):
 
     def prepare_data(self, case_name: str, slice_index: int) -> torch.tensor:
         """Load from hdf5 and stack/add_dimension or what ever"""
-        img = self.h5_object.get(f'{self.set_name}/data/{case_name}/img')
-        # img = self.h5_object.get(f'{self.set_name}/data/{case_name}/{slice_index}/img')
+        t1 = self.h5_object.get(f'{self.set_name}/data/{case_name}/t1')
+        t1c = self.h5_object.get(f'{self.set_name}/data/{case_name}/t1c')
+        t2 = self.h5_object.get(f'{self.set_name}/data/{case_name}/t2')
+        flair = self.h5_object.get(f'{self.set_name}/data/{case_name}/flair')
+        img = np.concatenate([t1, t1c, t2, flair])
         if img is None:
-            # raise FileNotFoundError(f'Image not found in hdf5-file -> {case_name}/{slice_index}/img')
-            raise FileNotFoundError(f'Image not found in hdf5-file -> {case_name}/img')
-        img = np.asarray(img)
-        # img = np.expand_dims(img, axis=0)  # todo: add channel to params
-        return torch.from_numpy(img)
+            raise FileNotFoundError('Image not found, this method needs to be adjusted to your needs')
+        return torch.from_numpy(img).type(torch.FloatTensor)
 
     def prepare_label(self, case_name: str, slice_index: int) -> torch.tensor:
         """Load label from hdf5 and stack/add_dimension or what ever"""
         if len(self.dataset_paths['label'][case_name]) > 1:
             raise NotImplementedError('Only 1 label tag is supported, adjust this method to your needs')
-        # label = self.h5_object.get(f'{self.set_name}/label/{case_name}/{slice_index}/mask')
         label = self.h5_object.get(f'{self.set_name}/label/{case_name}/mask')
-        label = np.asarray(label, dtype='int32')
-        # label = np.expand_dims(label, axis=0)  # todo: add channel to params
-        return torch.from_numpy(label)
+        label = np.squeeze(label, axis=0)  # remove channel
+        # label = np.expand_dims(label, axis=0)  # add channel
+        return torch.from_numpy(label).type(torch.LongTensor)
 
     def __getitem__(self, index) -> tuple:
         """Returns data and corresponding label"""
@@ -66,5 +65,4 @@ class Dataset(torch_Dataset):
 
     def __len__(self) -> int:
         """Holds number of cases"""
-        slices = 128  # todo: get from params
-        return len(self.random_set_case_names) * slices
+        return len(self.random_set_case_names)

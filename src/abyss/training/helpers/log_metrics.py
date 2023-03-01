@@ -11,5 +11,5 @@ def log_accuracy(self, output: torch.Tensor, label: torch.Tensor, stage: str = '
 def log_dice(self, output: torch.Tensor, label: torch.Tensor, stage: str = '') -> None:
     """Log dice for certain stage"""
     output = torch.sigmoid(output) > 0.5  # threshold
-    x = torchmetrics.functional.classification.dice(output, label)
+    x = torchmetrics.functional.classification.dice(output.to(torch.float32), label.to(torch.uint8))
     self.log(f'{stage}_dice', x, prog_bar=True, on_step=False, on_epoch=True)

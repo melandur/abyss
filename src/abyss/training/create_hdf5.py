@@ -180,4 +180,3 @@ class CreateHDF5(ConfigManager):
         tree_structure = os.path.join(self.params['project']['trainset_store_path'], 'data_structure.txt')
         with open(tree_structure, '+w') as f:
             f.write(self.tree_store)
-

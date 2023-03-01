@@ -6,7 +6,8 @@ import torch
 from loguru import logger
 
 from abyss.config import ConfigManager
-from abyss.training.nets import unet
+
+# from abyss.training.nets import unet
 
 
 class Inference(ConfigManager):

@@ -23,8 +23,12 @@ class Trainer(ConfigManager):
 
         # Integrated loggers: TBoard, MLflow, Comet, Neptune, WandB
         results_store_path = self.params['project']['result_store_path']
-        self.logger = TensorBoardLogger(save_dir=results_store_path)
-        logger.info(f'tensorboard --logdir={os.path.join(results_store_path, "lightning_logs")}')
+        self.logger = TensorBoardLogger(
+            save_dir=results_store_path,
+            name='train_logs',
+            version=self.params['project']['result_train_store_path'],
+        )
+        logger.info(f'tensorboard --logdir={os.path.join(results_store_path, "train_logs")}')
 
         # Define callbacks
         self.checkpoint_cb = ModelCheckpoint(

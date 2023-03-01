@@ -28,6 +28,8 @@ matplotlib = "^3.5.2"
 torchio = "^0.18.83"
 numpyencoder = "^0.3.0"
 torch = "1.11.0"
+tensorboardx = "^2.6"
+tensorboard = "^2.12.0"
 
 
 [tool.poetry.dev-dependencies]
