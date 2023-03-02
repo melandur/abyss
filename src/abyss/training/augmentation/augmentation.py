@@ -130,6 +130,5 @@ transforms = tf.Compose(
         # RandomChannelDropout(include=['data'], num_channels=1, fill_value=0.0, prob=0.8),
         # RandomChannelShuffle(include=['data'], prob=1.0),
         tf.ScaleIntensityd(keys=['data'], minv=0.0, maxv=1.0),
-        tio.OneHot(keys=['label'], num_classes=3),
     ]
 )

@@ -4,6 +4,7 @@ import random
 import h5py
 import numpy as np
 import torch
+from torch.nn.functional import one_hot
 from torch.utils.data import Dataset as torch_Dataset
 
 
@@ -46,8 +47,8 @@ class Dataset(torch_Dataset):
         if len(self.dataset_paths['label'][case_name]) > 1:
             raise NotImplementedError('Only 1 label tag is supported, adjust this method to your needs')
         label = self.h5_object.get(f'{self.set_name}/label/{case_name}/mask')
-        label = np.asarray(label)
-        return torch.from_numpy(label).type(torch.IntTensor)
+        label = np.array(label)
+        return torch.from_numpy(label).type(torch.LongTensor)
 
     def __getitem__(self, index) -> tuple:
         """Returns data and corresponding label"""
@@ -60,8 +61,12 @@ class Dataset(torch_Dataset):
         sample = {'data': data, 'label': label}
         if self.transforms:
             sample = self.transforms(sample)
-        # sample['label'] = torch.squeeze(sample['label'], dim=0).type(torch.LongTensor)  # todo: do better
-        sample['label'] = sample['label'].type(torch.LongTensor)
+
+        tmp_label = torch.squeeze(sample['label'], dim=0)
+        tmp_label = tmp_label.type(torch.LongTensor)
+        tmp_label = one_hot(tmp_label, num_classes=-1)  # tio onehot has no effect in augmentation pipeline
+        sample['label'] = tmp_label.permute(3, 0, 1, 2)
+
         return sample['data'], sample['label']
 
     def __len__(self) -> int:

@@ -28,15 +28,16 @@ def get_optimizer(params, parameters):
 
 def apply_criterion(params, output, ground_truth):
     """Calculate loss according to criterion"""
+    print('pre criteria', output.shape, ground_truth.shape)
     criterion = params['training']['criterion']
     if 'mse' == criterion:
         return F.mse_loss(output, ground_truth)
     if 'dice' == criterion:
-        dice_loss = DiceLoss(include_background=False, to_onehot_y=True, softmax=True)
+        dice_loss = DiceLoss(include_background=False, softmax=True)
         return dice_loss(output, ground_truth)
     if 'cross_entropy' == criterion:
         return F.cross_entropy(output, ground_truth)
     if 'cross_entropy_dice' == criterion:
-        dice_ce_loss = DiceCELoss(include_background=False, to_onehot_y=True, softmax=True)
+        dice_ce_loss = DiceCELoss(include_background=False, softmax=True)
         return dice_ce_loss(output, ground_truth)
     raise ValueError('Invalid criterion settings -> conf.py -> training -> criterion')

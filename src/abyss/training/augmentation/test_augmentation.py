@@ -33,25 +33,30 @@ def test_data_augmentation():
     idx = 0
     while True:
         for (ori_data, ori_label), (aug_data, aug_label) in zip(ori_loader, aug_loader):
-            # plt.subplot(1, 2, 1)
-            # plt.title('Original')
-            # plt.imshow(ori_data[0, 0, 50], cmap='gray')
-            # plt.imshow(ori_label[0, 0, 50], cmap='gray', alpha=0.5)
-            #
-            # plt.subplot(1, 2, 2)
-            # plt.title('Augmented')
-            # plt.imshow(aug_data[0, 0, 50], cmap='gray')
-            # plt.imshow(aug_label[0, 0, 50], cmap='gray', alpha=0.5)
+            plt.subplot(1, 2, 1)
+            plt.title('Original')
+            plt.imshow(ori_data[0, 0, 50], cmap='gray')
+            plt.imshow(ori_label[0, 0, 50], cmap='gray', alpha=0.5)
+
+            plt.subplot(1, 2, 2)
+            plt.title('Augmented')
+            plt.imshow(aug_data[0, 0, 50], cmap='gray')
+            plt.imshow(aug_label[0, 0, 50], cmap='gray', alpha=0.5)
+            plt.show()
 
             # print(ori_data.shape, ori_label.shape, aug_data.shape, aug_label.shape)
             #
             # save_path = os.path.join(params['project']['result_store_path'], 'test_aug', str(idx))
             # os.makedirs(save_path, exist_ok=True)
-            # sitk.WriteImage(sitk.GetImageFromArray(ori_data[0, 0, :, :, :]), os.path.join(save_path,
-            #                                                                               f'ori_img_{idx}.nii.gz'))
+            # sitk.WriteImage(sitk.GetImageFromArray(ori_data[0, 0, :, :, :]), os.path.join(save_path, f'ori_img_{idx}.nii.gz'))
             # sitk.WriteImage(sitk.GetImageFromArray(ori_label[0, 0, :, :, :]), os.path.join(save_path, f'ori_label_{idx}.nii.gz'))
+            #
             # sitk.WriteImage(sitk.GetImageFromArray(aug_data[0, 0, :, :, :]), os.path.join(save_path, f'aug_img_{idx}.nii.gz'))
-            # sitk.WriteImage(sitk.GetImageFromArray(aug_label[0, 0, :, :, :]), os.path.join(save_path, f'aug_label_{idx}.nii.gz'))
+            # sitk.WriteImage(sitk.GetImageFromArray(aug_label[0, 0, :, :, :]), os.path.join(save_path, f'aug_label_0_{idx}.nii.gz'))
+            # sitk.WriteImage(sitk.GetImageFromArray(aug_label[0, 1, :, :, :]),os.path.join(save_path, f'aug_label_1_{idx}.nii.gz'))
+            # sitk.WriteImage(sitk.GetImageFromArray(aug_label[0, 2, :, :, :]),os.path.join(save_path, f'aug_label_2_{idx}.nii.gz'))
+            # sitk.WriteImage(sitk.GetImageFromArray(aug_label[0, 3, :, :, :]),os.path.join(save_path, f'aug_label_3_{idx}.nii.gz'))
+
             idx += 1
             print(idx)
 

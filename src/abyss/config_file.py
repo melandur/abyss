@@ -7,7 +7,7 @@ class ConfigFile:
     def __init__(self) -> None:
         self.project_name = 'abyss_test'
         self.experiment_name = '1'
-        self.run_name = 'new_run'
+        self.run_name = 'run_1'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
         self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'kitten_11')
 
@@ -108,7 +108,7 @@ class ConfigFile:
                     #     'nesterov': True,
                     # },
                 },
-                'criterion': 'cross_entropy_dice',  # mse, cross_entropy, dice, cross_entropy_dice
+                'criterion': 'dice',  # mse, cross_entropy, dice, cross_entropy_dice
                 'log_metrics': ['dice'],  # dice, accuracy
                 'load_from_checkpoint_path': None,  # loads if valid *.ckpt provided
                 'load_from_weights_path': None,  # loads if valid *.pth provided
