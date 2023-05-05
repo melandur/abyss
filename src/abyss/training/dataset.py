@@ -33,10 +33,11 @@ class Dataset(torch_Dataset):
 
     def prepare_data(self, case_name: str, slice_index: int) -> torch.tensor:
         """Load from hdf5 and stack/add_dimension or what ever"""
-        t1 = self.h5_object.get(f'{self.set_name}/data/{case_name}/t1')
+        t1 = self.h5_object.get(f'{self.set_name}/data/{case_name}/t1')  # pylint: disable=invalid-name
         t1c = self.h5_object.get(f'{self.set_name}/data/{case_name}/t1c')
-        t2 = self.h5_object.get(f'{self.set_name}/data/{case_name}/t2')
+        t2 = self.h5_object.get(f'{self.set_name}/data/{case_name}/t2')  # pylint: disable=invalid-name
         flair = self.h5_object.get(f'{self.set_name}/data/{case_name}/flair')
+        _ = slice_index
         img = np.concatenate([t1, t1c, t2, flair])
         if img is None:
             raise FileNotFoundError('Image not found, this method needs to be adjusted to your needs')
@@ -48,6 +49,7 @@ class Dataset(torch_Dataset):
             raise NotImplementedError('Only 1 label tag is supported, adjust this method to your needs')
         label = self.h5_object.get(f'{self.set_name}/label/{case_name}/mask')
         label = np.array(label)
+        _ = slice_index
         return torch.from_numpy(label).type(torch.LongTensor)
 
     def __getitem__(self, index) -> tuple:
@@ -62,11 +64,10 @@ class Dataset(torch_Dataset):
         if self.transforms:
             sample = self.transforms(sample)
 
-        tmp_label = torch.squeeze(sample['label'], dim=0)
+        tmp_label = torch.squeeze(sample['label'], dim=0)  # squeeze to remove channel dimension
         tmp_label = tmp_label.type(torch.LongTensor)
         tmp_label = one_hot(tmp_label, num_classes=-1)  # tio onehot has no effect in augmentation pipeline
         sample['label'] = tmp_label.permute(3, 0, 1, 2)
-
         return sample['data'], sample['label']
 
     def __len__(self) -> int:

@@ -17,7 +17,7 @@ from abyss import (
 os.environ['OMP_NUM_THREADS'] = '1'
 
 
-class Pipeline:
+class Pipeline:  # ignore R0903
     """Runs according to the config file"""
 
     def __init__(self):

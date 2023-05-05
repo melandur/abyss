@@ -5,51 +5,44 @@ description = "Another deep learning template"
 authors = ["melandur <account@qunit.ch>"]
 license = "MIT"
 
+
 [tool.poetry.dependencies]
-gdown = "^4.4.0"
-
-loguru = "^0.6.0"
-
-itk = "^5.2.1"
-
-nibabel = "^3.2.2"
-numpy = "^1.22.3"
-
-Pillow = "^9.1.0"
 python = "^3.9"
-pytorch-lightning = "^1.6.1"
-
-setuptools = "^62.1.0"
-h5py = "^3.7.0"
-pytorch-ignite = "^0.4.9"
-monai = "^0.8.1"
-rich = "^12.4.4"
-matplotlib = "^3.5.2"
-torchio = "^0.18.83"
+torch = "^2.0.0"
+torchvision = "^0.15.1"
+torchaudio = "^2.0.1"
+urllib3 = "1.26.15"
+wandb = "^0.15.1"
+lightning = "^2.0.2"
+monai = "^1.1.0"
+loguru = "^0.7.0"
+matplotlib = "^3.7.1"
+h5py = "^3.8.0"
+torchio = "^0.18.91"
 numpyencoder = "^0.3.0"
-torch = "1.11.0"
-tensorboardx = "^2.6"
-tensorboard = "^2.12.0"
 
 
-[tool.poetry.dev-dependencies]
-black = "^22.3.0"
-isort = "^5.10.1"
-pylint = "^2.13.7"
-vulture = "^2.3"
+[tool.poetry.group.dev.dependencies]
+autohooks = "^23.4.0"
+autohooks-plugin-black = "^23.4.0"
+autohooks-plugin-pylint = "^23.4.0"
+autohooks-plugin-isort = "^23.4.0"
 
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+
+[tool.autohooks]
+mode = "pythonpath"
+pre-commit = ["autohooks.plugins.black", "autohooks.plugins.isort", "autohooks.plugins.pylint"]
+
+
 [tool.black]
 line-length = 120
 skip-string-normalization = true
 
+
 [tool.isort]
 profile = "black"
-
-
-
-

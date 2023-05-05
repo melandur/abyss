@@ -1,13 +1,13 @@
 import typing as t
 
+import matplotlib.pyplot as plt
 import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader
 
 from abyss.training.augmentation.augmentation import transforms
 from abyss.training.dataset import Dataset
-from abyss.training.helpers.log_metrics import log
-from abyss.training.helpers.model_helpers import apply_criterion, get_optimizer
+from abyss.training.helpers import apply_criterion, get_optimizer, log_metrics
 from abyss.training.nets import nn_unet
 
 
@@ -25,8 +25,8 @@ class Model(pl.LightningModule):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward step"""
-        x = self.net(x)
-        return x
+        y = self.net(x)  # pylint: disable=invalid-name
+        return y
 
     def setup(self, stage: t.Optional[str] = None) -> torch.utils.data:
         """Define model behaviours"""
@@ -47,23 +47,41 @@ class Model(pl.LightningModule):
         """Predict, loss, log, (backprop and optimizer step done by lightning)"""
         data, label = batch
         output = self(data)
+        log_metrics(self, output, label, 'train')
         loss = self.compute_loss(output, label, 'train')
-        log(self, output, label, 'train')
         return loss
 
     def validation_step(self, batch: torch.Tensor, batch_idx: int) -> None:
         """Predict, loss, log"""
         data, label = batch
+        _ = batch_idx
         output = self(data)
+        plt.imshow(label.cpu().numpy()[0, 0, :, :, 80])
+        plt.show()
+        plt.imshow(label.cpu().numpy()[0, 1, :, :, 80])
+        plt.show()
+        plt.imshow(label.cpu().numpy()[0, 2, :, :, 80])
+        plt.show()
+        plt.imshow(label.cpu().numpy()[0, 3, :, :, 80])
+        plt.show()
+        plt.imshow(output.cpu().numpy()[0, 0, :, :, 80])
+        plt.show()
+        plt.imshow(output.cpu().numpy()[0, 1, :, :, 80])
+        plt.show()
+        plt.imshow(output.cpu().numpy()[0, 2, :, :, 80])
+        plt.show()
+        plt.imshow(output.cpu().numpy()[0, 3, :, :, 80])
+        plt.show()
+        log_metrics(self, output, label, 'val')
         _ = self.compute_loss(output, label, 'val')
-        log(self, output, label, 'val')
 
     def test_step(self, batch: torch.Tensor, batch_idx: int) -> None:
         """Predict, loss, log"""
         data, label = batch
+        _ = batch_idx
         output = self(data)
+        log_metrics(self, output, label, 'test')
         _ = self.compute_loss(output, label, 'test')
-        log(self, output, label, 'test')
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         """Configure optimizers"""

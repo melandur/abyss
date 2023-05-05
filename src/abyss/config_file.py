@@ -90,7 +90,7 @@ class ConfigFile:
                 },
             },
             'training': {
-                'batch_size': 10,
+                'batch_size': 9,
                 'optimizers': {
                     'Adam': {
                         'active': True,
@@ -116,7 +116,7 @@ class ConfigFile:
             'trainer': {
                 'default_root_dir': os.path.join(experiment_path, '4_results'),
                 'max_epochs': 1000,
-                'log_every_n_steps': 1,
+                'log_every_n_steps': 10,
                 'precision': 32,
                 'check_val_every_n_epoch': 1,
                 'enable_progress_bar': True,

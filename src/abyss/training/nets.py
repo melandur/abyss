@@ -15,8 +15,6 @@ nn_unet = UNet(
     out_channels=4,
     channels=(16, 32, 64, 128, 256),
     strides=(2, 2, 2, 2),
-    num_res_units=0,
-    norm=Norm.BATCH,
 )
 
 #
@@ -380,7 +378,6 @@ class ConvDropoutNormNonlin(nn.Module):
         nonlin=nn.LeakyReLU,
         nonlin_kwargs=None,
     ):
-
         super().__init__()
         if nonlin_kwargs is None:
             nonlin_kwargs = {'negative_slope': 1e-2, 'inplace': True}
@@ -589,7 +586,6 @@ class Generic_UNet(nn.Module):
         convolutional_upsampling=False,
         max_num_features=None,
     ):
-
         super().__init__()
         self.input_shape_must_be_divisible_by = None
         self.conv_op = None
