@@ -20,6 +20,7 @@ matplotlib = "^3.7.1"
 h5py = "^3.8.0"
 torchio = "^0.18.91"
 numpyencoder = "^0.3.0"
+setuptools = "^65.5.1"
 
 
 [tool.poetry.group.dev.dependencies]
