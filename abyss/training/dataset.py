@@ -33,7 +33,7 @@ class Dataset(torch_Dataset):
     def prepare_data(self, case_name: str, slice_index: int) -> torch.tensor:
         """Load from hdf5 and stack/add_dimension or what ever"""
         img = self.h5_object.get(f'{self.set_name}/data/{case_name}/{slice_index}/img')
-        img = np.asarray(img)
+        img = np.asarray(img, dtype='float32')
         img = np.expand_dims(img, axis=0)  # add channel
         return torch.from_numpy(img)
 
@@ -42,7 +42,7 @@ class Dataset(torch_Dataset):
         if len(self.dataset_paths['label'][case_name]) > 1:
             raise NotImplementedError('Only 1 label tag is supported, adjust this method to your needs')
         label = self.h5_object.get(f'{self.set_name}/label/{case_name}/{slice_index}/mask')
-        label = np.asarray(label, dtype='int32')
+        label = np.asarray(label, dtype='float32')
         label = np.expand_dims(label, axis=0)  # add channel
         return torch.from_numpy(label)
 

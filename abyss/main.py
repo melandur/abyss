@@ -29,7 +29,7 @@ class Pipeline:
         self.extract_weights = ExtractWeights()
         self.inference = Inference()
         self.post_processing = PostProcessing()
-        config_manager()
+        config_manager()  # here for Borg pattern
 
     def __call__(self):
         start = datetime.now()

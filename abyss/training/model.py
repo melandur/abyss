@@ -1,7 +1,6 @@
 from typing import Optional
 
 import matplotlib.pyplot as plt
-import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader
 
@@ -9,10 +8,10 @@ from abyss.training.augmentation.augmentation import transforms
 from abyss.training.dataset import Dataset
 from abyss.training.helpers.log_metrics import log_dice
 from abyss.training.helpers.model_helpers import apply_criterion, get_optimizer
-from abyss.training.nets import unet
+from abyss.training.nets import net
 
 
-class Model(pl.LightningModule):
+class Model:
     """Holds model definitions"""
 
     def __init__(self, params, path_memory) -> None:
@@ -22,7 +21,7 @@ class Model(pl.LightningModule):
         self.val_set = None
         self.test_set = None
         self.train_set = None
-        self.net = unet
+        self.net = net
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward step"""
@@ -46,13 +45,13 @@ class Model(pl.LightningModule):
     def training_step(self, batch: torch.Tensor) -> torch.Tensor:
         """Predict, loss, log, (backprop and optimizer step done by lightning)"""
         data, label = batch
-        plt.imshow(data.detach().cpu().numpy()[0, 0], cmap='gray')
+        # plt.imshow(data.detach().cpu().numpy()[0, 0], cmap='gray')
         # plt.imshow(label.detach().cpu().numpy()[0,0], cmap='gray', alpha=0.1)
-        plt.show()
-        output = self(data)
-        plt.imshow(data.detach().cpu().numpy()[0, 0], cmap='gray')
-        plt.imshow(output.detach().cpu().numpy()[0, 0], cmap='gray')
-        plt.show()
+        # plt.show()
+        output = self.net(data)
+        # plt.imshow(data.detach().cpu().numpy()[0, 0], cmap='gray')
+        # plt.imshow(output.detach().cpu().numpy()[0, 0], cmap='gray')
+        # plt.show()
         loss = self.compute_loss(output, label, 'train')
         log_dice(self, output, label, 'train')
         return loss
@@ -60,14 +59,14 @@ class Model(pl.LightningModule):
     def validation_step(self, batch: torch.Tensor, batch_idx: int) -> None:
         """Predict, loss, log"""
         data, label = batch
-        output = self(data)
+        output = self.net(data)
         _ = self.compute_loss(output, label, 'val')
         log_dice(self, output, label, 'val')
 
     def test_step(self, batch: torch.Tensor, batch_idx: int) -> None:
         """Predict, loss, log"""
         data, label = batch
-        output = self(data)
+        output = self.net(data)
         _ = self.compute_loss(output, label, 'test')
         log_dice(self, output, label, 'test')
 

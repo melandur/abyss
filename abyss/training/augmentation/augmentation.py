@@ -97,14 +97,12 @@ artefact_transforms = tf.OneOf(
             keys=['data'],
             prob=1.0,
             alpha=(0.3, 0.7),
-            as_tensor_output=True,
         ),
         tf.RandKSpaceSpikeNoised(
             keys=['data'],
             prob=1.0,
             intensity_range=(1, 11),
             channel_wise=False,
-            as_tensor_output=True,
         ),
         tio.RandomMotion(
             include=['data'],

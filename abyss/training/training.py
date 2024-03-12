@@ -30,7 +30,7 @@ class Training(ConfigManager):
                 self.load_weights()
                 self.checkpoint_is_loaded = True
 
-            trainer = Trainer()()
+            trainer = Trainer(self.model)()
 
             if self.params['pipeline_steps']['training']['fit']:
                 trainer.fit(self.model)

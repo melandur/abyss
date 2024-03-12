@@ -6,6 +6,7 @@ from torch.nn import functional as F
 def get_optimizer(params, parameters):
     """Returns configured optimizer accordingly to the config file"""
     optimizer_params = params['training']['optimizers']
+
     if optimizer_params['Adam']['active']:
         return torch.optim.Adam(
             params=parameters(),
@@ -15,6 +16,7 @@ def get_optimizer(params, parameters):
             eps=optimizer_params['Adam']['eps'],
             amsgrad=optimizer_params['Adam']['amsgrad'],
         )
+
     if optimizer_params['SGD']['active']:
         return torch.optim.SGD(
             params=parameters(),
@@ -23,20 +25,26 @@ def get_optimizer(params, parameters):
             weight_decay=optimizer_params['Adam']['weight_decay'],
             nesterov=optimizer_params['SGD']['nesterov'],
         )
+
     raise ValueError('Invalid optimizer settings -> conf.py -> training -> optimizers')
 
 
 def apply_criterion(params, output, ground_truth):
     """Calculate loss according to criterion"""
     criterion = params['training']['criterion']
+
     if 'mse' == criterion:
         return F.mse_loss(output, ground_truth)
+
     if 'dice' == criterion:
         dice_loss = DiceLoss()
         return dice_loss(output, ground_truth)  # TODO: Not tested
+
     if 'cross_entropy' == criterion:
         return F.cross_entropy(output, ground_truth)
+
     if 'cross_entropy_dice' == criterion:
         dice_ce_loss = DiceCELoss()
         return dice_ce_loss(output, ground_truth)  # TODO: Not tested
+
     raise ValueError('Invalid criterion settings -> conf.py -> training -> criterion')

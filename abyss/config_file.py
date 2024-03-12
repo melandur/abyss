@@ -16,10 +16,10 @@ class ConfigFile:
         return {
             'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_reader': True,
-                'pre_processing': True,
+                'data_reader': False,
+                'pre_processing': False,
                 'create_trainset': False,
-                'training': {'fit': False, 'test': False},
+                'training': {'fit': True, 'test': False},
                 'production': {'extract_weights': False, 'inference': False, 'post_processing': False},
             },
             'project': {
@@ -46,7 +46,7 @@ class ConfigFile:
                 },
                 'data_file_type': ['.nii.gz'],
                 'data_search_tags': {
-                    'img': ['_img'],
+                    'img': ['_t1c'],
                 },
                 'val_fraction': 0.2,  # only used when cross_fold = 1/1, otherwise defined as 1/max_number_of_folds
                 'test_fraction': 0.2,
@@ -95,14 +95,10 @@ class ConfigFile:
                 'precision': 32,
                 'check_val_every_n_epoch': 1,
                 'enable_progress_bar': True,
-                'stochastic_weight_avg': False,
                 'accelerator': 'gpu',
                 'deterministic': False,
                 'devices': 1,
                 'gpus': None,
-                'auto_select_gpus': False,
-                'tpu_cores': None,
-                'fast_dev_run': False,
                 'resume_from_checkpoint': None,
                 'model_summary_depth': -1,
                 'early_stop': {'min_delta': 0.01, 'patience': 5, 'verbose': False, 'mode': 'max'},

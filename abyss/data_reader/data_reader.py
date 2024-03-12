@@ -36,9 +36,11 @@ class DataReader(ConfigManager):
     def show_dict_findings(self) -> None:
         """Summaries the findings"""
         logger.trace(f'Dataset scan found: {json.dumps(self.data_path_store, indent=4)}')
+
         count_labels = {}
         for label_tag in self.label_search_tags.keys():
             count_labels[label_tag] = 0
+
         count_data = {}
         for data_tag in self.data_search_tags.keys():
             count_data[data_tag] = 0
@@ -58,6 +60,7 @@ class DataReader(ConfigManager):
             'Label': count_labels,
             'Data': count_data,
         }
+
         logger.info(f'Dataset scan overview: {json.dumps(stats_dict, indent=4)}')
 
         n_data = sum(count_data.values())
