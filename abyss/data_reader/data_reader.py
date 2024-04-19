@@ -1,13 +1,10 @@
-import json
 import os
+import shutil
 
 from loguru import logger
 
 from abyss.config import ConfigManager
-from abyss.data_analyzer import DataAnalyzer
-from abyss.data_reader.file_finder import FileFinder
-from abyss.data_reader.restructure import Restructure
-from abyss.utils import NestedDefaultDict, assure_instance_type
+from abyss.utils import NestedDefaultDict
 
 
 class DataReader(ConfigManager):
@@ -16,8 +13,7 @@ class DataReader(ConfigManager):
     def __init__(self, **kwargs) -> None:
         super().__init__()
         self._shared_state.update(kwargs)
-        self.label_search_tags = assure_instance_type(self.params['dataset']['label_search_tags'], dict)
-        self.data_search_tags = assure_instance_type(self.params['dataset']['data_search_tags'], dict)
+        self.data_description = self.params['dataset']['description']
         self.data_path_store = NestedDefaultDict()
 
     def __call__(self) -> None:
@@ -25,51 +21,55 @@ class DataReader(ConfigManager):
         if self.params['pipeline_steps']['data_reader']:
             logger.info(f'Run: {self.__class__.__name__}')
             self.path_memory['structured_dataset_paths'] = NestedDefaultDict()
-            file_finder = FileFinder()
-            self.data_path_store = file_finder()
-            self.show_dict_findings()
-            data_restruct = Restructure(self.data_path_store)
-            data_restruct()
+            self._read_data()
+            self._check_for_missing_files()
+            self._create_structured_dataset()
             self.store_path_memory_file()
-            DataAnalyzer(self.params, self.path_memory)('structured_dataset')
 
-    def show_dict_findings(self) -> None:
-        """Summaries the findings"""
-        logger.trace(f'Dataset scan found: {json.dumps(self.data_path_store, indent=4)}')
+    def __data_description_iter(self) -> tuple:
+        """Iterate over data description"""
+        for data_type, groups in self.data_description.items():
+            for group, tags in groups.items():
+                for tag, tag_filter in tags.items():
+                    yield data_type, group, tag, tag_filter
 
-        count_labels = {}
-        for label_tag in self.label_search_tags.keys():
-            count_labels[label_tag] = 0
+    def __data_path_store_iter(self) -> tuple:
+        """Iterate over data path store"""
+        for data_type, cases in self.data_path_store.items():
+            for case, groups in cases.items():
+                for group, tags in groups.items():
+                    for tag, file_path in tags.items():
+                        yield data_type, case, group, tag, file_path
 
-        count_data = {}
-        for data_tag in self.data_search_tags.keys():
-            count_data[data_tag] = 0
+    def _read_data(self) -> None:
+        """Read data"""
+        dataset_path = self.params['project']['dataset_folder_path']
+        cases = os.listdir(dataset_path)
+        cases.sort()
 
-        for case in self.data_path_store['data'].keys():
-            for data_tag, data_path in self.data_path_store['data'][case].items():
-                if os.path.isfile(data_path):
-                    count_data[data_tag] += 1
+        for case in cases:
+            files = os.listdir(os.path.join(self.params['project']['dataset_folder_path'], case))
+            files.sort()
+            for file in files:
+                file_path = os.path.join(dataset_path, case, file)
+                for data_type, group, tag, tag_filter in self.__data_description_iter():
+                    if file.endswith(tag_filter):
+                        self.data_path_store[data_type][case][group][tag] = file_path
 
-        for case in self.data_path_store['label'].keys():
-            for label_tag, label_path in self.data_path_store['label'][case].items():
-                if os.path.isfile(label_path):
-                    count_labels[label_tag] += 1
+    def _create_structured_dataset(self) -> None:
+        """Copy files from original dataset to structured dataset and create file path dict"""
+        logger.info('Copying original data to new structure -> 2_pre_processed_dataset')
+        for data_type, case, group, tag, ori_file_path in self.__data_path_store_iter():
+            structured_data_store_path = self.params['project']['structured_dataset_store_path']
+            dst_folder_path = os.path.join(structured_data_store_path, data_type, case, group)
+            dst_file_path = os.path.join(dst_folder_path, os.path.basename(ori_file_path))
+            os.makedirs(dst_folder_path, exist_ok=True)
+            shutil.copy2(src=ori_file_path, dst=dst_file_path)
+            self.path_memory['structured_dataset_paths'][data_type][case][group][tag] = dst_file_path
 
-        stats_dict = {
-            'Total cases': sum(count_data.values()),
-            'Label': count_labels,
-            'Data': count_data,
-        }
-
-        logger.info(f'Dataset scan overview: {json.dumps(stats_dict, indent=4)}')
-
-        n_data = sum(count_data.values())
-        n_label = sum(count_labels.values())
-        if n_data == 0:
-            raise ValueError('Data not found, check -> config_file -> dataset -> data_search_tags')
-        if n_label == 0:
-            raise ValueError('Labels not found, check -> config_file -> dataset -> label_search_tags')
-        if n_data % n_label != 0:
-            raise ValueError(
-                'Not every label has the same multiple of data, check for missing data or adapt search tags',
-            )
+    def _check_for_missing_files(self) -> None:
+        """Check if there are any data/label files are missing"""
+        for data_type, group, tag, _ in self.__data_description_iter():
+            for _, case, _, _, _ in self.__data_path_store_iter():
+                if not isinstance(self.data_path_store[data_type][case][group][tag], str):
+                    raise FileNotFoundError(f'No {tag} file found for case {case}')

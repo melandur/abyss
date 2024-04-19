@@ -1,5 +1,4 @@
 import os
-from collections import Counter
 from copy import deepcopy
 
 
@@ -17,25 +16,29 @@ def check_and_create_folder_structure(params: dict) -> None:
         os.makedirs(folder, exist_ok=True)
 
 
-def check_search_tag_redundancy(params: dict, data_type: str) -> None:
-    """Check if there are any redundant search tag per data/label name"""
-    for key, value in params['dataset'][f'{data_type}_search_tags'].items():
-        if len(value) != len(set(value)):
-            redundant_tag = list((Counter(value) - Counter(list(set(value)))).elements())
-            raise ValueError(f'The {data_type} search tag {redundant_tag} found multiple times for the name {key}')
+def __helper_get_last_values(d):
+    """Get the last values of a nested dict"""
+    if isinstance(d, dict):
+        if not d:
+            return []
+        last_values = []
+        for value in d.values():
+            last_values.extend(__helper_get_last_values(value))
+        return last_values
+    return [d]
 
 
-def check_search_tag_uniqueness(params: dict, data_type: str) -> None:
+def check_search_tag_uniqueness(params: dict) -> None:
     """Check if the data/label search tags are unique enough to avoid wrong loading"""
-    tags = params['dataset'][f'{data_type}_search_tags'].values()
-    tags = [x for sublist in tags for x in sublist]  # flatten nested list
-    for i, tag in enumerate(tags):
-        tmp_tags = deepcopy(tags)
+    data_description = params['dataset']['description']
+    tag_filters = __helper_get_last_values(data_description)
+    for i, tag in enumerate(tag_filters):  # check if the tags are unique enough
+        tmp_tags = deepcopy(tag_filters)
         tmp_tags.pop(i)
         if [x for x in tmp_tags if x in tag]:
-            vague_tag = [x for x in tmp_tags if x in tag]
+            vague_filter = [x for x in tmp_tags if x in tag][0]
             raise ValueError(
-                f'The {data_type} search tag {vague_tag} is not expressive/unique enough. '
+                f'The search tag "{vague_filter}" is not expressive/unique enough. '
                 f'Try to add additional information to the search tag like " ", ".", "_"'
             )
 

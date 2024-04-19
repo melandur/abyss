@@ -8,7 +8,7 @@ class ConfigFile:
         self.project_name = 'aby'
         self.experiment_name = '3'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'kitten_12')
+        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'training_abyss')
 
     def __call__(self) -> dict:
         """Returns config file"""
@@ -16,10 +16,10 @@ class ConfigFile:
         return {
             'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_reader': False,
+                'data_reader': True,
                 'pre_processing': False,
                 'create_trainset': False,
-                'training': {'fit': True, 'test': False},
+                'training': {'fit': False, 'test': False},
                 'production': {'extract_weights': False, 'inference': False, 'post_processing': False},
             },
             'project': {
@@ -40,13 +40,17 @@ class ConfigFile:
             },
             'dataset': {
                 'folder_path': self.dataset_folder_path,
-                'label_file_type': ['.nii.gz'],
-                'label_search_tags': {
-                    'mask': ['_seg'],
-                },
-                'data_file_type': ['.nii.gz'],
-                'data_search_tags': {
-                    'img': ['_t1c'],
+                'description': {
+                    'labels': {
+                        'images': {'mask': '_seg.nii.gz'},
+                    },
+                    'data': {
+                        'images': {
+                            't1c': '_t1c.nii.gz',
+                            't1': '_t1.nii.gz',
+                            't2': '_t2.nii.gz',
+                        },
+                    },
                 },
                 'val_fraction': 0.2,  # only used when cross_fold = 1/1, otherwise defined as 1/max_number_of_folds
                 'test_fraction': 0.2,
@@ -62,7 +66,7 @@ class ConfigFile:
                 'label': {
                     'orient_to_ras': {'active': True},
                     'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'nearest'},
-                    'remap_labels': {'active': False, 'label_dict': {1: 1, 2: 2, 4: 3}},  # original : new
+                    'remap_labels': {'active': False, 'label_dict': {1: 1, 2: 1, 3: 1}},  # original : new
                 },
             },
             'training': {

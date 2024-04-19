@@ -4,10 +4,9 @@ import sys
 
 from loguru import logger
 
-from abyss.config.config_helpers import (
+from abyss.config.config_helpers import (  # check_search_tag_redundancy,
     check_and_create_folder_structure,
     check_pipeline_steps,
-    check_search_tag_redundancy,
     check_search_tag_uniqueness,
 )
 from abyss.config_file import ConfigFile
@@ -45,10 +44,7 @@ class ConfigManager:
 
     def __config_setting_checks(self) -> None:
         """A few checks for certain problematic config file parts"""
-        check_search_tag_redundancy(self.params, 'data')
-        check_search_tag_uniqueness(self.params, 'data')
-        check_search_tag_redundancy(self.params, 'label')
-        check_search_tag_uniqueness(self.params, 'label')
+        check_search_tag_uniqueness(self.params)
         check_pipeline_steps(self.params)
         check_and_create_folder_structure(self.params)
 
