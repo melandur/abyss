@@ -84,6 +84,9 @@ class ConfigManager:
 
     def path_memory_iter(self, step: str) -> tuple:
         """Iterate over path memory"""
+        if step not in self.path_memory:
+            raise ValueError(f'No step found in path memory: {step}. Previous step seems missing')
+
         for case, data_types in self.path_memory[step].items():
             for data_type, groups in data_types.items():
                 for group, tags in groups.items():

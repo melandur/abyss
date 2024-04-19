@@ -17,7 +17,7 @@ class ConfigFile:
             'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
                 'data_reader': True,
-                'pre_processing': False,
+                'pre_processing': True,
                 'create_trainset': False,
                 'training': {'fit': False, 'test': False},
                 'production': {'extract_weights': False, 'inference': False, 'post_processing': False},
@@ -59,18 +59,21 @@ class ConfigFile:
             'pre_processing': {
                 'labels': {
                     'images': {
-                        'orient_to_ras': {'active': True},
-                        'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'nearest'},
-                        'remap_labels': {'active': False, 'label_dict': {1: 1, 2: 1, 3: 1}},  # original : new
+                        'simple_itk_reader': {'active': True, 'orientation': 'LPS', 'file_type': 'sitk.sitkInt8'},
+                        'crop_zeros': {'active': True},
+                        'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'sitk.sitkNearestNeighbor'},
+                        'relabel_mask': {'active': False, 'label_dict': {1: 2, 2: 1, 3: 10}},  # original : new
+                        'simple_itk_writer': {'active': True, 'file_type': 'sitk.sitkInt8'},
                     },
                 },
                 'data': {
                     'images': {
-                        'orient_to_ras': {'active': True},
-                        'zero_crop': {'active': True},
-                        'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'linear'},
-                        'z_score': {'active': True},
-                        'rescale_intensity': {'active': True},
+                        'simple_itk_reader': {'active': True, 'orientation': 'LPS', 'file_type': 'sitk.sitkFloat32'},
+                        'crop_zeros': {'active': True},
+                        'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'sitk.sitkLinear'},
+                        'clip_percentiles': {'active': True, 'lower': 0.1, 'upper': 99.9},
+                        'z_score_norm': {'active': True},
+                        'simple_itk_writer': {'active': True, 'file_type': 'sitk.sitkFloat32'},
                     },
                 },
             },
