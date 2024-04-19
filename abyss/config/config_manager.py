@@ -81,3 +81,11 @@ class ConfigManager:
         with open(file_path, 'w+', encoding='utf-8') as file:
             file.write(json.dumps(self.path_memory, indent=4))
         logger.debug(f'Memory path file has been stored to {file_path}')
+
+    def path_memory_iter(self, step: str) -> tuple:
+        """Iterate over path memory"""
+        for case, data_types in self.path_memory[step].items():
+            for data_type, groups in data_types.items():
+                for group, tags in groups.items():
+                    for tag, file_path in tags.items():
+                        yield case, data_type, group, tag, file_path

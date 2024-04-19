@@ -35,11 +35,11 @@ class DataReader(ConfigManager):
 
     def __data_path_store_iter(self) -> tuple:
         """Iterate over data path store"""
-        for data_type, cases in self.data_path_store.items():
-            for case, groups in cases.items():
+        for case, data_types in self.data_path_store.items():
+            for data_type, groups in data_types.items():
                 for group, tags in groups.items():
                     for tag, file_path in tags.items():
-                        yield data_type, case, group, tag, file_path
+                        yield case, data_type, group, tag, file_path
 
     def _read_data(self) -> None:
         """Read data"""
@@ -54,22 +54,22 @@ class DataReader(ConfigManager):
                 file_path = os.path.join(dataset_path, case, file)
                 for data_type, group, tag, tag_filter in self.__data_description_iter():
                     if file.endswith(tag_filter):
-                        self.data_path_store[data_type][case][group][tag] = file_path
+                        self.data_path_store[case][data_type][group][tag] = file_path
 
     def _create_structured_dataset(self) -> None:
         """Copy files from original dataset to structured dataset and create file path dict"""
         logger.info('Copying original data to new structure -> 2_pre_processed_dataset')
-        for data_type, case, group, tag, ori_file_path in self.__data_path_store_iter():
+        for case, data_type, group, tag, ori_file_path in self.__data_path_store_iter():
             structured_data_store_path = self.params['project']['structured_dataset_store_path']
-            dst_folder_path = os.path.join(structured_data_store_path, data_type, case, group)
+            dst_folder_path = os.path.join(structured_data_store_path, case, data_type, group)
             dst_file_path = os.path.join(dst_folder_path, os.path.basename(ori_file_path))
             os.makedirs(dst_folder_path, exist_ok=True)
             shutil.copy2(src=ori_file_path, dst=dst_file_path)
-            self.path_memory['structured_dataset_paths'][data_type][case][group][tag] = dst_file_path
+            self.path_memory['structured_dataset_paths'][case][data_type][group][tag] = dst_file_path
 
     def _check_for_missing_files(self) -> None:
         """Check if there are any data/label files are missing"""
         for data_type, group, tag, _ in self.__data_description_iter():
-            for _, case, _, _, _ in self.__data_path_store_iter():
-                if not isinstance(self.data_path_store[data_type][case][group][tag], str):
+            for case, _, _, _, _ in self.__data_path_store_iter():
+                if not isinstance(self.data_path_store[case][data_type][group][tag], str):
                     raise FileNotFoundError(f'No {tag} file found for case {case}')

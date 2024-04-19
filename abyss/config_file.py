@@ -53,20 +53,25 @@ class ConfigFile:
                     },
                 },
                 'val_fraction': 0.2,  # only used when cross_fold = 1/1, otherwise defined as 1/max_number_of_folds
-                'test_fraction': 0.2,
+                'test_fraction': 0.2,  # todo: goes trainer i guess
                 'cross_fold': '1/1',
             },
             'pre_processing': {
-                'data': {
-                    'orient_to_ras': {'active': True},
-                    'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'linear'},
-                    'z_score': {'active': True},
-                    'rescale_intensity': {'active': True},
+                'labels': {
+                    'images': {
+                        'orient_to_ras': {'active': True},
+                        'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'nearest'},
+                        'remap_labels': {'active': False, 'label_dict': {1: 1, 2: 1, 3: 1}},  # original : new
+                    },
                 },
-                'label': {
-                    'orient_to_ras': {'active': True},
-                    'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'nearest'},
-                    'remap_labels': {'active': False, 'label_dict': {1: 1, 2: 1, 3: 1}},  # original : new
+                'data': {
+                    'images': {
+                        'orient_to_ras': {'active': True},
+                        'zero_crop': {'active': True},
+                        'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'linear'},
+                        'z_score': {'active': True},
+                        'rescale_intensity': {'active': True},
+                    },
                 },
             },
             'training': {
