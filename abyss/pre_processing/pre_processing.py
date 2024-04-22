@@ -38,14 +38,14 @@ class PreProcessing(ConfigManager):
                 pre_process = self.params['pre_processing'][data_type][group]
                 for process, params in pre_process.items():
                     params_ = deepcopy(params)
-                    if hasattr(self, process):
+                    if hasattr(self, process):  # check if method exists in class
                         if params_['active']:
                             logger.trace(f'pre_processing -> {process}')
                             params_.pop('active', None)
-                            method = getattr(self, process)
+                            method = getattr(self, process)  # get method
                             tmp_img = method(tmp_img, params_)
                     else:
-                        logger.warning(f'Pre-processing method not found: {process}')
+                        raise ValueError(f'Pre-processing method not found: {process}')
 
         self.store_path_memory_file()
 
@@ -75,10 +75,15 @@ class PreProcessing(ConfigManager):
         sitk.WriteImage(img, str(self.pre_precessed_file_path))
 
     @staticmethod
-    def z_score_norm(img: sitk.Image, _) -> sitk.Image:
+    def z_score_norm(img: sitk.Image, params) -> sitk.Image:
         """Z-score normalization"""
         img_arr = sitk.GetArrayFromImage(img)
-        img_norm_arr = (img_arr - np.mean(img_arr)) / np.std(img_arr)
+        if params['foreground_only']:
+            img_arr[img_arr == 0.0] = np.nan
+            img_norm_arr = (img_arr - np.nanmean(img_arr)) / np.nanstd(img_arr)
+            img_norm_arr[np.isnan(img_norm_arr)] = 0.0
+        else:
+            img_norm_arr = (img_arr - np.mean(img_arr)) / np.std(img_arr)
         img_norm_sitk = sitk.GetImageFromArray(img_norm_arr)
         img_norm_sitk.CopyInformation(img)
         return img_norm_sitk
@@ -93,7 +98,8 @@ class PreProcessing(ConfigManager):
         img_clipped_sitk.CopyInformation(img)
         return img_clipped_sitk
 
-    def resize(self, img: sitk.Image, params: dict) -> sitk.Image:
+    @staticmethod
+    def resize_image(img: sitk.Image, params: dict) -> sitk.Image:
         """Resize image"""
         original_size = img.GetSize()
         resampling_factor = [sz / float(ns) for sz, ns in zip(original_size, params['dim'])]
@@ -115,6 +121,20 @@ class PreProcessing(ConfigManager):
         relabel_img_sitk.CopyInformation(img)
         return relabel_img_sitk
 
+    @staticmethod
+    def background_as_zeros(img: sitk.Image, params: dict) -> sitk.Image:
+        """Zero background"""
+        img_arr = sitk.GetArrayFromImage(img)
+        new_arr = deepcopy(img_arr)
+        binary_mask = (img_arr > params['threshold']).astype(int)
+        bool_mask = binary_fill_holes(binary_mask)
+        binary_mask = np.where(bool_mask != 0)
+        new_arr[binary_mask == 0] = 0.0
+        new_sitk = sitk.GetImageFromArray(new_arr)
+        new_sitk.CopyInformation(img)
+        return new_sitk
+
+    # todo: will be provided in the analyzer class
     @staticmethod
     def __crop_zeros_helper(img: sitk.Image) -> tuple:
         """Zero crop image"""

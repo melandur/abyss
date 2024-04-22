@@ -57,7 +57,7 @@ class DataReader(ConfigManager):
                         self.data_path_store[case][data_type][group][tag] = file_path
 
     def _create_structured_dataset(self) -> None:
-        """Copy files from original dataset to structured dataset and create file path dict"""
+        """Copy files from original dataset to structured dataset folder"""
         logger.info('Copying original data to new structure -> 2_pre_processed_dataset')
         for case, data_type, group, tag, ori_file_path in self.__data_path_store_iter():
             structured_data_store_path = self.params['project']['structured_dataset_store_path']
