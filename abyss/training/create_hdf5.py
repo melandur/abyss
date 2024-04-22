@@ -132,6 +132,7 @@ class CreateHDF5(ConfigManager):
         """ "Read data as array"""
         img_sitk = sitk.ReadImage(file_path)
         img_arr = sitk.GetArrayFromImage(img_sitk)
+        img_arr = np.asarray(img_arr, dtype='float32')
         return img_arr
 
     def create_set(self, set_type: str, set_cases: str, h5_object: h5py.File) -> None:
