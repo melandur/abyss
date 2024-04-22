@@ -3,7 +3,7 @@ import os
 
 import h5py
 import numpy as np
-import torchio as tio
+import SimpleITK as sitk
 from loguru import logger
 
 from abyss.config import ConfigManager
@@ -38,11 +38,11 @@ class CreateHDF5(ConfigManager):
             self.store_path_memory_file()
 
     def get_data_store_paths(self) -> NestedDefaultDict:
-        """Returns the current data store path, with prio 1: pre processed, prio 2: structured dataset"""
-        if len(self.path_memory['pre_processed_dataset_paths']['data']) != 0:
+        """Returns the current data store path, with prio 1: pre_processed, prio 2: structured dataset"""
+        if len(self.path_memory['pre_processed_dataset_paths']) != 0:
             logger.info('HDF5 file will be created from pre processed dataset')
             return self.path_memory['pre_processed_dataset_paths']
-        if len(self.path_memory['structured_dataset_paths']['data']) != 0:
+        if len(self.path_memory['structured_dataset_paths']) != 0:
             logger.info('HDF5 file will be created from structured dataset')
             return self.path_memory['structured_dataset_paths']
         raise ValueError(
@@ -51,14 +51,12 @@ class CreateHDF5(ConfigManager):
 
     def train_test_split(self) -> None:
         """Creates a list with case names for train and test set each"""
-        count_cases = len(self.data_store_paths['data'])
+        count_cases = len(self.data_store_paths)
         if count_cases < 10:
             raise AssertionError('Your dataset needs to have at least 10 subjects')
         test_set_size = int(self.params['dataset']['test_fraction'] * count_cases)
-        self.test_set_cases = list(
-            np.random.choice(list(self.data_store_paths['data']), size=test_set_size, replace=False)
-        )
-        self.train_set_cases = [x for x in self.data_store_paths['data'] if x not in self.test_set_cases]
+        self.test_set_cases = list(np.random.choice(list(self.data_store_paths), size=test_set_size, replace=False))
+        self.train_set_cases = [x for x in self.data_store_paths if x not in self.test_set_cases]
         logger.info(f'Test set, counts: {len(self.test_set_cases)}, cases: {self.test_set_cases}')
 
     def check_fold_settings(self) -> None:
@@ -113,31 +111,39 @@ class CreateHDF5(ConfigManager):
             raise AssertionError(f'Contamination in test & val-set split -> {contamination}')
 
     def writer(
-        self, data_type: str, set_type: str, case_name: str, file_type: str, array_data: np.array, h5_object: h5py.File
+        self,
+        set_type: str,
+        case_name: str,
+        data_type: str,
+        group: str,
+        tag: str,
+        array_data: np.array,
+        h5_object: h5py.File,
     ) -> None:
         """Convert data to numpy array and write it hdf5 file"""
-        for slice_idx in range(np.shape(array_data)[0]):  # TODO: Store as whole Volume or Slice wise
-            new_file_path = f'{set_type}/{data_type}/{case_name}/{slice_idx}'
-            group = h5_object.require_group(new_file_path)
-            group.create_dataset(file_type, data=array_data[slice_idx])
-            train_file_path = f'{new_file_path}/{file_type}'
-            self.path_memory[f'{set_type}_dataset_paths'][data_type][case_name][file_type][slice_idx] = train_file_path
+        new_file_path = f'{set_type}/{case_name}/{data_type}/{group}'
+        h5_group = h5_object.require_group(new_file_path)
+        h5_group.create_dataset(tag, data=array_data)
+        train_file_path = f'{new_file_path}/{tag}'
+        self.path_memory[f'{set_type}_dataset_paths'][case_name][data_type][group][tag] = train_file_path
 
     @staticmethod
     def load_data_type(file_path: str) -> np.array:
         """ "Read data as array"""
-        return tio.ScalarImage(file_path).data
+        img_sitk = sitk.ReadImage(file_path)
+        img_arr = sitk.GetArrayFromImage(img_sitk)
+        return img_arr
 
     def create_set(self, set_type: str, set_cases: str, h5_object: h5py.File) -> None:
         """Create data set and append location to path memory"""
         self.path_memory[f'{set_type}_dataset_paths'] = NestedDefaultDict()
-        for data_type in ['data', 'label']:
-            for case_name in set_cases:
-                file_types = self.data_store_paths[data_type][case_name]
-                for file_type in file_types:
-                    file_path = self.data_store_paths[data_type][case_name][file_type]
-                    array_data = self.load_data_type(file_path)
-                    self.writer(data_type, set_type, case_name, file_type, array_data, h5_object)
+        for case_name in set_cases:
+            for data_type in self.data_store_paths[case_name]:
+                for group in self.data_store_paths[case_name][data_type]:
+                    for tag in self.data_store_paths[case_name][data_type][group]:
+                        file_path = self.data_store_paths[case_name][data_type][group][tag]
+                        array_data = self.load_data_type(file_path)
+                        self.writer(set_type, case_name, data_type, group, tag, array_data, h5_object)
 
     def execute_dataset_split(self) -> None:
         """Write files to train/validation/test folders in hdf5"""
