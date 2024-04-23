@@ -22,8 +22,7 @@ class Pipeline:
     """Runs according to the config file"""
 
     def __init__(self):
-
-        config_manager = ConfigManager(load_config_file_path=None)
+        self.config_manager = ConfigManager()
         self.data_reader = DataReader()
         self.pre_processing = PreProcessing()
         self.create_hdf5 = CreateHDF5()
@@ -31,17 +30,17 @@ class Pipeline:
         self.extract_weights = ExtractWeights()
         self.inference = Inference()
         self.post_processing = PostProcessing()
-        config_manager()  # here for Borg pattern
 
     def __call__(self):
+        self.config_manager()
         self.data_reader()
         self.pre_processing()
         self.create_hdf5()
         self.training()
 
-        self.extract_weights()
-        self.inference()
-        self.post_processing()
+        # self.extract_weights()
+        # self.inference()
+        # self.post_processing()
 
         self.__execute_time()
 

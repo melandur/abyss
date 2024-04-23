@@ -16,6 +16,7 @@ class CreateHDF5(ConfigManager):
     def __init__(self, **kwargs) -> None:
         super().__init__()
         self._shared_state.update(kwargs)
+
         self.trainset_store_path = os.path.join(self.params['project']['trainset_store_path'], 'data.h5')
         self.train_set_cases = None
         self.val_set_cases = None

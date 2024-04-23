@@ -13,6 +13,7 @@ class DataReader(ConfigManager):
     def __init__(self, **kwargs) -> None:
         super().__init__()
         self._shared_state.update(kwargs)
+
         self.data_description = self.params['dataset']['description']
         self.data_path_store = NestedDefaultDict()
 

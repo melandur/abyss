@@ -9,9 +9,8 @@ from abyss.config import ConfigManager
 class PostProcessing(ConfigManager):
     """Post process output"""
 
-    def __init__(self, **kwargs) -> None:
-        super().__init__()
-        self._shared_state.update(kwargs)
+    def __init__(self) -> None:
+        super(PostProcessing, self).__init__()
 
     def __call__(self) -> None:
         if self.params['pipeline_steps']['production']['post_processing']:

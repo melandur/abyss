@@ -16,10 +16,10 @@ class ConfigFile:
         return {
             'logger': {'level': 'INFO'},  # 'TRACE', 'DEBUG', 'INFO'
             'pipeline_steps': {
-                'data_reader': True,
-                'pre_processing': True,
+                'data_reader': False,
+                'pre_processing': False,
                 'create_trainset': False,
-                'training': {'fit': False, 'test': False},
+                'training': {'fit': True, 'test': False},
                 'production': {'extract_weights': False, 'inference': False, 'post_processing': False},
             },
             'project': {
@@ -47,8 +47,6 @@ class ConfigFile:
                     'data': {
                         'images': {
                             't1c': '_t1c.nii.gz',
-                            't1': '_t1.nii.gz',
-                            't2': '_t2.nii.gz',
                         },
                     },
                 },
@@ -61,28 +59,33 @@ class ConfigFile:
                     'images': {
                         'simple_itk_reader': {'active': True, 'orientation': 'LPS', 'file_type': 'sitk.sitkInt8'},
                         'crop_zeros': {'active': True},
-                        'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'sitk.sitkNearestNeighbor'},
-                        'relabel_mask': {'active': False, 'label_dict': {1: 2, 2: 1, 3: 10}},  # original : new
+                        'resize_image': {
+                            'active': True,
+                            'dim': (128, 128, 128),
+                            'interpolator': 'sitk.sitkNearestNeighbor',
+                        },
+                        'relabel_mask': {'active': True, 'label_dict': {1: 1, 2: 1, 3: 1}},  # original : new
                         'simple_itk_writer': {'active': True, 'file_type': 'sitk.sitkInt8'},
                     },
                 },
                 'data': {
                     'images': {
                         'simple_itk_reader': {'active': True, 'orientation': 'LPS', 'file_type': 'sitk.sitkFloat32'},
+                        'background_as_zeros': {'active': True, 'threshold': 0},
                         'crop_zeros': {'active': True},
-                        'resize': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'sitk.sitkLinear'},
+                        'resize_image': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'sitk.sitkLinear'},
                         'clip_percentiles': {'active': True, 'lower': 0.1, 'upper': 99.9},
-                        'z_score_norm': {'active': True},
+                        'z_score_norm': {'active': True, 'foreground_only': True},
                         'simple_itk_writer': {'active': True, 'file_type': 'sitk.sitkFloat32'},
                     },
                 },
             },
             'training': {
-                'batch_size': 80,
+                'batch_size': 1,
                 'optimizers': {
                     'Adam': {
-                        'active': True,
-                        'learning_rate': 0.001,
+                        'active': False,
+                        'learning_rate': 1,
                         'betas': (0.9, 0.999),
                         'eps': 1e-8,
                         'weight_decay': 1e-2,
@@ -91,29 +94,27 @@ class ConfigFile:
                     'SGD': {
                         'active': True,
                         'learning_rate': 0.01,
-                        'momentum': 0.9,
-                        'weight_decay': 1e-2,
+                        'momentum': 0.99,
+                        'weight_decay': 3e-5,
                         'nesterov': True,
                     },
                 },
-                'criterion': 'dice',  # mse, cross_entropy, dice, cross_entropy_dice
+                'criterion': 'cross_entropy_dice',  # mse, cross_entropy, dice, cross_entropy_dice
                 'load_from_checkpoint_path': None,  # loads if valid *.ckpt provided
                 'load_from_weights_path': None,  # loads if valid *.pth provided
             },
             'trainer': {
                 'default_root_dir': os.path.join(experiment_path, '4_results'),
-                'max_epochs': 1000,
-                'log_every_n_steps': 1,
+                'max_epochs': 100,
                 'precision': 32,
-                'check_val_every_n_epoch': 1,
+                'check_val_every_n_epoch': 10,
                 'enable_progress_bar': True,
                 'accelerator': 'gpu',
                 'deterministic': False,
-                'devices': 1,
-                'gpus': None,
+                'compile': False,
                 'resume_from_checkpoint': None,
                 'model_summary_depth': -1,
-                'early_stop': {'min_delta': 0.01, 'patience': 5, 'verbose': False, 'mode': 'max'},
+                'early_stop': {'min_delta': 0.01, 'patience': 10},
             },
             'production': {
                 'checkpoint_name': None,

@@ -6,7 +6,8 @@ import torch
 from loguru import logger
 
 from abyss.config import ConfigManager
-from abyss.training.nets import unet
+
+# from abyss.training.model import mod
 
 
 class Inference(ConfigManager):
@@ -14,14 +15,14 @@ class Inference(ConfigManager):
 
     def __init__(self, **kwargs) -> None:
         super().__init__()
-        self._shared_state.update(kwargs)
+        # self._shared_state.update(kwargs)
         self.model = None
 
     def __call__(self) -> None:
         if self.params['pipeline_steps']['production']['inference']:
             logger.info(f'Run: {self.__class__.__name__}')
             torch.cuda.empty_cache()
-            self.model = unet
+            # self.model = net
             self.load_weights()
             self.model.eval()
             self.predict_case_wise()

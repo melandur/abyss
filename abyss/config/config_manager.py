@@ -4,7 +4,7 @@ import sys
 
 from loguru import logger
 
-from abyss.config.config_helpers import (  # check_search_tag_redundancy,
+from abyss.config.config_helpers import (
     check_and_create_folder_structure,
     check_pipeline_steps,
     check_search_tag_uniqueness,
@@ -19,7 +19,8 @@ class ConfigManager:
     _shared_state = {}  # borg pattern is used, shared class state (params and path_memory state) with children
 
     def __init__(self, load_config_file_path: str = None) -> None:
-        self.__dict__ = self._shared_state
+        self.__dict__ = self._shared_state  # borg pattern
+
         self.params = None
         if load_config_file_path is None:
             self.params = ConfigFile()()
@@ -69,8 +70,12 @@ class ConfigManager:
         """Load path memory file from store folder"""
         file_path = os.path.join(self.params['project']['config_store_path'], 'path_memory.json')
         if os.path.isfile(file_path):
-            with open(file_path, 'r', encoding='utf-8') as file:
-                path_memory = json.load(file)
+            try:
+                with open(file_path, 'r', encoding='utf-8') as file:
+                    path_memory = json.load(file)
+            except Exception as e:
+                logger.error(f'Was not able to load path memory file from {file_path}. Error: {e}')
+
             logger.info(f'Path memory file has been loaded from {file_path}')
             logger.trace(f'Memory path file contains: {json.dumps(self.path_memory, indent=4)}')
             self.path_memory = NestedDefaultDict(path_memory)
@@ -78,8 +83,11 @@ class ConfigManager:
     def store_path_memory_file(self) -> None:
         """Export path memory as json to the config store folder"""
         file_path = os.path.join(self.params['project']['config_store_path'], 'path_memory.json')
-        with open(file_path, 'w+', encoding='utf-8') as file:
-            file.write(json.dumps(self.path_memory, indent=4))
+        try:
+            with open(file_path, 'w+', encoding='utf-8') as file:
+                file.write(json.dumps(self.path_memory, indent=4))
+        except Exception as e:
+            logger.error(f'Was not able to store path memory file to {file_path}. Error: {e}')
         logger.debug(f'Memory path file has been stored to {file_path}')
 
     def path_memory_iter(self, step: str) -> tuple:

@@ -16,7 +16,7 @@ spatial_transforms = tf.Compose(
         #     random_size=False,
         # ),
         tf.RandRotated(
-            keys=['data', 'label'],
+            keys=['data', 'labels'],
             range_x=(-1, 1),
             range_y=(-1, 1),
             range_z=(-1, 1),
@@ -26,17 +26,17 @@ spatial_transforms = tf.Compose(
         tf.OneOf(
             [
                 tio.RandomFlip(
-                    include=['data', 'label'],
+                    include=['data', 'labels'],
                     axes=0,
                     flip_probability=1.0,
                 ),
                 tio.RandomFlip(
-                    include=['data', 'label'],
+                    include=['data', 'labels'],
                     axes=1,
                     flip_probability=1.0,
                 ),
                 tio.RandomFlip(
-                    include=['data', 'label'],
+                    include=['data', 'labels'],
                     axes=2,
                     flip_probability=1.0,
                 ),
@@ -120,7 +120,7 @@ artefact_transforms = tf.OneOf(
     ]
 )
 
-transforms = tf.Compose(
+transform = tf.Compose(
     [
         # spatial_transforms,
         # intensity_transforms,

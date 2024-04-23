@@ -16,6 +16,7 @@ class PreProcessing(ConfigManager):
     def __init__(self, **kwargs) -> None:
         super().__init__()
         self._shared_state.update(kwargs)
+
         self.image_boundaries = {}
         self.case = None
         self.file_path = None

@@ -16,7 +16,7 @@ class Dataset(torch_Dataset):
         self.transforms = transforms
         self.h5_object = None
         self.dataset_paths = path_memory[f'{set_name}_dataset_paths']
-        set_case_names = list(self.dataset_paths['data'].keys())
+        set_case_names = list(self.dataset_paths)
         random.seed(params['meta']['seed'])
         self.random_set_case_names = random.sample(set_case_names, len(set_case_names))
         h5_file_path = os.path.join(params['project']['trainset_store_path'], 'data.h5')
@@ -30,36 +30,30 @@ class Dataset(torch_Dataset):
         if isinstance(self.h5_object, h5py.File):
             self.h5_object.close()
 
-    def prepare_data(self, case_name: str, slice_index: int) -> torch.tensor:
+    def prepare_data(self, case_name: str) -> torch.tensor:
         """Load from hdf5 and stack/add_dimension or what ever"""
-        img = self.h5_object.get(f'{self.set_name}/data/{case_name}/{slice_index}/img')
+        img = self.h5_object.get(f'{self.set_name}/{case_name}/data/images/t1c')
         img = np.asarray(img, dtype='float32')
         img = np.expand_dims(img, axis=0)  # add channel
         return torch.from_numpy(img)
 
-    def prepare_label(self, case_name: str, slice_index: int) -> torch.tensor:
+    def prepare_label(self, case_name: str) -> torch.tensor:
         """Load label from hdf5 and stack/add_dimension or what ever"""
-        if len(self.dataset_paths['label'][case_name]) > 1:
-            raise NotImplementedError('Only 1 label tag is supported, adjust this method to your needs')
-        label = self.h5_object.get(f'{self.set_name}/label/{case_name}/{slice_index}/mask')
-        label = np.asarray(label, dtype='float32')
+        label = self.h5_object.get(f'{self.set_name}/{case_name}/labels/images/mask')
+        label = np.asarray(label, dtype='float32')  # TODO: int it goes
         label = np.expand_dims(label, axis=0)  # add channel
         return torch.from_numpy(label)
 
     def __getitem__(self, index) -> tuple:
         """Returns data and corresponding label"""
-        slices = 128
-        case_index, slice_index = divmod(index, slices)
-        case_name = self.random_set_case_names[case_index]
-        # random.seed(self.params['meta']['seed'])
-        data = self.prepare_data(case_name, slice_index)
-        label = self.prepare_label(case_name, slice_index)
-        sample = {'data': data, 'label': label}
+        case_name = self.random_set_case_names[index]
+        data = self.prepare_data(case_name)
+        label = self.prepare_label(case_name)
+        sample = {'data': data, 'labels': label}
         if self.transforms:
             sample = self.transforms(sample)
-        return sample['data'], sample['label']
+        return sample['data'], sample['labels']
 
     def __len__(self) -> int:
         """Holds number of cases"""
-        slices = 128
-        return len(self.random_set_case_names) * slices
+        return len(self.random_set_case_names)
