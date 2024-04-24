@@ -68,30 +68,40 @@ class GenericTrainer(ConfigManager):
 
     def _check_early_stopping(self) -> bool:
         """Early stop if validation loss is not improving and learning rate is below threshold"""
-        patience = self.params['trainer']['early_stop']['patience']
-        min_delta = self.params['trainer']['early_stop']['min_delta']
-        best_loss = self._early_stopping['best_loss']
-        current_loss = self._early_stopping['current_loss']
-        min_learning_rate = self.params['trainer']['early_stop']['min_learning_rate']
+        if self._epoch % self.params['trainer']['check_val_every_n_epoch'] == 0 and self._epoch != 0:
+            patience = self.params['trainer']['early_stop']['patience']
+            min_delta = self.params['trainer']['early_stop']['min_delta']
+            best_loss = self._early_stopping['best_loss']
+            current_loss = self._early_stopping['current_loss']
+            min_learning_rate = self.params['trainer']['early_stop']['min_learning_rate']
 
-        if best_loss > current_loss + min_delta:
-            self._early_stopping['best_loss'] = current_loss
-            self._early_stopping['counter'] = 0
-        else:
-            self._early_stopping['counter'] += 1
+            if best_loss > current_loss + min_delta:
+                self._early_stopping['best_loss'] = current_loss
+                self._early_stopping['counter'] = 0
+                logger.info(f'Improved [{self._early_stopping["counter"]}/{patience}] -> {round(current_loss, 5)}')
+            else:
+                self._early_stopping['counter'] += 1
+                logger.info(
+                    f'No improvement [{self._early_stopping["counter"]}/{patience}] -> {round(current_loss, 5)}'
+                )
 
-        if self._early_stopping['counter'] > patience:
-            if self._optimizer.param_groups[0]['lr'] < min_learning_rate:
-                logger.info('Early stopping kicked in')
-                self._save_model('final')
-                return True
+            if self._early_stopping['counter'] > patience:
+                if self._optimizer.param_groups[0]['lr'] < min_learning_rate:
+                    logger.info('Early stopping kicked in')
+                    self.__save_model('final')
+                    return True
 
-            logger.info('Minimum learning rate not reached, continue training')
-            # todo: reduce learning rate or shorter validation check interval
-        return False
+                logger.info('Minimum learning rate not reached, continue training')
+                # todo: reduce learning rate
+            return False
 
-    def _save_model(self, tag: str = None) -> None:
-        """Save model to path"""
+    def _check_save_model(self) -> None:
+        """Check if model should be saved"""
+        if self._epoch % self.params['trainer']['save_model_every_n_epoch'] == 0 and self._epoch != 0:
+            self.__save_model()
+
+    def __save_model(self, tag: str = None) -> None:
+        """Save model to disk"""
         if tag is None:
             tag = str(self._epoch)
         model_name = f'{self.params["project"]["experiment_name"]}_{tag}.pth'

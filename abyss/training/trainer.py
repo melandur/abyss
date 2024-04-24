@@ -37,8 +37,8 @@ class Trainer(GenericTrainer):
                 self.training_step(batch)
             self._lr_scheduler.step()
             self.validation_iteration()
-            if self._check_early_stopping():
-                break
+            self._check_early_stopping()
+            self._check_save_model()
 
             learning_rate = self._optimizer.param_groups[0]['lr']
             self._log.add_scalar('learning_rate', learning_rate, self._epoch)

@@ -8,13 +8,13 @@ import torchio as tio
 
 spatial_transforms = tf.Compose(
     [
-        # tf.RandSpatialCropd(
-        #     keys=['data', 'label'],
-        #     roi_size=(80, 80, 80),
-        #     max_roi_size=None,
-        #     random_center=True,
-        #     random_size=False,
-        # ),
+        tf.RandSpatialCropd(
+            keys=['data', 'labels'],
+            roi_size=(128, 128, 128),
+            max_roi_size=None,
+            random_center=True,
+            random_size=False,
+        ),
         tf.RandRotated(
             keys=['data', 'labels'],
             range_x=(-1, 1),
@@ -122,12 +122,12 @@ artefact_transforms = tf.OneOf(
 
 transform = tf.Compose(
     [
-        # spatial_transforms,
-        # intensity_transforms,
-        # artefact_transforms,
+        spatial_transforms,
+        intensity_transforms,
+        artefact_transforms,
         # RandomChannelDropout(include=['data'], num_channels=1, fill_value=0.0, prob=0.8),
         # RandomChannelShuffle(include=['data'], prob=1.0),
-        tf.ScaleIntensityd(keys=['data'], minv=0.0, maxv=1.0),
-        # tio.OneHot(keys=['label'], num_classes=1)
+        # tf.ScaleIntensityd(keys=['data'], minv=0.0, maxv=1.0),
+        tio.OneHot(keys=['labels'], num_classes=1),
     ]
 )

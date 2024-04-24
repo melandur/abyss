@@ -93,7 +93,7 @@ class ConfigFile:
                     },
                     'SGD': {
                         'active': True,
-                        'learning_rate': 1e-2,
+                        'learning_rate': 1e-3,
                         'momentum': 0.99,
                         'weight_decay': 3e-5,
                         'nesterov': True,
@@ -105,7 +105,7 @@ class ConfigFile:
             },
             'trainer': {
                 'default_root_dir': os.path.join(experiment_path, '4_results'),
-                'max_epochs': 100,
+                'max_epochs': 1000,
                 'automated_mixed_precision': {  # todo: implement
                     'active': True,
                     'device': 'cuda',
@@ -117,8 +117,8 @@ class ConfigFile:
                 'deterministic': False,
                 'compile': False,
                 'resume_from_checkpoint': None,
-                'early_stop': {'patience': 10, 'min_learning_rate': 1e-6, 'min_delta': 1e-4},
-                'lr_scheduler': {'warmup_steps': 10},
+                'early_stop': {'patience': 50, 'min_learning_rate': 1e-6, 'min_delta': 1e-4},
+                'lr_scheduler': {'warmup_steps': 20},
             },
             'production': {
                 'checkpoint_name': None,

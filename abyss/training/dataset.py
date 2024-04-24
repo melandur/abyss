@@ -14,12 +14,12 @@ class Dataset(torch_Dataset):
         self.params = params
         self.set_name = set_name
         self.transforms = transforms
-        self.h5_object = None
         self.dataset_paths = path_memory[f'{set_name}_dataset_paths']
         set_case_names = list(self.dataset_paths)
         random.seed(params['meta']['seed'])
         self.random_set_case_names = random.sample(set_case_names, len(set_case_names))
         h5_file_path = os.path.join(params['project']['trainset_store_path'], 'data.h5')
+        self.h5_object = None
         if os.path.isfile(h5_file_path):
             self.h5_object = h5py.File(h5_file_path, 'r')
         else:
@@ -33,6 +33,7 @@ class Dataset(torch_Dataset):
     def prepare_data(self, case_name: str) -> torch.tensor:
         """Load from hdf5 and stack/add_dimension or what ever"""
         img = self.h5_object.get(f'{self.set_name}/{case_name}/data/images/t1c')
+        # img = self.h5_object.get(f'{self.set_name}/{case_name}/data/images/t1c')
         img = np.asarray(img, dtype='float32')
         img = np.expand_dims(img, axis=0)  # add channel
         return torch.from_numpy(img)
@@ -40,7 +41,7 @@ class Dataset(torch_Dataset):
     def prepare_label(self, case_name: str) -> torch.tensor:
         """Load label from hdf5 and stack/add_dimension or what ever"""
         label = self.h5_object.get(f'{self.set_name}/{case_name}/labels/images/mask')
-        label = np.asarray(label, dtype='float32')  # TODO: int it goes
+        label = np.asarray(label, dtype='int8')  # TODO: int it goes
         label = np.expand_dims(label, axis=0)  # add channel
         return torch.from_numpy(label)
 
