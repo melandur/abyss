@@ -32,10 +32,15 @@ class Dataset(torch_Dataset):
 
     def prepare_data(self, case_name: str) -> torch.tensor:
         """Load from hdf5 and stack/add_dimension or what ever"""
-        img = self.h5_object.get(f'{self.set_name}/{case_name}/data/images/t1c')
-        # img = self.h5_object.get(f'{self.set_name}/{case_name}/data/images/t1c')
-        img = np.asarray(img, dtype='float32')
-        img = np.expand_dims(img, axis=0)  # add channel
+        t1c_img = self.h5_object.get(f'{self.set_name}/{case_name}/data/images/t1c')
+        t1_img = self.h5_object.get(f'{self.set_name}/{case_name}/data/images/t1')
+        t2_img = self.h5_object.get(f'{self.set_name}/{case_name}/data/images/t2')
+        flair_img = self.h5_object.get(f'{self.set_name}/{case_name}/data/images/flair')
+        t1c_arr = np.asarray(t1c_img, dtype='float32')
+        t1_arr = np.asarray(t1_img, dtype='float32')
+        t2_arr = np.asarray(t2_img, dtype='float32')
+        flair_arr = np.asarray(flair_img, dtype='float32')
+        img = np.stack([t1c_arr, t1_arr, t2_arr, flair_arr], axis=0)  # stack channels
         return torch.from_numpy(img)
 
     def prepare_label(self, case_name: str) -> torch.tensor:

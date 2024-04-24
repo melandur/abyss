@@ -1,5 +1,6 @@
 import math
 import os
+import shutil
 from abc import abstractmethod
 
 import torch
@@ -37,6 +38,8 @@ class GenericTrainer(ConfigManager):
         self._lr_scheduler = self.__configure_scheduler()
 
         log_path = os.path.join(self.params['project']['result_store_path'], 'log')
+        if os.path.exists(log_path):
+            shutil.rmtree(log_path)
         self._log = SummaryWriter(log_dir=log_path)
         logger.info(f'tensorboard --logdir={log_path}')
 

@@ -6,7 +6,7 @@ class ConfigFile:
 
     def __init__(self) -> None:
         self.project_name = 'aby'
-        self.experiment_name = '3'
+        self.experiment_name = 'test'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
         self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'training_abyss')
 
@@ -47,6 +47,9 @@ class ConfigFile:
                     'data': {
                         'images': {
                             't1c': '_t1c.nii.gz',
+                            't1': '_t1.nii.gz',
+                            't2': '_t2.nii.gz',
+                            'flair': '_flair.nii.gz',
                         },
                     },
                 },
@@ -61,10 +64,10 @@ class ConfigFile:
                         'crop_zeros': {'active': True},
                         'resize_image': {
                             'active': True,
-                            'dim': (128, 128, 128),
+                            'dim': (182, 182, 182),
                             'interpolator': 'sitk.sitkNearestNeighbor',
                         },
-                        'relabel_mask': {'active': True, 'label_dict': {1: 1, 2: 1, 3: 1}},  # original : new
+                        'relabel_mask': {'active': True, 'label_dict': {1: 1, 2: 0, 3: 0, 4: 0}},  # original : new
                         'simple_itk_writer': {'active': True, 'file_type': 'sitk.sitkInt8'},
                     },
                 },
@@ -73,15 +76,15 @@ class ConfigFile:
                         'simple_itk_reader': {'active': True, 'orientation': 'LPS', 'file_type': 'sitk.sitkFloat32'},
                         'background_as_zeros': {'active': True, 'threshold': 0},
                         'crop_zeros': {'active': True},
-                        'resize_image': {'active': True, 'dim': (128, 128, 128), 'interpolator': 'sitk.sitkLinear'},
-                        'clip_percentiles': {'active': True, 'lower': 0.1, 'upper': 99.9},
+                        'resize_image': {'active': True, 'dim': (182, 182, 182), 'interpolator': 'sitk.sitkLinear'},
+                        'clip_percentiles': {'active': True, 'lower': 0.5, 'upper': 99.5},
                         'z_score_norm': {'active': True, 'foreground_only': True},
                         'simple_itk_writer': {'active': True, 'file_type': 'sitk.sitkFloat32'},
                     },
                 },
             },
             'training': {
-                'batch_size': 1,
+                'batch_size': 8,
                 'optimizers': {
                     'Adam': {
                         'active': False,
@@ -112,7 +115,7 @@ class ConfigFile:
                     'precision': 'float16',  # 'bfloat32', 'float16'
                 },
                 'check_val_every_n_epoch': 10,
-                'save_model_every_n_epoch': 10,
+                'save_model_every_n_epoch': 5,
                 'accelerator': 'gpu',
                 'deterministic': False,
                 'compile': False,
