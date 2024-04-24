@@ -85,15 +85,15 @@ class ConfigFile:
                 'optimizers': {
                     'Adam': {
                         'active': False,
-                        'learning_rate': 1,
+                        'learning_rate': 3e-4,
                         'betas': (0.9, 0.999),
-                        'eps': 1e-8,
-                        'weight_decay': 1e-2,
-                        'amsgrad': False,
+                        'eps': 1e-3,
+                        'weight_decay': 3e-5,
+                        'amsgrad': True,
                     },
                     'SGD': {
                         'active': True,
-                        'learning_rate': 0.01,
+                        'learning_rate': 1e-2,
                         'momentum': 0.99,
                         'weight_decay': 3e-5,
                         'nesterov': True,
@@ -106,15 +106,19 @@ class ConfigFile:
             'trainer': {
                 'default_root_dir': os.path.join(experiment_path, '4_results'),
                 'max_epochs': 100,
-                'precision': 32,
+                'automated_mixed_precision': {  # todo: implement
+                    'active': True,
+                    'device': 'cuda',
+                    'precision': 'float16',  # 'bfloat32', 'float16'
+                },
                 'check_val_every_n_epoch': 10,
-                'enable_progress_bar': True,
+                'save_model_every_n_epoch': 10,
                 'accelerator': 'gpu',
                 'deterministic': False,
                 'compile': False,
                 'resume_from_checkpoint': None,
-                'model_summary_depth': -1,
-                'early_stop': {'min_delta': 0.01, 'patience': 10},
+                'early_stop': {'patience': 10, 'min_learning_rate': 1e-6, 'min_delta': 1e-4},
+                'lr_scheduler': {'warmup_steps': 10},
             },
             'production': {
                 'checkpoint_name': None,
