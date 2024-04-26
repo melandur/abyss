@@ -30,11 +30,12 @@ class Trainer(GenericTrainer):
 
     def training_iteration(self) -> None:
         """Training iteration"""
-        self._model.train()
         for self._epoch in range(self.params['trainer']['total_epochs']):
             logger.info(f'Epoch: {self._epoch}')
+            self._model.train()
             for batch in self.train_dataloader():
                 self.training_step(batch)
+
             self._lr_schedulers['lr_rate'].step(self._epoch)
             self.validation_iteration()
             self._check_early_stopping()
@@ -51,7 +52,6 @@ class Trainer(GenericTrainer):
         """Predict, loss, log, backprop, optimizer step"""
         data, labels = batch
         data, labels = data.to(self._device), labels.to(self._device)
-        self._optimizer.zero_grad()
         output = self._model(data)
         loss = self._compute_loss(output, labels)
         self._losses['train'].append(loss.item())
@@ -70,7 +70,6 @@ class Trainer(GenericTrainer):
                         self._metrics['val']['dice'].append(val_dice)
 
                     val_loss_average = sum(self._losses['val']) / len(self._losses['val'])
-                    self._lr_schedulers['reduce_on_plateau'].step(val_loss_average)
                     self._early_stopping['current_loss'] = val_loss_average
                     self._losses['val'] = []  # reset
                     self._log.add_scalar('val_loss_average', val_loss_average, self._epoch)

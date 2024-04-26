@@ -50,7 +50,6 @@ spatial_transforms = tf.Compose(
         #     magnitude_range=(50, 110),
         #     mode='nearest',
         #     padding_mode='zeros',
-        #     as_tensor_output=True,
         #     prob=1.0,
         # ),
         # tf.Rand2DElasticd(

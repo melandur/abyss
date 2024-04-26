@@ -39,7 +39,7 @@ class GenericTrainer(ConfigManager):
 
         log_path = os.path.join(self.params['project']['result_store_path'], 'log')
         if os.path.exists(log_path):
-            shutil.rmtree(log_path)
+            shutil.rmtree(log_path, ignore_errors=True)
         self._log = SummaryWriter(log_dir=log_path)
         logger.info(f'tensorboard --logdir={log_path}')
 
@@ -50,6 +50,7 @@ class GenericTrainer(ConfigManager):
         if self.params['trainer']['accelerator'] == 'gpu':
             if not torch.cuda.is_available():
                 raise ValueError('GPU not available')
+            torch.cuda.empty_cache()
             self._device = torch.device('cuda')
             logger.info(f'Using device: {self._device}')
             self._model = self._model.to(self._device)
@@ -89,6 +90,7 @@ class GenericTrainer(ConfigManager):
                     logger.info(
                         f'No improvement [{self._early_stopping["counter"]}/{patience}] -> {round(current_loss, 5)}'
                     )
+                    self._lr_schedulers['reduce_on_plateau'].step(current_loss)
 
                 if self._early_stopping['counter'] > patience:
                     if self._optimizer.param_groups[0]['lr'] < min_learning_rate:
@@ -97,8 +99,8 @@ class GenericTrainer(ConfigManager):
                         return True
 
                     logger.info('Minimum learning rate not reached, continue training')
-                    # todo: reduce learning rate
-                return False
+                    self._lr_schedulers['reduce_on_plateau'].step(current_loss)
+        return False
 
     def _check_save_model(self) -> None:
         """Check if model should be saved"""

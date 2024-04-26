@@ -84,7 +84,7 @@ class ConfigFile:
                 },
             },
             'training': {
-                'batch_size': 8,
+                'batch_size': 4,
                 'optimizers': {
                     'Adam': {
                         'active': False,
