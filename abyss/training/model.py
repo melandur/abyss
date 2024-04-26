@@ -387,7 +387,7 @@ class DynUNet(nn.Module):
 
 model = DynUNet(
     spatial_dims=3,
-    in_channels=1,
+    in_channels=4,
     out_channels=1,
     kernel_size=[[3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3]],
     strides=[[1, 1, 1], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]],

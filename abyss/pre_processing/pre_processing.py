@@ -3,6 +3,8 @@ from copy import deepcopy
 
 import numpy as np
 import SimpleITK as sitk
+import torch
+import torch.nn.functional as F
 from loguru import logger
 from scipy.ndimage import binary_fill_holes
 
@@ -102,13 +104,16 @@ class PreProcessing(ConfigManager):
     @staticmethod
     def resize_image(img: sitk.Image, params: dict) -> sitk.Image:
         """Resize image"""
-        original_size = img.GetSize()
-        resampling_factor = [sz / float(ns) for sz, ns in zip(original_size, params['dim'])]
-        resampler = sitk.ResampleImageFilter()
-        resampler.SetOutputSpacing(resampling_factor)
-        resampler.SetSize(params['dim'])
-        resampler.SetInterpolator(eval(params['interpolator']))
-        resampled_image = resampler.Execute(img)
+        img_arr = sitk.GetArrayFromImage(img)
+        img_arr = img_arr[None, None, :, :, :]
+        img_tensor = torch.tensor(img_arr, dtype=torch.float32)
+        img_tensor = F.interpolate(img_tensor, size=params['dim'], mode=params['interpolator'])
+        img_arr = img_tensor.numpy()
+        img_arr = img_arr[0, 0, :, :, :]
+        resampled_image = sitk.GetImageFromArray(img_arr)
+        resampled_image.SetOrigin(img.GetOrigin())
+        resampled_image.SetSpacing(img.GetSpacing())
+        resampled_image.SetDirection(img.GetDirection())
         return resampled_image
 
     @staticmethod

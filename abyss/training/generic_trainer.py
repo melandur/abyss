@@ -1,17 +1,17 @@
-import math
 import os
 import shutil
 from abc import abstractmethod
 
 import torch
 from loguru import logger
+from monai.inferers import sliding_window_inference
 from monai.losses import DiceCELoss, DiceLoss
 from tensorboardX import SummaryWriter
 from torch.nn import functional as F
-from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader
 
 from abyss.config import ConfigManager
+from abyss.training.helpers.lr_scheduler import LearningRateScheduler
 from abyss.training.model import model
 
 
@@ -35,7 +35,7 @@ class GenericTrainer(ConfigManager):
 
         self._model = model
         self._optimizer = self.__configure_optimizer()
-        self._lr_scheduler = self.__configure_scheduler()
+        self._lr_schedulers = self.__configure_scheduler()
 
         log_path = os.path.join(self.params['project']['result_store_path'], 'log')
         if os.path.exists(log_path):
@@ -71,37 +71,40 @@ class GenericTrainer(ConfigManager):
 
     def _check_early_stopping(self) -> bool:
         """Early stop if validation loss is not improving and learning rate is below threshold"""
-        if self._epoch % self.params['trainer']['check_val_every_n_epoch'] == 0 and self._epoch != 0:
-            patience = self.params['trainer']['early_stop']['patience']
-            min_delta = self.params['trainer']['early_stop']['min_delta']
-            best_loss = self._early_stopping['best_loss']
-            current_loss = self._early_stopping['current_loss']
-            min_learning_rate = self.params['trainer']['early_stop']['min_learning_rate']
+        if self._epoch > self.params['trainer']['lr_scheduler']['warmup_epochs']:
+            if self._epoch % self.params['trainer']['val_epoch'] == 0 and self._epoch != 0:
+                patience = self.params['trainer']['early_stop']['patience']
+                min_delta = self.params['trainer']['early_stop']['min_delta']
+                best_loss = self._early_stopping['best_loss']
+                current_loss = self._early_stopping['current_loss']
+                min_learning_rate = self.params['trainer']['early_stop']['min_learning_rate']
 
-            if best_loss > current_loss + min_delta:
-                self._early_stopping['best_loss'] = current_loss
-                self._early_stopping['counter'] = 0
-                logger.info(f'Improved [{self._early_stopping["counter"]}/{patience}] -> {round(current_loss, 5)}')
-            else:
-                self._early_stopping['counter'] += 1
-                logger.info(
-                    f'No improvement [{self._early_stopping["counter"]}/{patience}] -> {round(current_loss, 5)}'
-                )
+                if best_loss > current_loss + min_delta:
+                    self._early_stopping['best_loss'] = current_loss
+                    self._early_stopping['counter'] = 0
+                    self.__save_model('best')
+                    logger.info(f'Improved [{self._early_stopping["counter"]}/{patience}] -> {round(current_loss, 5)}')
+                else:
+                    self._early_stopping['counter'] += 1
+                    logger.info(
+                        f'No improvement [{self._early_stopping["counter"]}/{patience}] -> {round(current_loss, 5)}'
+                    )
 
-            if self._early_stopping['counter'] > patience:
-                if self._optimizer.param_groups[0]['lr'] < min_learning_rate:
-                    logger.info('Early stopping kicked in')
-                    self.__save_model('final')
-                    return True
+                if self._early_stopping['counter'] > patience:
+                    if self._optimizer.param_groups[0]['lr'] < min_learning_rate:
+                        logger.info('Early stopping kicked in')
+                        self.__save_model('final')
+                        return True
 
-                logger.info('Minimum learning rate not reached, continue training')
-                # todo: reduce learning rate
-            return False
+                    logger.info('Minimum learning rate not reached, continue training')
+                    # todo: reduce learning rate
+                return False
 
     def _check_save_model(self) -> None:
         """Check if model should be saved"""
-        if self._epoch % self.params['trainer']['save_model_every_n_epoch'] == 0 and self._epoch != 0:
-            self.__save_model()
+        if self.params['trainer']['auto_save']['active']:
+            if self._epoch % self.params['trainer']['auto_save']['n_epoch'] == 0 and self._epoch != 0:
+                self.__save_model()
 
     def __save_model(self, tag: str = None) -> None:
         """Save model to disk"""
@@ -115,7 +118,8 @@ class GenericTrainer(ConfigManager):
             'epoch': self._epoch,
             'model_state_dict': self._model.state_dict(),
             'optimizer_state_dict': self._optimizer.state_dict(),
-            'scheduler_state_dict': self._lr_scheduler.state_dict(),
+            'lr_scheduler_state_dict': self._lr_schedulers['lr_rate'].state_dict(),
+            'lr_reduce_on_plateau_state_dict': self._lr_schedulers['reduce_on_plateau'].state_dict(),
         }
         logger.info(f'Save model -> {model_path}')
         torch.save(state_dict, model_path)
@@ -125,7 +129,8 @@ class GenericTrainer(ConfigManager):
         checkpoint = torch.load(path)
         self._model.load_state_dict(checkpoint['model_state_dict'])
         self._optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        self._lr_scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        self._lr_schedulers['lr_rate'].load_state_dict(checkpoint['lr_scheduler_state_dict'])
+        self._lr_schedulers['reduce_on_plateau'].load_state_dict(checkpoint['lr_reduce_on_plateau_state_dict'])
         self._epoch = checkpoint['epoch']
 
     def __criterion(self, output: torch.Tensor, ground_truth: torch.Tensor) -> torch.Tensor:  # TODO: check speed
@@ -143,27 +148,20 @@ class GenericTrainer(ConfigManager):
             return F.cross_entropy(output, ground_truth)
 
         if 'cross_entropy_dice' == criterion:
-            dice_ce_loss = DiceCELoss()
+            dice_ce_loss = DiceCELoss(sigmoid=True)
             return dice_ce_loss(output, ground_truth)  # TODO: Not tested
 
         raise ValueError('Invalid criterion settings -> conf.py -> training -> criterion')
 
-    def __schedule_plan(self, step, warmup_steps, max_steps, lr_start, lr_end):
-        if step < warmup_steps:  # cosine annealing warmup
-            return lr_start + (lr_end - lr_start) * (1 - math.cos(step / warmup_steps * math.pi)) / 2
-
-        lr_current = self._optimizer.param_groups[0]['lr']
-        return lr_current * (1 - step / max_steps) ** 0.9  # nnunet poly learning rate
-
     def __configure_scheduler(self) -> torch.optim.lr_scheduler:
         """Returns configured scheduler"""
-        max_steps = self.params['trainer']['max_epochs']  # epochs are called steps in lr_scheduler
-        warmup_steps = self.params['trainer']['lr_scheduler']['warmup_steps']
+        total_epochs = self.params['trainer']['total_epochs']
+        warmup_epochs = self.params['trainer']['lr_scheduler']['warmup_epochs']
         lr_end = self._optimizer.defaults['lr']
-        lr_scheduler = LambdaLR(
-            self._optimizer,
-            lr_lambda=lambda step: self.__schedule_plan(step, warmup_steps, max_steps, 0.0, lr_end),
-        )
+        lr_scheduler = {
+            'lr_rate': LearningRateScheduler(self._optimizer, 0.0, lr_end, warmup_epochs, total_epochs),
+            'reduce_on_plateau': torch.optim.lr_scheduler.ReduceLROnPlateau(self._optimizer, mode='min'),
+        }
         return lr_scheduler
 
     def __configure_optimizer(self) -> torch.optim.Optimizer:
@@ -190,6 +188,17 @@ class GenericTrainer(ConfigManager):
             )
 
         raise ValueError('Invalid optimizer settings -> conf.py -> training -> optimizers')
+
+    def _inference(self, data: torch.Tensor) -> torch.Tensor:
+        """Inference"""
+
+        return sliding_window_inference(
+            inputs=data,
+            roi_size=(128, 128, 128),
+            sw_batch_size=1,
+            predictor=self._model,
+            overlap=0.25,
+        )
 
     @abstractmethod
     def setup(self, stage: str = None) -> torch.utils.data:

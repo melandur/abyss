@@ -6,9 +6,9 @@ class ConfigFile:
 
     def __init__(self) -> None:
         self.project_name = 'aby'
-        self.experiment_name = 'test'
+        self.experiment_name = 'tester'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'training_abyss')
+        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'training_ab')
 
     def __call__(self) -> dict:
         """Returns config file"""
@@ -64,8 +64,8 @@ class ConfigFile:
                         'crop_zeros': {'active': True},
                         'resize_image': {
                             'active': True,
-                            'dim': (182, 182, 182),
-                            'interpolator': 'sitk.sitkNearestNeighbor',
+                            'dim': (150, 150, 150),
+                            'interpolator': 'nearest',
                         },
                         'relabel_mask': {'active': True, 'label_dict': {1: 1, 2: 0, 3: 0, 4: 0}},  # original : new
                         'simple_itk_writer': {'active': True, 'file_type': 'sitk.sitkInt8'},
@@ -76,7 +76,7 @@ class ConfigFile:
                         'simple_itk_reader': {'active': True, 'orientation': 'LPS', 'file_type': 'sitk.sitkFloat32'},
                         'background_as_zeros': {'active': True, 'threshold': 0},
                         'crop_zeros': {'active': True},
-                        'resize_image': {'active': True, 'dim': (182, 182, 182), 'interpolator': 'sitk.sitkLinear'},
+                        'resize_image': {'active': True, 'dim': (150, 150, 150), 'interpolator': 'trilinear'},
                         'clip_percentiles': {'active': True, 'lower': 0.5, 'upper': 99.5},
                         'z_score_norm': {'active': True, 'foreground_only': True},
                         'simple_itk_writer': {'active': True, 'file_type': 'sitk.sitkFloat32'},
@@ -108,20 +108,20 @@ class ConfigFile:
             },
             'trainer': {
                 'default_root_dir': os.path.join(experiment_path, '4_results'),
-                'max_epochs': 1000,
+                'total_epochs': 1000,
                 'automated_mixed_precision': {  # todo: implement
                     'active': True,
                     'device': 'cuda',
                     'precision': 'float16',  # 'bfloat32', 'float16'
                 },
-                'check_val_every_n_epoch': 10,
-                'save_model_every_n_epoch': 5,
+                'val_epoch': 10,
+                'auto_save': {'active': True, 'n_epoch': 50},
                 'accelerator': 'gpu',
                 'deterministic': False,
                 'compile': False,
                 'resume_from_checkpoint': None,
-                'early_stop': {'patience': 50, 'min_learning_rate': 1e-6, 'min_delta': 1e-4},
-                'lr_scheduler': {'warmup_steps': 20},
+                'early_stop': {'patience': 17, 'min_learning_rate': 1e-6, 'min_delta': 1e-4},
+                'lr_scheduler': {'warmup_epochs': 20},
             },
             'production': {
                 'checkpoint_name': None,

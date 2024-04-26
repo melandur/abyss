@@ -31,11 +31,11 @@ class Trainer(GenericTrainer):
     def training_iteration(self) -> None:
         """Training iteration"""
         self._model.train()
-        for self._epoch in range(self.params['trainer']['max_epochs']):
+        for self._epoch in range(self.params['trainer']['total_epochs']):
             logger.info(f'Epoch: {self._epoch}')
             for batch in self.train_dataloader():
                 self.training_step(batch)
-            self._lr_scheduler.step()
+            self._lr_schedulers['lr_rate'].step(self._epoch)
             self.validation_iteration()
             self._check_early_stopping()
             self._check_save_model()
@@ -45,6 +45,7 @@ class Trainer(GenericTrainer):
             train_loss_average = sum(self._losses['train']) / len(self._losses['train'])
             self._losses['train'] = []  # reset every epoch
             self._log.add_scalar('train_loss', train_loss_average, self._epoch)
+            self._log.flush()
 
     def training_step(self, batch: torch.Tensor) -> None:
         """Predict, loss, log, backprop, optimizer step"""
@@ -59,28 +60,32 @@ class Trainer(GenericTrainer):
 
     def validation_iteration(self) -> None:
         """Validation iteration"""
-        if self._epoch % self.params['trainer']['check_val_every_n_epoch'] == 0 and self._epoch != 0:
-            self._model.eval()
-            with torch.no_grad():
-                for batch in self.val_dataloader():
-                    val_loss, val_dice = self.validation_step(batch)
-                    self._losses['val'].append(val_loss)
-                    self._metrics['val']['dice'].append(val_dice)
+        if self._epoch > self.params['trainer']['lr_scheduler']['warmup_epochs']:
+            if self._epoch % self.params['trainer']['val_epoch'] == 0 and self._epoch != 0:
+                self._model.eval()
+                with torch.no_grad():
+                    for batch in self.val_dataloader():
+                        val_loss, val_dice = self.validation_step(batch)
+                        self._losses['val'].append(val_loss)
+                        self._metrics['val']['dice'].append(val_dice)
 
-                val_loss_average = sum(self._losses['val']) / len(self._losses['val'])
-                self._early_stopping['current_loss'] = val_loss_average
-                self._losses['val'] = []  # reset
-                self._log.add_scalar('val_loss_average', val_loss_average, self._epoch)
-                val_dice_average = sum(self._metrics['val']['dice']) / len(self._metrics['val']['dice'])
-                self._metrics['val']['dice'] = []
-                self._log.add_scalar('val_dice_average', val_dice_average, self._epoch)
+                    val_loss_average = sum(self._losses['val']) / len(self._losses['val'])
+                    self._lr_schedulers['reduce_on_plateau'].step(val_loss_average)
+                    self._early_stopping['current_loss'] = val_loss_average
+                    self._losses['val'] = []  # reset
+                    self._log.add_scalar('val_loss_average', val_loss_average, self._epoch)
+                    val_dice_average = sum(self._metrics['val']['dice']) / len(self._metrics['val']['dice'])
+                    self._metrics['val']['dice'] = []
+                    self._log.add_scalar('val_dice_average', val_dice_average, self._epoch)
+                    self._log.flush()
 
     def validation_step(self, batch: torch.Tensor) -> tuple:
         """Predict, loss, log"""
         data, labels = batch
         data, labels = data.to(self._device), labels.to(self._device)
-        output = self._model(data)
+        output = self._inference(data)
         loss = self._compute_loss(output, labels)
+        output = torch.softmax(output, dim=1)
         metric_results = metric_dice(output, labels)  # todo: needs to hold multiple metrics, returns dict
         return loss.item(), metric_results.item()
 
@@ -98,13 +103,15 @@ class Trainer(GenericTrainer):
         self._log.add_scalar('test_loss', test_loss_average, 0)
         test_dice_average = sum(self._metrics['test']['dice']) / len(self._metrics['test']['dice'])
         self._log.add_scalar('test_dice', test_dice_average, 0)
+        self._log.flush()
 
     def test_step(self, batch: torch.Tensor) -> tuple:
         """Predict, loss, log"""
         data, labels = batch
         data, labels = data.to(self._device), labels.to(self._device)
-        output = self._model(data)
+        output = self._inference(data)
         loss = self._compute_loss(output, labels)
+        output = torch.softmax(output, dim=1)
         metric_results = metric_dice(output, labels)
         return loss.item(), metric_results.item()
 
