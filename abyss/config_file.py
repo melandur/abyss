@@ -84,7 +84,7 @@ class ConfigFile:
                 },
             },
             'training': {
-                'batch_size': 4,
+                'batch_size': 8,
                 'optimizers': {
                     'Adam': {
                         'active': False,
@@ -96,7 +96,7 @@ class ConfigFile:
                     },
                     'SGD': {
                         'active': True,
-                        'learning_rate': 1e-3,
+                        'learning_rate': 1e-4,
                         'momentum': 0.99,
                         'weight_decay': 3e-5,
                         'nesterov': True,

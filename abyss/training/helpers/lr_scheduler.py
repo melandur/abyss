@@ -13,13 +13,14 @@ class LearningRateScheduler:
 
     def step(self, epoch: int) -> float:
         """Update optimizer learning rate for each epoch"""
-        if epoch < self.warmup_epochs:
+        if epoch < self.warmup_epochs:  # cosine annealing warmup
             lr = (
                 self.lr_start + (self.lr_end - self.lr_start) * (1 - math.cos(epoch / self.warmup_epochs * math.pi)) / 2
-            )  # cosine annealing warmup
-        else:
+            )
+        else:  # poly decay
+            epoch = epoch - self.warmup_epochs
             lr_current = self.optimizer.param_groups[0]['lr']
-            lr = lr_current * (1 - epoch / self.total_epochs) ** 0.9  # poly decay
+            lr = lr_current * (1 - epoch / (self.total_epochs - self.warmup_epochs)) ** 0.9
 
         for param_group in self.optimizer.param_groups:
             param_group['lr'] = lr

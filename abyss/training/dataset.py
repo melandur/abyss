@@ -46,7 +46,7 @@ class Dataset(torch_Dataset):
     def prepare_label(self, case_name: str) -> torch.tensor:
         """Load label from hdf5 and stack/add_dimension or what ever"""
         label = self.h5_object.get(f'{self.set_name}/{case_name}/labels/images/mask')
-        label = np.asarray(label, dtype='int8')  # TODO: int it goes
+        label = np.asarray(label, dtype='int8')
         label = np.expand_dims(label, axis=0)  # add channel
         return torch.from_numpy(label)
 

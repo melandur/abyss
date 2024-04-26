@@ -43,14 +43,13 @@ class GenericTrainer(ConfigManager):
         self._log = SummaryWriter(log_dir=log_path)
         logger.info(f'tensorboard --logdir={log_path}')
 
-        self.__check_device()
-        self.__compile_model_option()
+        self._check_device()
+        self._compile_model_option()
 
-    def __check_device(self):
+    def _check_device(self):
         if self.params['trainer']['accelerator'] == 'gpu':
             if not torch.cuda.is_available():
                 raise ValueError('GPU not available')
-            torch.cuda.empty_cache()
             self._device = torch.device('cuda')
             logger.info(f'Using device: {self._device}')
             self._model = self._model.to(self._device)
@@ -59,7 +58,7 @@ class GenericTrainer(ConfigManager):
         else:
             raise ValueError('Invalid trainer.accelerator, choose from [gpu, cpu]')
 
-    def __compile_model_option(self) -> None:
+    def _compile_model_option(self) -> None:
         """Compile model"""
         if self.params['trainer']['compile']:
             logger.info('Compile model')
@@ -126,9 +125,13 @@ class GenericTrainer(ConfigManager):
         logger.info(f'Save model -> {model_path}')
         torch.save(state_dict, model_path)
 
-    def _load_model(self, path: str) -> None:
+    def _load_model(self, tag: str) -> None:
         """Load model from path"""
-        checkpoint = torch.load(path)
+        model_name = f'{self.params["project"]["experiment_name"]}_{tag}.pth'
+        folder_path = os.path.join(self.params['project']['result_store_path'], 'models')
+        model_path = os.path.join(folder_path, model_name)
+        logger.info(f'Load model -> {model_path}')
+        checkpoint = torch.load(model_path)
         self._model.load_state_dict(checkpoint['model_state_dict'])
         self._optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self._lr_schedulers['lr_rate'].load_state_dict(checkpoint['lr_scheduler_state_dict'])

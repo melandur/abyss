@@ -90,6 +90,8 @@ class Trainer(GenericTrainer):
 
     def test_iteration(self) -> None:
         """Test iteration"""
+        self._load_model('best')
+        self._check_device()
         self._model.eval()
         with torch.no_grad():
             for batch in self.test_dataloader():
@@ -111,6 +113,12 @@ class Trainer(GenericTrainer):
         output = self._inference(data)
         loss = self._compute_loss(output, labels)
         output = torch.softmax(output, dim=1)
+        print(output.shape)
+        x = output[0, 0, :, :, :]
+        x = x.cpu().numpy()
+        import SimpleITK as sitk
+
+        sitk.WriteImage(sitk.GetImageFromArray(x), 'test.nii')
         metric_results = metric_dice(output, labels)
         return loss.item(), metric_results.item()
 
