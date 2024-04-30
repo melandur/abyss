@@ -115,21 +115,12 @@
 
 
 
-### Built With
-
-* [MONAI](https://monai.io/)
-* [PyTorch-Lightning](https://www.pytorchlightning.ai/)
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-
-
 <!-- GETTING STARTED -->
 ## Getting Started
 
 ### Prerequisites
 
-* Python >= 3.9
+* Python >= 3.10
 
 ### Installation
 
