@@ -4,10 +4,11 @@ import os
 from typing import Optional
 
 import matplotlib.pyplot as plt
+import numpy as np
 from torch.utils.data import DataLoader
 
 from abyss.config import ConfigManager
-from abyss.training.augmentation.augmentation import transforms
+from abyss.training.augmentation.augmentation import transform
 from abyss.training.dataset import Dataset
 
 
@@ -19,7 +20,7 @@ def show_train_batch(save_path: Optional[str] = None):
     params = config_manager.params
     path_memory = config_manager.path_memory
     ori_dataset = Dataset(params, path_memory, 'train')
-    aug_dataset = Dataset(params, path_memory, 'train', transforms)
+    aug_dataset = Dataset(params, path_memory, 'train')
 
     ori_loader = DataLoader(ori_dataset, 1)
     aug_loader = DataLoader(aug_dataset, 1)
@@ -35,12 +36,14 @@ def show_train_batch(save_path: Optional[str] = None):
         for (ori_data, ori_label), (aug_data, aug_label) in zip(ori_loader, aug_loader):
 
             plt.subplot(1, 2, 1)
-            plt.imshow(ori_data[0], cmap='gray')
-            plt.imshow(ori_label[0], cmap='gray', alpha=0.5)
+            plt.imshow(ori_data[0][0][100], cmap='gray')
+            plt.imshow(ori_label[0][2][100], cmap='gray', alpha=0.5)
 
             plt.subplot(1, 2, 2)
-            plt.imshow(aug_data[0], cmap='gray')
-            plt.imshow(aug_label[0], cmap='gray', alpha=0.5)
+            plt.imshow(aug_data[0][0][100], cmap='gray')
+
+            # plt.imshow(aug_label[0][1][100], cmap='gray', alpha=0.5)
+            # plt.imshow(aug_label[0][2][100], cmap='gray', alpha=0.5)
 
             if save_path:
                 idx += 1

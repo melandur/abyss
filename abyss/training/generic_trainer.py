@@ -3,6 +3,7 @@ import shutil
 from abc import abstractmethod
 
 import torch
+import torch.nn as nn
 from loguru import logger
 from monai.inferers import sliding_window_inference
 from monai.losses import DiceCELoss, DiceLoss
@@ -12,6 +13,7 @@ from torch.utils.data import DataLoader
 
 from abyss.config import ConfigManager
 from abyss.training.helpers.lr_scheduler import LearningRateScheduler
+from abyss.training.metrics import Metrics
 from abyss.training.model import model
 
 
@@ -23,17 +25,16 @@ class GenericTrainer(ConfigManager):
         self._shared_state.update(kwargs)
 
         self._epoch = None
-
         self._val_set = None
         self._test_set = None
         self._train_set = None
         self._device = None
 
-        self._metrics = {'train': {'dice': []}, 'val': {'dice': []}, 'test': {'dice': []}}
         self._losses = {'train': [], 'val': [], 'test': []}
         self._early_stopping = {'counter': 0, 'best_loss': float('inf'), 'current_loss': float('inf')}
 
         self._model = model
+        self._metrics = Metrics()
         self._optimizer = self.__configure_optimizer()
         self._lr_schedulers = self.__configure_scheduler()
 
@@ -42,6 +43,7 @@ class GenericTrainer(ConfigManager):
             shutil.rmtree(log_path, ignore_errors=True)
         self._log = SummaryWriter(log_dir=log_path)
         logger.info(f'tensorboard --logdir={log_path}')
+        self._log.flush()
 
         self._check_device()
         self._compile_model_option()
@@ -143,18 +145,20 @@ class GenericTrainer(ConfigManager):
         criterion = self.params['training']['criterion']
 
         if 'mse' == criterion:
-            return F.mse_loss(output, ground_truth)
+            output = torch.sigmoid(output)
+            return F.mse_loss(output, ground_truth.to(torch.float32))
 
         if 'dice' == criterion:
-            dice_loss = DiceLoss()
-            return dice_loss(output, ground_truth)  # TODO: Not tested
+            dice_loss = DiceLoss(sigmoid=True)
+            return dice_loss(output, ground_truth)
 
         if 'cross_entropy' == criterion:
-            return F.cross_entropy(output, ground_truth)
+            loss = F.cross_entropy(output, ground_truth.to(torch.float32))
+            return loss
 
         if 'cross_entropy_dice' == criterion:
             dice_ce_loss = DiceCELoss(sigmoid=True)
-            return dice_ce_loss(output, ground_truth)  # TODO: Not tested
+            return dice_ce_loss(output, ground_truth)
 
         raise ValueError('Invalid criterion settings -> conf.py -> training -> criterion')
 

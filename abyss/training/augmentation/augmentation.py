@@ -1,10 +1,19 @@
+import monai.networks.utils
 import monai.transforms as tf
+import torch
 import torchio as tio
+
+from abyss.config import ConfigManager
 
 # from abyss.training.augmentation.custom_augmentations import (
 #     RandomChannelDropout,
 #     RandomChannelShuffle,
 # )
+
+
+config = ConfigManager()
+labels = config.params['training']['output_channels']
+
 
 spatial_transforms = tf.Compose(
     [
@@ -15,33 +24,33 @@ spatial_transforms = tf.Compose(
             random_center=True,
             random_size=False,
         ),
-        tf.RandRotated(
-            keys=['data', 'labels'],
-            range_x=(-1, 1),
-            range_y=(-1, 1),
-            range_z=(-1, 1),
-            prob=0.8,
-            mode='nearest',
-        ),
-        tf.OneOf(
-            [
-                tio.RandomFlip(
-                    include=['data', 'labels'],
-                    axes=0,
-                    flip_probability=1.0,
-                ),
-                tio.RandomFlip(
-                    include=['data', 'labels'],
-                    axes=1,
-                    flip_probability=1.0,
-                ),
-                tio.RandomFlip(
-                    include=['data', 'labels'],
-                    axes=2,
-                    flip_probability=1.0,
-                ),
-            ]
-        ),
+        # tf.RandRotated(
+        #     keys=['data', 'labels'],
+        #     range_x=(-1, 1),
+        #     range_y=(-1, 1),
+        #     range_z=(-1, 1),
+        #     prob=0.8,
+        #     mode='nearest',
+        # ),
+        # tf.OneOf(
+        #     [
+        #         tio.RandomFlip(
+        #             include=['data', 'labels'],
+        #             axes=0,
+        #             flip_probability=1.0,
+        #         ),
+        #         tio.RandomFlip(
+        #             include=['data', 'labels'],
+        #             axes=1,
+        #             flip_probability=1.0,
+        #         ),
+        #         tio.RandomFlip(
+        #             include=['data', 'labels'],
+        #             axes=2,
+        #             flip_probability=1.0,
+        #         ),
+        #     ]
+        # ),
         # tf.Rand3DElasticd(
         #     keys=['data', 'label'],
         #     sigma_range=(5, 7),
@@ -50,6 +59,7 @@ spatial_transforms = tf.Compose(
         #     magnitude_range=(50, 110),
         #     mode='nearest',
         #     padding_mode='zeros',
+        #     as_tensor_output=True,
         #     prob=1.0,
         # ),
         # tf.Rand2DElasticd(
@@ -119,14 +129,48 @@ artefact_transforms = tf.OneOf(
     ]
 )
 
-transform = tf.Compose(
+
+class ConvertToMultiChannel(tf.MapTransform):
+    """
+    Convert labels to multi channels based on brats classes:
+    label 1 is the peritumoral edema
+    label 2 is the GD-enhancing tumor
+    label 3 is the necrotic and non-enhancing tumor core
+    The possible classes are TC (Tumor core), WT (Whole tumor)
+    and ET (Enhancing tumor).
+
+    """
+
+    def __call__(self, data):
+        d = dict(data)
+        for key in self.keys:
+            result = []
+            for label, value in labels.items():
+                result.append(d[key] == value)
+            d[key] = torch.stack(result, dim=0).float()
+        return d
+
+
+train_transform = tf.Compose(
     [
+        ConvertToMultiChannel(keys=['labels']),
         spatial_transforms,
-        intensity_transforms,
-        artefact_transforms,
+        # intensity_transforms,
+        # artefact_transforms,
         # RandomChannelDropout(include=['data'], num_channels=1, fill_value=0.0, prob=0.8),
         # RandomChannelShuffle(include=['data'], prob=1.0),
         # tf.ScaleIntensityd(keys=['data'], minv=0.0, maxv=1.0),
-        tio.OneHot(keys=['labels'], num_classes=1),
+    ]
+)
+
+val_transform = tf.Compose(
+    [
+        ConvertToMultiChannel(keys=['labels']),
+    ]
+)
+
+test_transform = tf.Compose(
+    [
+        ConvertToMultiChannel(keys=['labels']),
     ]
 )

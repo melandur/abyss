@@ -6,9 +6,9 @@ class ConfigFile:
 
     def __init__(self) -> None:
         self.project_name = 'aby'
-        self.experiment_name = 'tester'
+        self.experiment_name = 'brats'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'training_ab')
+        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'MICCAI_4', '1')
 
     def __call__(self) -> dict:
         """Returns config file"""
@@ -19,7 +19,7 @@ class ConfigFile:
                 'data_reader': False,
                 'pre_processing': False,
                 'create_trainset': False,
-                'training': {'fit': True, 'test': False},
+                'training': {'fit': False, 'test': True},
                 'production': {'extract_weights': False, 'inference': False, 'post_processing': False},
             },
             'project': {
@@ -46,7 +46,7 @@ class ConfigFile:
                     },
                     'data': {
                         'images': {
-                            't1c': '_t1c.nii.gz',
+                            't1c': '_t1ce.nii.gz',
                             't1': '_t1.nii.gz',
                             't2': '_t2.nii.gz',
                             'flair': '_flair.nii.gz',
@@ -64,10 +64,10 @@ class ConfigFile:
                         'crop_zeros': {'active': True},
                         'resize_image': {
                             'active': True,
-                            'dim': (150, 150, 150),
+                            'dim': (240, 240, 150),
                             'interpolator': 'nearest',
                         },
-                        'relabel_mask': {'active': True, 'label_dict': {1: 1, 2: 0, 3: 0, 4: 0}},  # original : new
+                        'relabel_mask': {'active': False, 'label_dict': {1: 1, 2: 2, 3: 3, 4: 3}},  # original : new
                         'simple_itk_writer': {'active': True, 'file_type': 'sitk.sitkInt8'},
                     },
                 },
@@ -76,7 +76,7 @@ class ConfigFile:
                         'simple_itk_reader': {'active': True, 'orientation': 'LPS', 'file_type': 'sitk.sitkFloat32'},
                         'background_as_zeros': {'active': True, 'threshold': 0},
                         'crop_zeros': {'active': True},
-                        'resize_image': {'active': True, 'dim': (150, 150, 150), 'interpolator': 'trilinear'},
+                        'resize_image': {'active': True, 'dim': (240, 240, 150), 'interpolator': 'trilinear'},
                         'clip_percentiles': {'active': True, 'lower': 0.5, 'upper': 99.5},
                         'z_score_norm': {'active': True, 'foreground_only': True},
                         'simple_itk_writer': {'active': True, 'file_type': 'sitk.sitkFloat32'},
@@ -84,6 +84,11 @@ class ConfigFile:
                 },
             },
             'training': {
+                'output_channels': {
+                    'enhanced': 4,
+                    'necrosis': 1,
+                    'edema': 2,
+                },
                 'batch_size': 8,
                 'optimizers': {
                     'Adam': {
@@ -96,7 +101,7 @@ class ConfigFile:
                     },
                     'SGD': {
                         'active': True,
-                        'learning_rate': 1e-4,
+                        'learning_rate': 1e-3,
                         'momentum': 0.99,
                         'weight_decay': 3e-5,
                         'nesterov': True,
@@ -115,13 +120,14 @@ class ConfigFile:
                     'precision': 'float16',  # 'bfloat32', 'float16'
                 },
                 'val_epoch': 10,
-                'auto_save': {'active': True, 'n_epoch': 50},
+                'auto_save': {'active': True, 'n_epoch': 100},
                 'accelerator': 'gpu',
                 'deterministic': False,
                 'compile': False,
                 'resume_from_checkpoint': None,
                 'early_stop': {'patience': 17, 'min_learning_rate': 1e-6, 'min_delta': 1e-4},
-                'lr_scheduler': {'warmup_epochs': 20},
+                'lr_scheduler': {'warmup_epochs': 50},
+                'metrics': ['dice_score'],
             },
             'production': {
                 'checkpoint_name': None,

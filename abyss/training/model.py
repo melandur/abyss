@@ -1,12 +1,27 @@
-# from monai.networks.nets import UNet
+from typing import List, Optional, Sequence, Tuple, Union
+
+import torch
+import torch.nn as nn
+from monai.networks.blocks.dynunet_block import UnetBasicBlock, UnetOutBlock, UnetResBlock, UnetUpBlock
+from monai.networks.nets import SegResNet, UNet
+from torch.nn.functional import interpolate
 
 # model = UNet(
 #     spatial_dims=3,
-#     in_channels=1,
-#     out_channels=1,
+#     in_channels=4,
+#     out_channels=3,
 #     channels=(16, 32, 64, 128, 256),
 #     strides=(2, 2, 2, 2),
 #     num_res_units=0,
+# )
+
+# model = SegResNet(
+#     blocks_down=[1, 2, 2, 4],
+#     blocks_up=[1, 1, 1],
+#     init_filters=16,
+#     in_channels=4,
+#     out_channels=3,
+#     dropout_prob=0.2,
 # )
 
 
@@ -23,12 +38,7 @@
 
 # isort: dont-add-import: from __future__ import annotations
 
-from typing import List, Optional, Sequence, Tuple, Union
 
-import torch
-import torch.nn as nn
-from monai.networks.blocks.dynunet_block import UnetBasicBlock, UnetOutBlock, UnetResBlock, UnetUpBlock
-from torch.nn.functional import interpolate
 
 
 class DynUNetSkipLayer(nn.Module):
@@ -388,11 +398,11 @@ class DynUNet(nn.Module):
 model = DynUNet(
     spatial_dims=3,
     in_channels=4,
-    out_channels=1,
+    out_channels=3,
     kernel_size=[[3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3]],
     strides=[[1, 1, 1], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]],
     upsample_kernel_size=[[2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]],
-    dropout=None,
+    dropout=0.2,
     norm_name='INSTANCE',
     act_name='leakyrelu',
     deep_supervision=False,
