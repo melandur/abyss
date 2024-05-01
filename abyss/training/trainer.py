@@ -1,3 +1,4 @@
+import time
 import torch
 from loguru import logger
 from torch.utils.data import DataLoader
@@ -17,20 +18,21 @@ class Trainer(GenericTrainer):
     def setup(self, stage: str = None) -> torch.utils.data:
         """Define model behaviours"""
         if stage == 'fit':
-            logger.info('Setup model for training')
+            logger.info('Setup for training')
             self._train_set = Dataset(self.params, self.path_memory, 'train', train_transform)
             self._val_set = Dataset(self.params, self.path_memory, 'val', val_transform)
             self.training_iteration()
 
         if stage == 'test':
-            logger.info('Setup model for testing')
+            logger.info('Setup for testing')
             self._test_set = Dataset(self.params, self.path_memory, 'test', test_transform)
             self.test_iteration()
 
     def training_iteration(self) -> None:
         """Training iteration"""
+        logger.info('Training started')
         for self._epoch in range(self.params['trainer']['total_epochs']):
-            logger.info(f'Epoch: {self._epoch}')
+            time_start = time.time()
             self._model.train()
             for batch in self.train_dataloader():
                 self.training_step(batch)
@@ -46,6 +48,7 @@ class Trainer(GenericTrainer):
             self._losses['train'] = []  # reset every epoch
             self._log.add_scalar('train_loss', train_loss_average, self._epoch)
             self._log.flush()
+            self._execution_time(f'Epoch {self._epoch}', time_start)
 
     def training_step(self, batch: torch.Tensor) -> None:
         """Predict, loss, log, backprop, optimizer step"""
@@ -85,6 +88,7 @@ class Trainer(GenericTrainer):
 
     def test_iteration(self) -> None:
         """Test iteration"""
+        logger.info('Testing started')
         self._load_model('best')
         self._check_device()
         self._model.eval()
@@ -126,7 +130,7 @@ class Trainer(GenericTrainer):
         """Validation dataloader"""
         return DataLoader(
             self._val_set,
-            batch_size=self.params['training']['batch_size'],
+            batch_size=2,
             num_workers=self.params['meta']['num_workers'],
             shuffle=False,
         )

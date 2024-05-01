@@ -1,9 +1,9 @@
+import time
 import os
 import shutil
 from abc import abstractmethod
 
 import torch
-import torch.nn as nn
 from loguru import logger
 from monai.inferers import sliding_window_inference
 from monai.losses import DiceCELoss, DiceLoss
@@ -68,7 +68,15 @@ class GenericTrainer(ConfigManager):
 
     def _compute_loss(self, output: torch.Tensor, ground_truth: torch.Tensor) -> torch.Tensor:
         """Calculate and return loss"""
-        loss = self.__criterion(output, ground_truth)
+        if output.dim() == 6:  # deep supervision
+            output_layers = output.shape[1]  # extract for deep supervision [B, DS, C, H, W, D]
+            ds_loss_weights = [1.0 / 2 ** x for x in range(1, output_layers + 1)]
+
+            loss = torch.tensor(0.0).to(self._device)
+            for layer_num, weights in zip(range(output_layers), ds_loss_weights):
+                loss += self.__criterion(output[:, layer_num, ...], ground_truth) * weights
+        else:
+            loss = self.__criterion(output, ground_truth)
         return loss
 
     def _check_early_stopping(self) -> bool:
@@ -208,6 +216,16 @@ class GenericTrainer(ConfigManager):
             predictor=self._model,
             overlap=0.25,
         )
+
+    @staticmethod
+    def _execution_time(name: str, start_time: float) -> None:
+        """Prints the execution"""
+        end_time = time.time()
+        execution_time = end_time - start_time
+        hours = int(execution_time // 3600)
+        minutes = int((execution_time % 3600) // 60)
+        seconds = int(execution_time % 60)
+        logger.info(f'{name} -> {hours:02d}:{minutes:02d}:{seconds:02d}')
 
     @abstractmethod
     def setup(self, stage: str = None) -> torch.utils.data:

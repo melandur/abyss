@@ -403,10 +403,10 @@ model = DynUNet(
     strides=[[1, 1, 1], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]],
     upsample_kernel_size=[[2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]],
     dropout=0.2,
-    norm_name='INSTANCE',
-    act_name='leakyrelu',
-    deep_supervision=False,
-    deep_supr_num=3,
+    norm_name=("INSTANCE", {"affine": True}),
+    act_name=("leakyrelu", {"inplace": True, "negative_slope": 0.01}),
+    deep_supervision=True,
+    deep_supr_num=2,
     res_block=False,
 )
 

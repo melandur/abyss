@@ -8,7 +8,7 @@ class ConfigFile:
         self.project_name = 'aby'
         self.experiment_name = 'brats'
         self.project_base_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'MICCAI_4', '1')
+        self.dataset_folder_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'MICCAI_4')
 
     def __call__(self) -> dict:
         """Returns config file"""
@@ -19,7 +19,7 @@ class ConfigFile:
                 'data_reader': False,
                 'pre_processing': False,
                 'create_trainset': False,
-                'training': {'fit': False, 'test': True},
+                'training': {'fit': True, 'test': False},
                 'production': {'extract_weights': False, 'inference': False, 'post_processing': False},
             },
             'project': {
@@ -120,7 +120,7 @@ class ConfigFile:
                     'precision': 'float16',  # 'bfloat32', 'float16'
                 },
                 'val_epoch': 10,
-                'auto_save': {'active': True, 'n_epoch': 100},
+                'auto_save': {'active': False, 'n_epoch': 1000},
                 'accelerator': 'gpu',
                 'deterministic': False,
                 'compile': False,

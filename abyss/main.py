@@ -42,10 +42,10 @@ class Pipeline:
         # self.inference()
         # self.post_processing()
 
-        self.__execute_time()
+        self.__execution_time()
 
     @staticmethod
-    def __execute_time():
+    def __execution_time():
         """Prints the execution time of the pipeline"""
         end_time = time.time()
         execution_time = end_time - start_time
