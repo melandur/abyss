@@ -3,15 +3,19 @@ import logging
 import ignite.distributed as idist
 import torch
 import torch.distributed as dist
-from create_dataset import get_loader
-from create_network import get_network
-from evaluator import DynUNetEvaluator
+from ignite.contrib.handlers import create_lr_scheduler_with_warmup
+from ignite.engine import Events
+from ignite.handlers import EarlyStopping
 from monai.handlers import CheckpointSaver, LrScheduleHandler, MeanDice, StatsHandler, ValidationHandler, from_engine
 from monai.inferers import SimpleInferer, SlidingWindowInferer
 from monai.losses import DiceCELoss
 from monai.utils import set_determinism
 from torch.nn.parallel import DistributedDataParallel
-from trainer import DynUNetTrainer
+
+from abyss.training.create_dataset import get_loader
+from abyss.training.create_network import get_network
+from abyss.training.evaluator import DynUNetEvaluator
+from abyss.training.trainer import DynUNetTrainer
 
 
 def validation(config: dict) -> None:
@@ -86,6 +90,10 @@ def train(config: dict) -> None:
 
     # produce the network
     net = get_network(config)
+
+    if config['training']['compile']:
+        net = torch.compile(net)  # todo: check this
+
     net = net.to(device)
 
     if config['training']['multi_gpu']:
@@ -101,6 +109,14 @@ def train(config: dict) -> None:
 
     max_epochs = config['training']['max_epochs']
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda epoch: (1 - epoch / max_epochs) ** 0.9)
+
+    if config['training']['warmup']['active']:
+        scheduler = create_lr_scheduler_with_warmup(
+            scheduler,
+            warmup_start_value=0.0,
+            warmup_end_value=config['training']['learning_rate'],
+            warmup_duration=config['training']['warmup']['epochs'],
+        )
 
     # produce evaluator
     val_handlers = (
@@ -142,23 +158,14 @@ def train(config: dict) -> None:
     # produce trainer
     loss = DiceCELoss(to_onehot_y=True, softmax=True, batch=True)
     train_handlers = [
-        ValidationHandler(
-            validator=evaluator,
-            interval=config['training']['val_interval'],
-            epoch_level=True,
-        )
+        ValidationHandler(validator=evaluator, interval=config['training']['val_interval'], epoch_level=True)
     ]
 
-    if config['trainer']['lr_decay_flag']:
+    if config['trainer']['lr_decay']:
         train_handlers += [LrScheduleHandler(lr_scheduler=scheduler, print_lr=True)]
 
     if idist.get_rank() == 0:
-        train_handlers += [
-            StatsHandler(
-                tag_name='train_loss',
-                output_transform=from_engine(['loss'], first=True),
-            )
-        ]
+        train_handlers += [StatsHandler(tag_name='train_loss', output_transform=from_engine(['loss'], first=True))]
 
     trainer = DynUNetTrainer(
         device=device,
@@ -173,6 +180,16 @@ def train(config: dict) -> None:
         train_handlers=train_handlers,
         amp=config['training']['amp'],
     )
+
+    trainer.add_event_handler(Events.ITERATION_STARTED, scheduler)
+
+    if config['training']['early_stop']['active']:
+        early_stop = EarlyStopping(
+            patience=config['training']['early_stop']['patience'],
+            score_function=lambda engine: -engine.state.metrics['val_mean_dice'],
+            trainer=trainer,
+        )
+        evaluator.add_event_handler(Events.COMPLETED, early_stop)
 
     if config['training']['local_rank'] > 0:
         evaluator.logger.setLevel(logging.WARNING)

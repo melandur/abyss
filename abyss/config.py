@@ -34,8 +34,8 @@ class ConfigFile:
             'trainer': {
                 'batch_size': 3,
                 'patch_size': [128, 128, 128],
-                'lr_decay_flag': False,
-                'tta': False,
+                'lr_decay': True,
+                'tta': True,
             },
             'training': {
                 'fold': 0,
@@ -43,13 +43,15 @@ class ConfigFile:
                 'num_workers': {'train': 4, 'val': 4},
                 'max_epochs': 1000,
                 'learning_rate': 1e-3,
+                'warmup': {'active': True, 'epochs': 3},
+                'early_stop': {'active': True, 'patience': 10},
                 'local_rank': 0,
                 'cache_rate': 0.1,
                 'val_interval': 1,
                 'multi_gpu': False,
                 'amp': False,
-                'deterministic': False,
                 'compile': False,  # todo: add this to the pipeline
+                'deterministic': False,
                 'checkpoint_path': None,
                 'seed': 42,  # find the truth in randomness
             },

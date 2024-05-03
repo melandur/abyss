@@ -3,7 +3,8 @@ import os
 
 import torch.distributed as dist
 from monai.data import CacheDataset, DataLoader, partition_dataset
-from transforms import get_transforms
+
+from abyss.training.transforms import get_transforms
 
 
 def get_loader(config: dict, mode: str):
