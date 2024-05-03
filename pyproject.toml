@@ -1,34 +1,21 @@
 [tool.poetry]
 name = "abyss"
 version = "0.1.0"
-description = "here to learn"
+description = ""
 authors = ["melandur <account@qunit.ch>"]
-license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
-
-loguru = "^0.7.2"
-h5py = "^3.10.0"
-numpyencoder = "^0.3.0"
-rich = "^13.7.1"
-matplotlib = "^3.8.3"
-torch = {url = "https://download.pytorch.org/whl/cu121/torch-2.2.2%2Bcu121-cp311-cp311-linux_x86_64.whl", markers = "sys_platform == 'linux'"}
+python = "^3.8"
 monai = "^1.3.0"
-torchmetrics = "^1.3.2"
-simpleitk = "^2.3.1"
-scipy = "^1.13.0"
-tensorboardx = "^2.6.2.2"
-torchvision = "^0.17.2"
-tensorboard = "^2.16.2"
-wandb = "^0.16.6"
-torchio = "0.19.1"
+pytorch-ignite = "^0.5.0.post2"
+scikit-learn = "1.3.2"
+scikit-image = "0.21.0"
 
 [tool.poetry.dev-dependencies]
-pylint = "^3.1.0"
-black = "^24.2.0"
+black = "^24.4.2"
 isort = "^5.13.2"
+pylint = "^3.1.0"
 
 [build-system]
 requires = ["poetry-core"]
