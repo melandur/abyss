@@ -4,11 +4,12 @@ import os
 import torch.distributed as dist
 from monai.data import CacheDataset, DataLoader, partition_dataset
 
-from abyss.training.transforms import get_transforms
+from .transforms import get_transforms
 
 
 def get_loader(config: dict, mode: str):
     """Get the dataloader for training, validation or test."""
+
     transform = get_transforms(config, mode)
 
     dataset_file_path = os.path.join(config['project']['config_path'], 'dataset.json')
@@ -26,21 +27,21 @@ def get_loader(config: dict, mode: str):
                 even_divisible=False,
             )[dist.get_rank()]
 
-        val_ds = CacheDataset(
+        dataset = CacheDataset(
             data=datalist,
             transform=transform,
-            num_workers=config['training']['num_workers']['val'],
+            num_workers=config['training']['num_workers'],
             cache_rate=config['training']['cache_rate'],
+            copy_cache=False,
         )
 
-        data_loader = DataLoader(
-            val_ds,
-            batch_size=config['training']['batch_size']['val'],
+        return DataLoader(
+            dataset,
+            batch_size=1,
             shuffle=False,
-            num_workers=config['training']['num_workers']['val'],
+            num_workers=config['training']['num_workers'],
             drop_last=False,
         )
-        return data_loader
 
     if mode == 'train':
         if config['training']['multi_gpu']:
@@ -51,19 +52,20 @@ def get_loader(config: dict, mode: str):
                 even_divisible=True,
             )[dist.get_rank()]
 
-        train_ds = CacheDataset(
+        dataset = CacheDataset(
             data=datalist,
             transform=transform,
-            num_workers=config['training']['num_workers']['train'],
+            num_workers=config['training']['num_workers'],
             cache_rate=config['training']['cache_rate'],
+            copy_cache=False,
         )
-        data_loader = DataLoader(
-            train_ds,
-            batch_size=config['training']['batch_size']['train'],
+
+        return DataLoader(
+            dataset,
+            batch_size=config['training']['batch_size'],
             shuffle=True,
-            num_workers=config['training']['num_workers']['train'],
+            num_workers=config['training']['num_workers'],
             drop_last=True,
         )
-        return data_loader
 
     raise ValueError(f'mode should be train, validation or test.')

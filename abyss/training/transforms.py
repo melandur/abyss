@@ -23,10 +23,10 @@ from skimage.transform import resize
 
 
 def get_transforms(config: dict, mode: str) -> Compose:
-    if mode == 'test':
-        keys = ['image']
-    else:
-        keys = ['image', 'label']
+    # if mode == 'test':
+    #     keys = ['image']
+    # else:
+    keys = ['image', 'label']
 
     load_transforms = [
         LoadImaged(keys=keys),
@@ -146,7 +146,7 @@ def recovery_prediction(prediction, shape, anisotrophy_flag):
 
 
 class PreprocessAnisotropic(MapTransform):
-    '''This transform class takes NNUNet's preprocessing method for reference.'''
+    """This transform class takes NNUNet's preprocessing method for reference."""
 
     def __init__(
         self,
@@ -164,7 +164,7 @@ class PreprocessAnisotropic(MapTransform):
         self.mean = normalize_values[0]
         self.std = normalize_values[1]
         self.training = False
-        self.crop_foreground = CropForegroundd(keys=['image', 'label'], source_key='image', allow_smaller=True)
+        self.crop_foreground = CropForegroundd(keys=['image', 'label'], source_key='image', allow_smaller=False)
         self.normalize_intensity = NormalizeIntensity(nonzero=True, channel_wise=True)
         if model_mode in ['train']:
             self.training = True
@@ -192,12 +192,12 @@ class PreprocessAnisotropic(MapTransform):
         if self.training:
             cropped_data = self.crop_foreground({'image': image, 'label': label})
             image, label = cropped_data['image'], cropped_data['label']
-        else:
-            d['original_shape'] = np.array(image.shape[1:])
-            box_start, box_end = generate_spatial_bounding_box(image, allow_smaller=True)
-            image = SpatialCrop(roi_start=box_start, roi_end=box_end)(image)
-            d['bbox'] = np.vstack([box_start, box_end])
-            d['crop_shape'] = np.array(image.shape[1:])
+        # else:
+        #     d['original_shape'] = np.array(image.shape[1:])
+        #     box_start, box_end = generate_spatial_bounding_box(image, allow_smaller=False)
+        #     image = SpatialCrop(roi_start=box_start, roi_end=box_end)(image)
+        #     d['bbox'] = np.vstack([box_start, box_end])
+        #     d['crop_shape'] = np.array(image.shape[1:])
 
         image = image.numpy()
         if self.low != 0 or self.high != 0:

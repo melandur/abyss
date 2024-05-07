@@ -6,6 +6,7 @@ from sklearn.model_selection import KFold
 
 
 def create_dataset_file(config):
+    """Create a dataset file with training data."""
     image_folder_name = 'imagesTr'
     label_folder_name = 'labelsTr'
 
@@ -40,6 +41,7 @@ def create_dataset_file(config):
 
 
 def create_datalist(config):
+    """Create a dataset file with folds."""
     dataset_file_path = os.path.join(config['project']['config_path'], 'dataset.json')
 
     with open(dataset_file_path, 'r') as f:
@@ -73,3 +75,11 @@ def create_datalist(config):
     with open(dataset_file_path, 'w') as f:
         json.dump(dataset_with_folds, f)
     print(f'dataset file with folds has been created -> {dataset_file_path}')
+
+
+if __name__ == '__main__':
+    from abyss.config import ConfigFile
+
+    config = ConfigFile().get_config()
+    create_dataset_file(config)
+    create_datalist(config)

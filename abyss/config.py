@@ -7,7 +7,7 @@ class ConfigFile:
         self.project_name = 'aby'
         self.experiment_name = 'brats'
         self.project_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'Task01_BrainTumour')
+        self.dataset_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'Task01_BrainTumour_small')
 
     def get_config(self) -> dict:
         """Returns config dict"""
@@ -32,25 +32,25 @@ class ConfigFile:
             },
             'mode': {'train': True, 'test': False},
             'trainer': {
-                'batch_size': 3,
-                'patch_size': [128, 128, 128],
-                'lr_decay': True,
-                'tta': True,
+                'patch_size': [64, 64, 64],
+                'lr_decay': False,  # todo: check this
+                'tta': False,
             },
             'training': {
                 'fold': 0,
-                'batch_size': {'train': 3, 'val': 1},
-                'num_workers': {'train': 4, 'val': 4},
-                'max_epochs': 1000,
-                'learning_rate': 1e-3,
-                'warmup': {'active': True, 'epochs': 3},
-                'early_stop': {'active': True, 'patience': 10},
+                'fast_dev_run': False,
+                'batch_size': 5,
+                'num_workers': 8,
+                'max_epochs': 100,
+                'learning_rate': 3e-4,
+                'warmup': 10,
+                'early_stop': {'patience': 10, 'min_delta': 1e-4, 'mode': 'min', 'verbose': True},
                 'local_rank': 0,
-                'cache_rate': 0.1,
-                'val_interval': 1,
+                'cache_rate': 0.05,
+                'check_val_every_n_epoch': 1,
                 'multi_gpu': False,
                 'amp': False,
-                'compile': False,  # todo: add this to the pipeline
+                'compile': False,  # todo: check this
                 'deterministic': False,
                 'checkpoint_path': None,
                 'seed': 42,  # find the truth in randomness

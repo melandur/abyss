@@ -142,6 +142,7 @@ class DynUNetEvaluator(SupervisedEvaluator):
 
         inputs = inputs.cpu()
 
+
         predictions = self.post_pred(decollate_batch(predictions)[0])
         targets = self.post_label(decollate_batch(targets)[0])
 

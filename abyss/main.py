@@ -1,12 +1,16 @@
 from config import ConfigFile
 
-from abyss.training.train import train, validation
+from training.trainer import get_trainer
+from training.model import Model
 
 config_file = ConfigFile()
 config = config_file.get_config()
 
+model = Model(config)
+trainer = get_trainer(config)
+
 if config['mode']['train']:
-    train(config)
+    trainer.fit(model)
 
 if config['mode']['test']:
-    validation(config)
+    trainer.test(model)

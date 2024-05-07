@@ -15,7 +15,7 @@ from torch.nn.parallel import DistributedDataParallel
 from abyss.training.create_dataset import get_loader
 from abyss.training.create_network import get_network
 from abyss.training.evaluator import DynUNetEvaluator
-from abyss.training.trainer import DynUNetTrainer
+from abyss.training.trainer_ignite import DynUNetTrainer
 
 
 def validation(config: dict) -> None:
