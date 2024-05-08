@@ -5,9 +5,9 @@ class ConfigFile:
 
     def __init__(self) -> None:
         self.project_name = 'aby'
-        self.experiment_name = 'brats'
+        self.experiment_name = 'train'
         self.project_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'Task01_BrainTumour_small')
+        self.dataset_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'Task01_BrainTumour')
 
     def get_config(self) -> dict:
         """Returns config dict"""
@@ -39,10 +39,10 @@ class ConfigFile:
             'training': {
                 'fold': 0,
                 'fast_dev_run': False,
-                'batch_size': 5,
+                'batch_size': 24,
                 'num_workers': 8,
-                'max_epochs': 100,
-                'learning_rate': 3e-4,
+                'max_epochs': 1000,
+                'learning_rate': 1e-1,
                 'warmup': 10,
                 'early_stop': {'patience': 10, 'min_delta': 1e-4, 'mode': 'min', 'verbose': True},
                 'local_rank': 0,

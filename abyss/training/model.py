@@ -1,51 +1,39 @@
 import math
-from typing import Union, Optional, Callable, Any, List
 
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-from pytorch_lightning.core.optimizer import LightningOptimizer
-from pytorch_lightning.utilities.types import LRSchedulerPLType, LRSchedulerTypeUnion
-from torch.optim import Optimizer
-
-from torch.optim.lr_scheduler import LRScheduler
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
-from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR
-
-from monai.losses import DiceCELoss
-from monai.inferers import SlidingWindowInferer
-from monai.metrics import DiceMetric
-
 from monai.data import decollate_batch
+from monai.inferers import SlidingWindowInferer
+from monai.losses import DiceCELoss
+from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete
 
-from .create_network import get_network
 from .create_dataset import get_loader
-
-
-import math
+from .create_network import get_network
 
 
 class LearningRateScheduler:
     """Learning rate scheduler"""
 
-    def __init__(self, optimizer, lr_start: float, lr_end: float, warmup_epochs: int, total_epochs: int) -> None:
+    def __init__(self, optimizer, config: dict) -> None:
         self.optimizer = optimizer
-        self.lr_start = lr_start
-        self.lr_end = lr_end
-        self.warmup_epochs = warmup_epochs
-        self.total_epochs = total_epochs
+        self.lr_start = 1e-8  # low initial learning rate
+        self.lr_end = config['training']['learning_rate']
+        self.warmup_epochs = config['training']['warmup']
+        self.total_epochs = config['training']['max_epochs']
 
     def step(self, epoch: int) -> float:
         """Update optimizer learning rate for each epoch"""
-        if epoch < self.warmup_epochs:  # cosine annealing warmup
+        if epoch <= self.warmup_epochs:  # cosine annealing warmup
             lr = (
-                self.lr_start + (self.lr_end - self.lr_start) * (1 - math.cos(epoch / self.warmup_epochs * math.pi)) / 2
+                self.lr_start
+                + (self.lr_end - self.lr_start) * (1.0 - math.cos(epoch / self.warmup_epochs * math.pi)) / 2
             )
         else:  # poly decay
             epoch = epoch - self.warmup_epochs
             lr_current = self.optimizer.param_groups[0]['lr']
-            lr = lr_current * (1 - epoch / (self.total_epochs - self.warmup_epochs)) ** 0.9
+            lr = lr_current * (1.0 - epoch / (self.total_epochs - self.warmup_epochs)) ** 0.9
 
         for param_group in self.optimizer.param_groups:
             param_group['lr'] = lr
@@ -73,29 +61,27 @@ class Model(pl.LightningModule):
         self.inferer = SlidingWindowInferer(
             roi_size=config['trainer']['patch_size'],
             sw_batch_size=4,
-            overlap=0.5,
+            overlap=0.25,
             mode='gaussian',
         )
         self.val_dataset = None
         self.test_dataset = None
         self.train_dataset = None
 
-    def lr_scheduler_step(self, scheduler: LRSchedulerTypeUnion, metric: Optional[Any]) -> None:
-        """Update optimizer learning rate for each epoch"""
+    def lr_scheduler_step(self, scheduler, metric) -> None:
+        """Update optimizer learning rate"""
         scheduler.step(self.current_epoch)
 
     def configure_optimizers(self):
         """Optimizer"""
-        optimizer = torch.optim.Adam(self.net.parameters(),
-                                     lr=self.config['training']['learning_rate'],
-                                     weight_decay=3e-5,
-                                     amsgrad=True)
-
-        lr_start = 1e-8
-        lr_end = self.config['training']['learning_rate']
-        max_epochs = self.config['training']['max_epochs']
-        warmup_epochs = self.config['training']['warmup']
-        scheduler = LearningRateScheduler(optimizer, lr_start, lr_end, warmup_epochs, max_epochs)
+        optimizer = torch.optim.SGD(
+            self.net.parameters(),
+            lr=self.config['training']['learning_rate'],
+            momentum=0.99,
+            weight_decay=3e-5,
+            nesterov=True,
+        )
+        scheduler = LearningRateScheduler(optimizer, self.config)
         return [optimizer], [scheduler]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -109,8 +95,12 @@ class Model(pl.LightningModule):
 
         if len(preds.size()) - len(label.size()) == 1:  # deep supervision mode
             preds = torch.unbind(preds, dim=1)  # unbind feature maps
-            normalize_factor = sum(1.0 / (2.0 ** i) for i in range(len(preds)))
-            loss = sum(1.0 / (2.0 ** i) * self.criterion(p, label) for i, p in enumerate(preds))  # [1, 0.5, 0.25, ...]
+            factor = 2.0
+            # max_epochs = self.config['training']['max_epochs']
+            # epoch = self.current_epoch if self.current_epoch < 15 else 1.0
+            # factor = 1 + 1000 ** math.sin(epoch / max_epochs)
+            normalize_factor = sum(1.0 / (factor**i) for i in range(len(preds)))
+            loss = sum(1.0 / (factor**i) * self.criterion(p, label) for i, p in enumerate(preds))  # [1, 0.5, 0.25, ...]
             loss = loss / normalize_factor
         else:  # normal mode, only last feature map is output
             loss = self.criterion(preds, label)
@@ -160,7 +150,7 @@ class Model(pl.LightningModule):
             'dice_avg': mean_dice,
             'dice_ed': dice_metric[0],
             'dice_et': dice_metric[1],
-            'dice_nc': dice_metric[2]
+            'dice_nc': dice_metric[2],
         }
         self.metrics['dice'].reset()
         self.log_dict(dice_per_label, prog_bar=True, on_step=False, on_epoch=True)
@@ -197,6 +187,7 @@ class Model(pl.LightningModule):
 
         img = sitk.GetImageFromArray(new.cpu().numpy())
         import random
+
         x = random.randint(0, 1000)
         sitk.WriteImage(img, f'{x}_pred.nii.gz')
 
@@ -206,7 +197,6 @@ class Model(pl.LightningModule):
         new[label[3] == 1] = 3
         img = sitk.GetImageFromArray(new.cpu().numpy())
         sitk.WriteImage(img, f'{x}_label.nii.gz')
-
 
         self.metrics['dice']([pred], [label])
 
@@ -218,11 +208,10 @@ class Model(pl.LightningModule):
             'dice_avg': mean_dice,
             'dice_ed': dice_metric[0],
             'dice_et': dice_metric[1],
-            'dice_nc': dice_metric[2]
+            'dice_nc': dice_metric[2],
         }
         self.metrics['dice'].reset()
         self.log_dict(dice_per_label, prog_bar=True, on_step=False, on_epoch=True)
-
 
     def train_dataloader(self):
         """Train dataloader"""

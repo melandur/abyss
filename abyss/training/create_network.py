@@ -52,7 +52,7 @@ def get_network(config):
         kernel_size=dimemsions['kernel_size'],
         strides=dimemsions['strides'],
         upsample_kernel_size=dimemsions['upsample_kernel_size'],
-        dropout=0.2,
+        dropout=None,
         norm_name='instance',
         deep_supervision=True,
         deep_supr_num=1,

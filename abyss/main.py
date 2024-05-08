@@ -1,7 +1,6 @@
 from config import ConfigFile
-
-from training.trainer import get_trainer
 from training.model import Model
+from training.trainer import get_trainer
 
 config_file = ConfigFile()
 config = config_file.get_config()

@@ -68,4 +68,4 @@ def get_loader(config: dict, mode: str):
             drop_last=True,
         )
 
-    raise ValueError(f'mode should be train, validation or test.')
+    raise ValueError('mode should be train, validation or test.')

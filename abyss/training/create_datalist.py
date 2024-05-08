@@ -22,10 +22,23 @@ def create_dataset_file(config):
 
     assert set(images) == set(labels), f'files differ -> {set(labels).symmetric_difference(set(images))}'
 
-    datalist = {'training': []}
     images = sorted(images)
-    for image in images:
+
+    # randome choice 10% of the dataset
+    test_images = np.random.choice(images, 30, replace=False)
+    train_images = list(set(images) - set(test_images))
+
+    datalist = {'training': [], 'test': []}
+    for image in train_images:
         datalist['training'].append(
+            {
+                'image': os.path.join(dataset_path, image_folder_name, image),
+                'label': os.path.join(dataset_path, label_folder_name, image),
+            }
+        )
+
+    for image in test_images:
+        datalist['test'].append(
             {
                 'image': os.path.join(dataset_path, image_folder_name, image),
                 'label': os.path.join(dataset_path, label_folder_name, image),
@@ -72,6 +85,7 @@ def create_datalist(config):
         dataset_with_folds[f'train_fold_{i}'] = train_data
     del dataset
 
+    print(dataset_with_folds)
     with open(dataset_file_path, 'w') as f:
         json.dump(dataset_with_folds, f)
     print(f'dataset file with folds has been created -> {dataset_file_path}')

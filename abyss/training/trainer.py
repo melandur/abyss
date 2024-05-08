@@ -1,19 +1,23 @@
 import os
-import shutil
 
 import torch
 from pytorch_lightning import Trainer as LightningTrainer
 from pytorch_lightning import seed_everything
-from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.callbacks import (
+    EarlyStopping,
+    LearningRateMonitor,
+    ModelCheckpoint,
+    RichProgressBar,
+    StochasticWeightAveraging,
+)
 from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTheme
-from pytorch_lightning.callbacks import RichProgressBar, ModelCheckpoint, EarlyStopping, LearningRateMonitor, StochasticWeightAveraging
+from pytorch_lightning.loggers import TensorBoardLogger
 
 
 def get_trainer(config: dict) -> LightningTrainer:
     results_path = config['project']['results_path']
-    logger = TensorBoardLogger(save_dir=results_path, name='logs', version='latest')  # TBoard, MLflow, Comet, Neptune, WandB
+    logger = TensorBoardLogger(save_dir=results_path, name='logs')  # TBoard, MLflow, Comet, Neptune, WandB
     log_path = os.path.join(results_path, 'logs')
-    shutil.rmtree(log_path, ignore_errors=True)
     print(f'tensorboard --logdir={log_path}')
 
     # swa = StochasticWeightAveraging(swa_lrs=1e-2)
@@ -76,8 +80,8 @@ def get_trainer(config: dict) -> LightningTrainer:
         enable_progress_bar=True,
         enable_model_summary=True,
         accumulate_grad_batches=1,
-        gradient_clip_val=4.0,
-        gradient_clip_algorithm='norm',
+        gradient_clip_val=None,
+        gradient_clip_algorithm=None,
         deterministic=config['training']['deterministic'],
         benchmark=None,
         use_distributed_sampler=True,
@@ -87,6 +91,6 @@ def get_trainer(config: dict) -> LightningTrainer:
         plugins=None,
         sync_batchnorm=False,
         reload_dataloaders_every_n_epochs=0,
-        default_root_dir=config['project']['results_path']
+        default_root_dir=config['project']['results_path'],
     )
     return trainer
