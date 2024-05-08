@@ -32,18 +32,18 @@ class ConfigFile:
             },
             'mode': {'train': True, 'test': False},
             'trainer': {
-                'patch_size': [64, 64, 64],
+                'patch_size': [128, 128, 128],
                 'lr_decay': False,  # todo: check this
                 'tta': False,
             },
             'training': {
                 'fold': 0,
                 'fast_dev_run': False,
-                'batch_size': 24,
+                'batch_size': 3,
                 'num_workers': 8,
                 'max_epochs': 1000,
                 'learning_rate': 1e-1,
-                'warmup': 10,
+                'warmup': 5,
                 'early_stop': {'patience': 10, 'min_delta': 1e-4, 'mode': 'min', 'verbose': True},
                 'local_rank': 0,
                 'cache_rate': 0.05,

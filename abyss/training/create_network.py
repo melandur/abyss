@@ -55,7 +55,7 @@ def get_network(config):
         dropout=None,
         norm_name='instance',
         deep_supervision=True,
-        deep_supr_num=1,
+        deep_supr_num=3,
         res_block=False,
         trans_bias=False,
     )
