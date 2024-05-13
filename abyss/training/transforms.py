@@ -1,36 +1,37 @@
+import monai.transforms as tf
 import numpy as np
-from monai.transforms import (
-    CastToTyped,
-    Compose,
-    CropForegroundd,
-    EnsureChannelFirstd,
-    EnsureTyped,
-    LoadImaged,
-    NormalizeIntensity,
-    RandCropByPosNegLabeld,
-    RandFlipd,
-    RandGaussianNoised,
-    RandGaussianSmoothd,
-    RandScaleIntensityd,
-    RandZoomd,
-    SpatialCrop,
-    SpatialPadd,
-    ToTensord,
-)
+import torch
 from monai.transforms.compose import MapTransform
 from monai.transforms.utils import generate_spatial_bounding_box
 from skimage.transform import resize
 
 
-def get_transforms(config: dict, mode: str) -> Compose:
+class ToOneHot(MapTransform):
+    def __init__(self, keys, classes_dict: dict):
+        super().__init__(self)
+        self.keys = keys
+        self.classes_dict = classes_dict
+
+    def __call__(self, data):
+        for key in self.keys:
+            store = []
+            for _, class_label in self.classes_dict.items():
+                zeros = torch.zeros_like(data[key])
+                zeros[data[key] == class_label] = 1
+                store.append(zeros)
+            data[key] = torch.vstack(store)
+        return data
+
+
+def get_transforms(config: dict, mode: str) -> tf.Compose:
     # if mode == 'test':
     #     keys = ['image']
     # else:
     keys = ['image', 'label']
 
     load_transforms = [
-        LoadImaged(keys=keys),
-        EnsureChannelFirstd(keys=keys),
+        tf.LoadImaged(keys=keys),
+        tf.EnsureChannelFirstd(keys=keys),
     ]
 
     sample_transforms = [
@@ -41,13 +42,13 @@ def get_transforms(config: dict, mode: str) -> Compose:
             normalize_values=config['dataset']['normalize_values'],
             model_mode=mode,
         ),
-        ToTensord(keys='image'),
+        tf.ToTensord(keys='image'),
     ]
 
     if mode == 'train':
         spatial_transforms = [
-            SpatialPadd(keys=['image', 'label'], spatial_size=config['trainer']['patch_size']),
-            RandCropByPosNegLabeld(
+            tf.SpatialPadd(keys=['image', 'label'], spatial_size=config['trainer']['patch_size']),
+            tf.RandCropByPosNegLabeld(
                 keys=['image', 'label'],
                 label_key='label',
                 spatial_size=config['trainer']['patch_size'],
@@ -57,7 +58,7 @@ def get_transforms(config: dict, mode: str) -> Compose:
                 image_key='image',
                 image_threshold=0,
             ),
-            RandZoomd(
+            tf.RandZoomd(
                 keys=['image', 'label'],
                 min_zoom=0.9,
                 max_zoom=1.2,
@@ -65,34 +66,44 @@ def get_transforms(config: dict, mode: str) -> Compose:
                 align_corners=(True, None),
                 prob=0.15,
             ),
-            RandGaussianNoised(keys=['image'], std=0.01, prob=0.15),
-            RandGaussianSmoothd(
+            tf.RandGaussianNoised(keys=['image'], std=0.01, prob=0.15),
+            tf.RandGaussianSmoothd(
                 keys=['image'],
                 sigma_x=(0.5, 1.15),
                 sigma_y=(0.5, 1.15),
                 sigma_z=(0.5, 1.15),
                 prob=0.15,
             ),
-            RandScaleIntensityd(keys=['image'], factors=0.3, prob=0.15),
-            RandFlipd(['image', 'label'], spatial_axis=[0], prob=0.5),
-            RandFlipd(['image', 'label'], spatial_axis=[1], prob=0.5),
-            RandFlipd(['image', 'label'], spatial_axis=[2], prob=0.5),
-            CastToTyped(keys=['image', 'label'], dtype=(np.float32, np.uint8)),
-            EnsureTyped(keys=['image', 'label']),
+            tf.RandScaleIntensityd(keys=['image'], factors=0.3, prob=0.15),
+            tf.RandFlipd(['image', 'label'], spatial_axis=[0], prob=0.5),
+            tf.RandFlipd(['image', 'label'], spatial_axis=[1], prob=0.5),
+            tf.RandFlipd(['image', 'label'], spatial_axis=[2], prob=0.5),
+            # tf.Rand3DElasticd(['image', 'label'],
+            #                   magnitude_range=(0., 900.),
+            #                   sigma_range=(9., 13.),
+            #                   spatial_size=config['trainer']['patch_size'],
+            #                   mode=('bilinear', 'nearest'),
+            #                   prob=0.2),
+            tf.RandAdjustContrastd(keys=['image'], gamma=(0.7, 1.5), prob=0.3),
+            ToOneHot(keys=['label'], classes_dict={'edema': 1, 'necrosis': 2, 'enhancing': 3}),
+            tf.CastToTyped(keys=['image', 'label'], dtype=(np.float32, np.uint8)),
+            tf.EnsureTyped(keys=['image', 'label']),
         ]
     elif mode == 'val':
         spatial_transforms = [
-            CastToTyped(keys=['image', 'label'], dtype=(np.float32, np.uint8)),
-            EnsureTyped(keys=['image', 'label']),
+            tf.CastToTyped(keys=['image', 'label'], dtype=(np.float32, np.uint8)),
+            ToOneHot(keys=['label'], classes_dict={'edema': 1, 'necrosis': 2, 'enhancing': 3}),
+            tf.EnsureTyped(keys=['image', 'label']),
         ]
     else:
         spatial_transforms = [
-            CastToTyped(keys=['image'], dtype=(np.float32)),
-            EnsureTyped(keys=['image']),
+            tf.CastToTyped(keys=['image'], dtype=(np.float32)),
+            ToOneHot(keys=['label'], classes_dict={'edema': 1, 'necrosis': 2, 'enhancing': 3}),
+            tf.EnsureTyped(keys=['image']),
         ]
 
     all_transforms = load_transforms + sample_transforms + spatial_transforms
-    return Compose(all_transforms)
+    return tf.Compose(all_transforms)
 
 
 def recovery_prediction(prediction, shape, anisotrophy_flag):
@@ -164,8 +175,8 @@ class PreprocessAnisotropic(MapTransform):
         self.mean = normalize_values[0]
         self.std = normalize_values[1]
         self.training = False
-        self.crop_foreground = CropForegroundd(keys=['image', 'label'], source_key='image', allow_smaller=False)
-        self.normalize_intensity = NormalizeIntensity(nonzero=True, channel_wise=True)
+        self.crop_foreground = tf.CropForegroundd(keys=['image', 'label'], source_key='image', allow_smaller=False)
+        self.normalize_intensity = tf.NormalizeIntensity(nonzero=True, channel_wise=True)
         if model_mode in ['train']:
             self.training = True
 

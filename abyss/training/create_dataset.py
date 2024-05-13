@@ -32,7 +32,7 @@ def get_loader(config: dict, mode: str):
             transform=transform,
             num_workers=config['training']['num_workers'],
             cache_rate=config['training']['cache_rate'],
-            copy_cache=False,
+            copy_cache=True,
         )
 
         return DataLoader(
@@ -57,7 +57,7 @@ def get_loader(config: dict, mode: str):
             transform=transform,
             num_workers=config['training']['num_workers'],
             cache_rate=config['training']['cache_rate'],
-            copy_cache=False,
+            copy_cache=True,
         )
 
         return DataLoader(
