@@ -1,4 +1,5 @@
 import os
+from collections import OrderedDict
 
 
 class ConfigFile:
@@ -32,6 +33,7 @@ class ConfigFile:
             },
             'mode': {'train': True, 'test': False},
             'trainer': {
+                'label_classes': OrderedDict({'background': 0, 'edema': 1, 'necrosis': 2, 'enhancing': 3}),
                 'patch_size': [128, 128, 128],
                 'lr_decay': False,  # todo: check this
                 'tta': False,
@@ -41,8 +43,8 @@ class ConfigFile:
                 'fast_dev_run': False,
                 'batch_size': 3,
                 'num_workers': 8,
-                'max_epochs': 1000,
-                'learning_rate': 1e-2,
+                'max_epochs': 100,
+                'learning_rate': 1e-3,
                 'warmup': 5,
                 'early_stop': {'patience': 50, 'min_delta': 1e-5, 'mode': 'min', 'verbose': True},
                 'local_rank': 0,

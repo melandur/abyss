@@ -80,8 +80,8 @@ def get_trainer(config: dict) -> LightningTrainer:
         enable_progress_bar=True,
         enable_model_summary=True,
         accumulate_grad_batches=1,
-        gradient_clip_val=None,
-        gradient_clip_algorithm=None,
+        gradient_clip_val=12.0,  # nnunet default, check this
+        gradient_clip_algorithm='norm',  # nnunet default, check this
         deterministic=config['training']['deterministic'],
         benchmark=None,
         use_distributed_sampler=True,

@@ -20,6 +20,8 @@ rich = "^13.7.1"
 tensorboard = "2.14.0"
 six = "^1.16.0"
 simpleitk = "^2.3.1"
+matplotlib = "3.7.2"
+torchcontrib = "^0.0.2"
 
 [tool.poetry.dev-dependencies]
 black = "^24.4.2"

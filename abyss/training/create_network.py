@@ -44,15 +44,15 @@ def get_kernels_strides(config):
 
 def get_network(config):
     dimemsions = get_kernels_strides(config)
-
+    out_channels = len(config['trainer']['label_classes'])
     net = DynUNet(
         spatial_dims=3,
         in_channels=4,
-        out_channels=3,
+        out_channels=out_channels,
         kernel_size=dimemsions['kernel_size'],
         strides=dimemsions['strides'],
         upsample_kernel_size=dimemsions['upsample_kernel_size'],
-        dropout=0.2,
+        dropout=None,
         norm_name=('INSTANCE', {'affine': True}),
         act_name=('leakyrelu', {'inplace': True, 'negative_slope': 0.01}),
         deep_supervision=True,

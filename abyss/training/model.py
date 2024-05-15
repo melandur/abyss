@@ -16,7 +16,7 @@ class LearningRateScheduler:
 
     def __init__(self, optimizer, config: dict) -> None:
         self.optimizer = optimizer
-        self.lr_start = 1e-10  # low initial learning rate
+        self.lr_start = 1e-7  # low initial learning rate
         self.lr_end = config['training']['learning_rate']
         self.warmup_epochs = config['training']['warmup']
         self.total_epochs = config['training']['max_epochs']
@@ -29,9 +29,7 @@ class LearningRateScheduler:
             lr_current = self.optimizer.param_groups[0]['lr']
             lr = lr_current * (1.0 - epoch / self.total_epochs) ** 0.9
 
-        for param_group in self.optimizer.param_groups:
-            param_group['lr'] = lr
-
+        self.optimizer.param_groups[0]['lr'] = lr
         return lr
 
     def state_dict(self):
@@ -50,17 +48,14 @@ class Model(pl.LightningModule):
         super().__init__()
         self.config = config
         self.net = get_network(config)
-        self.criterion = DiceCELoss(include_background=True, softmax=True, weight=torch.tensor([1.0, 1.0, 2.0]))
-        self.metrics = {'dice': DiceMetric(include_background=True, reduction='mean_batch')}
+        self.criterion = DiceCELoss()
+        self.metrics = {'dice': DiceMetric(reduction='mean_channel')}
         self.inferer = SlidingWindowInferer(
             roi_size=config['trainer']['patch_size'],
             sw_batch_size=4,
             overlap=0.5,
             mode='gaussian',
         )
-        self.accumulated_loss = 0.0
-        self.accumulated_batches = 3
-        self.automatic_optimization = False
 
     def configure_optimizers(self):
         """Optimizer"""
@@ -71,16 +66,11 @@ class Model(pl.LightningModule):
             weight_decay=3e-5,
             nesterov=True,
         )
-        # max_epochs = self.config['training']['max_epochs']
-        # scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer,
-        #                                               lr_lambda=lambda epoch: (1 - epoch / max_epochs) ** 0.9)
-
         scheduler = LearningRateScheduler(optimizer, self.config)
         return [optimizer], [scheduler]
 
-    def lr_scheduler_step(self) -> None:
-        """Update optimizer learning rate"""
-        scheduler = self.lr_schedulers()
+    def lr_scheduler_step(self, scheduler, _) -> None:
+        """Update optimizer learning rate for each epoch"""
         scheduler.step(self.current_epoch)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -89,36 +79,35 @@ class Model(pl.LightningModule):
 
     def training_step(self, batch: torch.Tensor, batch_idx: int):
         """Predict, loss, log, (backprop and optimizer step done by lightning)"""
-        opt = self.optimizers()
-
-        if batch_idx % self.accumulated_batches == 0 and batch_idx > 0:
-            opt.zero_grad()
-
         data, label = batch['image'], batch['label']
         preds = self(data)
 
         if len(preds.size()) - len(label.size()) == 1:  # deep supervision mode
             preds = torch.unbind(preds, dim=1)  # unbind feature maps
+
             factor = 2.0
             # max_epochs = self.config['training']['max_epochs']
             # epoch = self.current_epoch if self.current_epoch < 15 else 1.0
             # factor = 1 + 1000 ** math.sin(epoch / max_epochs)
-            # normalize_factor = sum(1.0 / (factor**i) for i in range(len(preds)))
-            loss = sum(0.5 / (factor**i) * self.criterion(p, label) for i, p in enumerate(preds))  # [1, 0.5, 0.25, ...]
-            # loss = loss / normalize_factor
+            normalize_factor = sum(1.0 / (factor**i) for i in range(len(preds)))
+
+            loss = 0.0
+            for idx, pred in enumerate(preds):
+                pred = nn.functional.softmax(pred, dim=1)
+                loss += 1.0 / (factor**idx) * self.criterion(pred, label)
+
+            loss = loss / normalize_factor
         else:  # normal mode, only last feature map is output
-            loss = self.criterion(preds, label)
-
-        self.manual_backward(loss)
-
-        if batch_idx % self.accumulated_batches == self.accumulated_batches - 1 and batch_idx > 0:
-            torch.nn.utils.clip_grad_norm_(self.net.parameters(), 12)
-            opt.step()
+            pred = nn.functional.softmax(preds, dim=1)
+            loss = self.criterion(pred, label)
 
         self.log('train_loss', loss, prog_bar=True, on_step=False, on_epoch=True)
+        return loss
 
     def on_train_epoch_start(self) -> None:
-        self.lr_scheduler_step()
+        scheduler = self.lr_schedulers()
+        self.lr_scheduler_step(scheduler, None)
+
         optimizers = self.optimizers()
         lr = optimizers.param_groups[0]['lr']
         self.log('lr', lr, prog_bar=True, on_step=False, on_epoch=True)
@@ -127,6 +116,7 @@ class Model(pl.LightningModule):
         """Predict, loss, log"""
         data, label = batch['image'], batch['label']
         pred = self.inferer(data, self.net)
+        pred = nn.functional.softmax(pred, dim=1)
 
         if self.config['trainer']['tta']:
             ct = 1.0
@@ -147,18 +137,19 @@ class Model(pl.LightningModule):
         pred = post_pred(decollate_batch(pred)[0])
         label = decollate_batch(label)[0]
 
-        self.metrics['dice']([pred], [label])
+        self.metrics['dice'](pred, label)
         self.log('val_loss', loss, prog_bar=True, on_step=False, on_epoch=True)
 
     def on_validation_epoch_end(self) -> None:
         """Log dice metric"""
         dice_metric = self.metrics['dice'].aggregate()
-        mean_dice = dice_metric.mean().item()
+        # dice_metric = dice_metric[1:]  # exclude background
         dice_per_label = {
-            'dice_avg': mean_dice,
-            'dice_ed': dice_metric[0],
-            'dice_nc': dice_metric[1],
-            'dice_et': dice_metric[2],
+            'dice_avg': dice_metric.mean(),
+            'dice_bg': dice_metric[0],
+            'dice_ed': dice_metric[1],
+            'dice_nc': dice_metric[2],
+            'dice_et': dice_metric[3],
         }
         self.metrics['dice'].reset()
         self.log_dict(dice_per_label, prog_bar=True, on_step=False, on_epoch=True)
@@ -166,12 +157,13 @@ class Model(pl.LightningModule):
     def test_step(self, batch: torch.Tensor) -> None:
         """Predict, loss, log"""
         data, label = batch['image'], batch['label']
-        pred = self.inferer(data, self.net)
+        label = label.cpu()
+        pred = self.inferer(data, self.net).cpu()
         if self.config['trainer']['tta']:
             ct = 1.0
             for dims in [[2], [3], [4], (2, 3), (2, 4), (3, 4), (2, 3, 4)]:
                 flip_inputs = torch.flip(data, dims=dims)
-                flip_pred = torch.flip(self.inferer(flip_inputs, self.net), dims=dims)
+                flip_pred = torch.flip(self.inferer(flip_inputs, self.net).cpu(), dims=dims)
                 flip_pred = nn.functional.softmax(flip_pred, dim=1)
                 del flip_inputs
                 pred += flip_pred
@@ -215,9 +207,9 @@ class Model(pl.LightningModule):
         mean_dice = dice_metric.mean().item()
         dice_per_label = {
             'dice_avg': mean_dice,
-            'dice_ed': dice_metric[0],
-            'dice_nc': dice_metric[1],
-            'dice_en': dice_metric[2],
+            'dice_ed': dice_metric[0].mean().item(),
+            'dice_nc': dice_metric[1].mean().item(),
+            'dice_en': dice_metric[2].mean().item(),
         }
         self.metrics['dice'].reset()
         self.log_dict(dice_per_label, prog_bar=True, on_step=False, on_epoch=True)

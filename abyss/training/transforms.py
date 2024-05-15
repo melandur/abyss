@@ -7,18 +7,18 @@ from skimage.transform import resize
 
 
 class ToOneHot(MapTransform):
-    def __init__(self, keys, classes_dict: dict):
+    def __init__(self, keys, label_classes: dict):
         super().__init__(self)
         self.keys = keys
-        self.classes_dict = classes_dict
+        self.label_classes = label_classes
 
     def __call__(self, data):
         for key in self.keys:
             store = []
-            for _, class_label in self.classes_dict.items():
-                zeros = torch.zeros_like(data[key])
-                zeros[data[key] == class_label] = 1
-                store.append(zeros)
+            for _, class_label in self.label_classes.items():
+                label_mask = torch.ones_like(data[key])
+                label_mask[data[key] != class_label] = 0
+                store.append(label_mask)
             data[key] = torch.vstack(store)
         return data
 
@@ -48,6 +48,15 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
     if mode == 'train':
         spatial_transforms = [
             tf.SpatialPadd(keys=['image', 'label'], spatial_size=config['trainer']['patch_size']),
+            tf.RandZoomd(
+                keys=['image', 'label'],
+                min_zoom=0.9,
+                max_zoom=1.2,
+                mode=('trilinear', 'nearest'),
+                align_corners=(True, None),
+                prob=1.0,
+                keep_size=True,
+            ),
             tf.RandCropByPosNegLabeld(
                 keys=['image', 'label'],
                 label_key='label',
@@ -57,14 +66,6 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
                 num_samples=3,
                 image_key='image',
                 image_threshold=0,
-            ),
-            tf.RandZoomd(
-                keys=['image', 'label'],
-                min_zoom=0.9,
-                max_zoom=1.2,
-                mode=('trilinear', 'nearest'),
-                align_corners=(True, None),
-                prob=0.15,
             ),
             tf.RandGaussianNoised(keys=['image'], std=0.01, prob=0.15),
             tf.RandGaussianSmoothd(
@@ -78,27 +79,27 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
             tf.RandFlipd(['image', 'label'], spatial_axis=[0], prob=0.5),
             tf.RandFlipd(['image', 'label'], spatial_axis=[1], prob=0.5),
             tf.RandFlipd(['image', 'label'], spatial_axis=[2], prob=0.5),
-            # tf.Rand3DElasticd(['image', 'label'],
-            #                   magnitude_range=(0., 900.),
-            #                   sigma_range=(9., 13.),
-            #                   spatial_size=config['trainer']['patch_size'],
-            #                   mode=('bilinear', 'nearest'),
-            #                   prob=0.2),
-            tf.RandAdjustContrastd(keys=['image'], gamma=(0.7, 1.5), prob=0.3),
-            ToOneHot(keys=['label'], classes_dict={'edema': 1, 'necrosis': 2, 'enhancing': 3}),
+            tf.RandRotated(['image', 'label'],
+                           range_x=(-15.0, 15.0),
+                           range_y=(-15.0, 15.0),
+                           range_z=(-15.0, 15.0),
+                           mode=('bilinear', 'nearest'),
+                           prob=0.5),
+            tf.RandAdjustContrastd(keys=['image'], gamma=(0.5, 2.0), prob=0.15),
+            ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
             tf.CastToTyped(keys=['image', 'label'], dtype=(np.float32, np.uint8)),
             tf.EnsureTyped(keys=['image', 'label']),
         ]
     elif mode == 'val':
         spatial_transforms = [
+            ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
             tf.CastToTyped(keys=['image', 'label'], dtype=(np.float32, np.uint8)),
-            ToOneHot(keys=['label'], classes_dict={'edema': 1, 'necrosis': 2, 'enhancing': 3}),
             tf.EnsureTyped(keys=['image', 'label']),
         ]
     else:
         spatial_transforms = [
+            ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
             tf.CastToTyped(keys=['image'], dtype=(np.float32)),
-            ToOneHot(keys=['label'], classes_dict={'edema': 1, 'necrosis': 2, 'enhancing': 3}),
             tf.EnsureTyped(keys=['image']),
         ]
 
@@ -160,12 +161,12 @@ class PreprocessAnisotropic(MapTransform):
     """This transform class takes NNUNet's preprocessing method for reference."""
 
     def __init__(
-        self,
-        keys,
-        clip_values,
-        pixdim,
-        normalize_values,
-        model_mode,
+            self,
+            keys,
+            clip_values,
+            pixdim,
+            normalize_values,
+            model_mode,
     ) -> None:
         super().__init__(keys)
         self.keys = keys
@@ -200,9 +201,9 @@ class PreprocessAnisotropic(MapTransform):
             label = d['label']
             label[label < 0] = 0
 
-        if self.training:
-            cropped_data = self.crop_foreground({'image': image, 'label': label})
-            image, label = cropped_data['image'], cropped_data['label']
+        # if self.training:
+        cropped_data = self.crop_foreground({'image': image, 'label': label})
+        image, label = cropped_data['image'], cropped_data['label']
         # else:
         #     d['original_shape'] = np.array(image.shape[1:])
         #     box_start, box_end = generate_spatial_bounding_box(image, allow_smaller=False)
