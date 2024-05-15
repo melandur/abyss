@@ -79,7 +79,7 @@ def get_trainer(config: dict) -> LightningTrainer:
         enable_checkpointing=None,
         enable_progress_bar=True,
         enable_model_summary=True,
-        accumulate_grad_batches=1,
+        accumulate_grad_batches=3,
         gradient_clip_val=12.0,  # nnunet default, check this
         gradient_clip_algorithm='norm',  # nnunet default, check this
         deterministic=config['training']['deterministic'],

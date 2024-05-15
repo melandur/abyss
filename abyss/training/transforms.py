@@ -16,8 +16,8 @@ class ToOneHot(MapTransform):
         for key in self.keys:
             store = []
             for _, class_label in self.label_classes.items():
-                label_mask = torch.ones_like(data[key])
-                label_mask[data[key] != class_label] = 0
+                label_mask = torch.zeros_like(data[key])
+                label_mask[data[key] == class_label] = 1
                 store.append(label_mask)
             data[key] = torch.vstack(store)
         return data

@@ -52,7 +52,7 @@ def get_network(config):
         kernel_size=dimemsions['kernel_size'],
         strides=dimemsions['strides'],
         upsample_kernel_size=dimemsions['upsample_kernel_size'],
-        dropout=None,
+        dropout=0.2,
         norm_name=('INSTANCE', {'affine': True}),
         act_name=('leakyrelu', {'inplace': True, 'negative_slope': 0.01}),
         deep_supervision=True,

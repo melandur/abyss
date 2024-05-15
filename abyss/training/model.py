@@ -143,13 +143,12 @@ class Model(pl.LightningModule):
     def on_validation_epoch_end(self) -> None:
         """Log dice metric"""
         dice_metric = self.metrics['dice'].aggregate()
-        # dice_metric = dice_metric[1:]  # exclude background
+        dice_metric = dice_metric[1:]  # exclude background
         dice_per_label = {
             'dice_avg': dice_metric.mean(),
-            'dice_bg': dice_metric[0],
-            'dice_ed': dice_metric[1],
-            'dice_nc': dice_metric[2],
-            'dice_et': dice_metric[3],
+            'dice_ed': dice_metric[0],
+            'dice_nc': dice_metric[1],
+            'dice_et': dice_metric[2],
         }
         self.metrics['dice'].reset()
         self.log_dict(dice_per_label, prog_bar=True, on_step=False, on_epoch=True)
