@@ -5,10 +5,10 @@ from pytorch_lightning import Trainer as LightningTrainer
 from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks import (
     EarlyStopping,
-    LearningRateMonitor,
     ModelCheckpoint,
     RichProgressBar,
     StochasticWeightAveraging,
+    LearningRateMonitor,
 )
 from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTheme
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -23,12 +23,14 @@ def get_trainer(config: dict) -> LightningTrainer:
     # swa = StochasticWeightAveraging(swa_lrs=1e-2)
 
     early_stop_cb = EarlyStopping(
-        monitor='val_loss',
+        monitor='loss_val',
         min_delta=config['training']['early_stop']['min_delta'],
         patience=config['training']['early_stop']['patience'],
         verbose=config['training']['early_stop']['verbose'],
         mode=config['training']['early_stop']['mode'],
     )
+
+    lr_monitor = LearningRateMonitor(logging_interval='epoch')
 
     progress_bar_cb = RichProgressBar(
         leave=True,
@@ -60,6 +62,7 @@ def get_trainer(config: dict) -> LightningTrainer:
             early_stop_cb,
             progress_bar_cb,
             # swa,
+            lr_monitor,
         ],
         fast_dev_run=config['training']['fast_dev_run'],
         max_epochs=config['training']['max_epochs'],
@@ -79,8 +82,8 @@ def get_trainer(config: dict) -> LightningTrainer:
         enable_checkpointing=None,
         enable_progress_bar=True,
         enable_model_summary=True,
-        accumulate_grad_batches=3,
-        gradient_clip_val=12.0,  # nnunet default, check this
+        accumulate_grad_batches=1,
+        gradient_clip_val=1.0,  # nnunet default, check this
         gradient_clip_algorithm='norm',  # nnunet default, check this
         deterministic=config['training']['deterministic'],
         benchmark=None,

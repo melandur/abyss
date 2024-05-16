@@ -42,17 +42,35 @@ def get_kernels_strides(config):
     return results
 
 
+# def get_network(config):
+#
+#     from monai.networks.nets import UNet
+#
+#     net = UNet(
+#         spatial_dims=3,
+#         in_channels=4,
+#         out_channels=len(config['trainer']['label_classes']),
+#         channels=(16, 32, 64, 128, 256),
+#         strides=(2, 2, 2, 2),
+#     )
+#     return net
+
+
 def get_network(config):
-    dimemsions = get_kernels_strides(config)
+    dimensions = get_kernels_strides(config)
     out_channels = len(config['trainer']['label_classes'])
+
+    print(dimensions)
+    print(out_channels)
+
     net = DynUNet(
         spatial_dims=3,
         in_channels=4,
         out_channels=out_channels,
-        kernel_size=dimemsions['kernel_size'],
-        strides=dimemsions['strides'],
-        upsample_kernel_size=dimemsions['upsample_kernel_size'],
-        dropout=0.2,
+        kernel_size=[[3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3]],
+        strides=[[1, 1, 1], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]],
+        upsample_kernel_size=[[2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]],
+        dropout=None,  # use other regularization methods like augmentation
         norm_name=('INSTANCE', {'affine': True}),
         act_name=('leakyrelu', {'inplace': True, 'negative_slope': 0.01}),
         deep_supervision=True,
