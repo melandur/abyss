@@ -30,8 +30,6 @@ def get_trainer(config: dict) -> LightningTrainer:
         mode=config['training']['early_stop']['mode'],
     )
 
-    lr_monitor = LearningRateMonitor(logging_interval='epoch')
-
     progress_bar_cb = RichProgressBar(
         leave=True,
         theme=RichProgressBarTheme(
@@ -62,7 +60,6 @@ def get_trainer(config: dict) -> LightningTrainer:
             early_stop_cb,
             progress_bar_cb,
             # swa,
-            lr_monitor,
         ],
         fast_dev_run=config['training']['fast_dev_run'],
         max_epochs=config['training']['max_epochs'],
@@ -82,8 +79,8 @@ def get_trainer(config: dict) -> LightningTrainer:
         enable_checkpointing=None,
         enable_progress_bar=True,
         enable_model_summary=True,
-        accumulate_grad_batches=1,
-        gradient_clip_val=1.0,  # nnunet default, check this
+        accumulate_grad_batches=2,
+        gradient_clip_val=12.0,  # nnunet default, check this
         gradient_clip_algorithm='norm',  # nnunet default, check this
         deterministic=config['training']['deterministic'],
         benchmark=None,

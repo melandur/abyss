@@ -33,7 +33,7 @@ class ConfigFile:
             },
             'mode': {'train': True, 'test': False},
             'trainer': {
-                'label_classes': OrderedDict({'edema': 1, 'necrosis': 2, 'enhancing': 3}),
+                'label_classes': OrderedDict({'background': 0, 'edema': 1, 'necrosis': 2, 'enhancing': 3}),
                 'patch_size': [128, 128, 128],
                 'lr_decay': False,  # todo: check this
                 'tta': False,
@@ -41,7 +41,7 @@ class ConfigFile:
             'training': {
                 'fold': 0,
                 'fast_dev_run': False,
-                'batch_size': 9,
+                'batch_size': 4,
                 'num_workers': 8,
                 'max_epochs': 1000,
                 'learning_rate': 1e-2,

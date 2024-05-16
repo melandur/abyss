@@ -1,4 +1,4 @@
-from typing import Union, Optional, Callable, Any
+from typing import Optional, Any
 import math
 import pytorch_lightning as pl
 import torch
@@ -8,10 +8,8 @@ from monai.inferers import SlidingWindowInferer
 from monai.losses import DiceCELoss
 from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete
-from pytorch_lightning.core.optimizer import LightningOptimizer
 from pytorch_lightning.utilities.types import LRSchedulerTypeUnion
-from torch.optim import Optimizer
-from torch.optim.lr_scheduler import LambdaLR
+from torch.optim.lr_scheduler import ExponentialLR
 
 from .create_dataset import get_loader
 from .create_network import get_network
@@ -42,15 +40,17 @@ class Model(pl.LightningModule):
             weight_decay=3e-5,
             nesterov=True,
         )
-        total_epochs = self.config['training']['max_epochs']
-        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: (1 - epoch / total_epochs) ** 0.9)
+        scheduler = ExponentialLR(optimizer, gamma=0.97)
 
         return [optimizer], [scheduler]
 
     def lr_scheduler_step(self, scheduler: LRSchedulerTypeUnion, metric: Optional[Any]) -> None:
         """LR Scheduler step"""
-        if self.trainer.global_step > self.config['training']['warmup_steps']:
-            scheduler.step()
+        if self.trainer.global_step >= self.config['training']['warmup_steps']:
+            if metric is None:
+                scheduler.step()
+            else:
+                scheduler.step(metric)
 
     def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_closure=None) -> None:
         """Optimizer step"""
@@ -59,7 +59,7 @@ class Model(pl.LightningModule):
         end_lr = self.config['training']['learning_rate']
         warmup_steps = self.config['training']['warmup_steps']
 
-        if self.trainer.global_step < warmup_steps:
+        if self.trainer.global_step < warmup_steps:  # cosine warmup lr
             lr = end_lr * (1.0 - math.cos(self.trainer.global_step / warmup_steps * math.pi)) / 2.0
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
@@ -131,7 +131,7 @@ class Model(pl.LightningModule):
     def on_validation_epoch_end(self) -> None:
         """Log dice metric"""
         dice_metric = self.metrics['dice'].aggregate()
-        # dice_metric = dice_metric[1:]  # exclude background
+        dice_metric = dice_metric[1:]  # exclude background
         dice_per_label = {
             'dice_avg': dice_metric.mean(),
             'dice_ed': dice_metric[0],

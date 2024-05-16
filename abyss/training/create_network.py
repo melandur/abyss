@@ -67,15 +67,16 @@ def get_network(config):
         spatial_dims=3,
         in_channels=4,
         out_channels=out_channels,
+        filters=[64, 128, 256, 512, 1024],  # [:len(strides)] aka channels
         kernel_size=[[3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3]],
         strides=[[1, 1, 1], [2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]],
         upsample_kernel_size=[[2, 2, 2], [2, 2, 2], [2, 2, 2], [2, 2, 2]],
-        dropout=None,  # use other regularization methods like augmentation
+        dropout=None,
         norm_name=('INSTANCE', {'affine': True}),
         act_name=('leakyrelu', {'inplace': True, 'negative_slope': 0.01}),
         deep_supervision=True,
-        deep_supr_num=3,
-        res_block=False,
+        deep_supr_num=2,
+        res_block=True,
         trans_bias=False,
     )
 
