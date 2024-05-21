@@ -9,7 +9,7 @@ from monai.losses import DiceCELoss, DiceFocalLoss
 from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete
 from pytorch_lightning.utilities.types import LRSchedulerTypeUnion
-from torch.optim.lr_scheduler import LambdaLR
+from torch.optim.lr_scheduler import LambdaLR, ExponentialLR
 
 from .create_dataset import get_loader
 from .create_network import get_network
@@ -42,7 +42,8 @@ class Model(pl.LightningModule):
             nesterov=True,
         )
         total_epochs = self.config['training']['max_epochs']
-        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: (1 - epoch / total_epochs) ** 0.9)
+        # scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: (1 - epoch / total_epochs) ** 0.9)
+        scheduler = ExponentialLR(optimizer, gamma=0.95)
         return [optimizer], [scheduler]
 
     def lr_scheduler_step(self, scheduler: LRSchedulerTypeUnion, metric: Optional[Any]) -> None:
