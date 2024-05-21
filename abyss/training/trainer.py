@@ -54,7 +54,7 @@ def get_trainer(config: dict) -> LightningTrainer:
         strategy='auto',
         devices=[0],
         num_nodes=1,
-        precision='32-true',
+        precision='16-mixed',  # '16-mixed', '16-false', '32'
         logger=logger,
         callbacks=[
             early_stop_cb,
@@ -79,9 +79,9 @@ def get_trainer(config: dict) -> LightningTrainer:
         enable_checkpointing=None,
         enable_progress_bar=True,
         enable_model_summary=True,
-        accumulate_grad_batches=8,
-        gradient_clip_val=12.0,  # nnunet default, check this
-        gradient_clip_algorithm='norm',  # nnunet default, check this
+        accumulate_grad_batches=config['training']['accumulate_grad_batches'],
+        gradient_clip_val=config['training']['clip_grad']['value'],
+        gradient_clip_algorithm=config['training']['clip_grad']['norm'],
         deterministic=config['training']['deterministic'],
         benchmark=None,
         use_distributed_sampler=True,
