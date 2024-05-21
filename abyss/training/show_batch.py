@@ -1,8 +1,8 @@
 # pick one image from DecathlonDataset to visualize and check the 4 channels
-from create_dataset import get_loader
-from abyss.config import ConfigFile
-
 import matplotlib.pyplot as plt
+from create_dataset import get_loader
+
+from abyss.config import ConfigFile
 
 config_file = ConfigFile()
 config = config_file.get_config()
@@ -24,7 +24,7 @@ for idx, batch in enumerate(train_loader):
 
     print(f"image shape: {batch['label'].shape}")
     # plt.figure("label", (18, 6))
-    for i in range(3):
+    for i in range(4):
         ix = i + 4
         plt.subplot(3, 4, ix + 1)
         # plt.title(f"label channel {i}")

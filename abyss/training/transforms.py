@@ -46,50 +46,58 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
     ]
 
     if mode == 'train':
+
         spatial_transforms = [
-            tf.SpatialPadd(keys=['image', 'label'], spatial_size=config['trainer']['patch_size']),
-            tf.RandZoomd(
-                keys=['image', 'label'],
-                min_zoom=0.9,
-                max_zoom=1.2,
-                mode=('trilinear', 'nearest'),
-                align_corners=(True, None),
-                prob=1.0,
-                keep_size=True,
-            ),
+            tf.SpatialPadd(['image', 'label'], spatial_size=config['trainer']['patch_size']),
             tf.RandCropByPosNegLabeld(
                 keys=['image', 'label'],
                 label_key='label',
                 spatial_size=config['trainer']['patch_size'],
                 pos=1,
-                neg=1,
+                neg=0,
                 num_samples=1,
                 image_key='image',
                 image_threshold=0,
             ),
-            tf.RandGaussianNoised(keys=['image'], std=0.01, prob=0.15),
+            tf.RandZoomd(
+                keys=['image', 'label'],
+                min_zoom=0.7,
+                max_zoom=1.4,
+                mode=('trilinear', 'nearest'),
+                align_corners=(True, None),
+                prob=0.5,
+            ),
+            tf.RandAffined(
+                keys=['image', 'label'],
+                rotate_range=(0, 0, 0),
+                scale_range=(0.1, 0.1, 0.1),
+                translate_range=(0, 0, 0),
+                mode=('bilinear', 'nearest'),
+            ),
             tf.RandGaussianSmoothd(
                 keys=['image'],
                 sigma_x=(0.5, 1.15),
                 sigma_y=(0.5, 1.15),
                 sigma_z=(0.5, 1.15),
-                prob=0.15,
+                prob=0.3,
             ),
-            tf.RandScaleIntensityd(keys=['image'], factors=0.3, prob=0.15),
-            tf.RandFlipd(['image', 'label'], spatial_axis=[0], prob=0.5),
-            tf.RandFlipd(['image', 'label'], spatial_axis=[1], prob=0.5),
-            tf.RandFlipd(['image', 'label'], spatial_axis=[2], prob=0.5),
-            # tf.RandRotated(['image', 'label'],
-            #                range_x=(-15.0, 15.0),
-            #                range_y=(-15.0, 15.0),
-            #                range_z=(-15.0, 15.0),
-            #                mode=('bilinear', 'nearest'),
-            #                prob=0.5),
-            # tf.RandAdjustContrastd(keys=['image'], gamma=(0.5, 2.0), prob=0.15),
+            tf.RandScaleIntensityd(['image'], factors=0.1, prob=0.3),
+            tf.RandShiftIntensityd(['image'], offsets=0.1, prob=0.3),
+            tf.RandGaussianNoised(['image'], std=0.01, prob=0.3),
+            tf.RandFlipd(['image', 'label'], spatial_axis=0, prob=0.3),
+            tf.RandFlipd(['image', 'label'], spatial_axis=1, prob=0.3),
+            tf.RandFlipd(['image', 'label'], spatial_axis=2, prob=0.3),
+            tf.RandRotate90d(['image', 'label'], max_k=3, prob=0.3),
+        ]
+
+        other = [
             ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
             tf.CastToTyped(keys=['image', 'label'], dtype=(np.float32, np.uint8)),
             tf.EnsureTyped(keys=['image', 'label']),
         ]
+
+        spatial_transforms = spatial_transforms + other
+
     elif mode == 'val':
         spatial_transforms = [
             ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
@@ -161,12 +169,12 @@ class PreprocessAnisotropic(MapTransform):
     """This transform class takes NNUNet's preprocessing method for reference."""
 
     def __init__(
-            self,
-            keys,
-            clip_values,
-            pixdim,
-            normalize_values,
-            model_mode,
+        self,
+        keys,
+        clip_values,
+        pixdim,
+        normalize_values,
+        model_mode,
     ) -> None:
         super().__init__(keys)
         self.keys = keys

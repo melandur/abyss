@@ -1,5 +1,6 @@
-from typing import Optional, Any
 import math
+from typing import Any, Optional
+
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
@@ -9,7 +10,7 @@ from monai.losses import DiceCELoss
 from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete
 from pytorch_lightning.utilities.types import LRSchedulerTypeUnion
-from torch.optim.lr_scheduler import ExponentialLR
+from torch.optim.lr_scheduler import PolynomialLR, ReduceLROnPlateau
 
 from .create_dataset import get_loader
 from .create_network import get_network
@@ -40,29 +41,9 @@ class Model(pl.LightningModule):
             weight_decay=3e-5,
             nesterov=True,
         )
-        scheduler = ExponentialLR(optimizer, gamma=0.97)
-
+        max_epochs = self.config['training']['max_epochs']
+        scheduler = PolynomialLR(optimizer, total_iters=max_epochs, power=0.9)
         return [optimizer], [scheduler]
-
-    def lr_scheduler_step(self, scheduler: LRSchedulerTypeUnion, metric: Optional[Any]) -> None:
-        """LR Scheduler step"""
-        if self.trainer.global_step >= self.config['training']['warmup_steps']:
-            if metric is None:
-                scheduler.step()
-            else:
-                scheduler.step(metric)
-
-    def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_closure=None) -> None:
-        """Optimizer step"""
-        optimizer.step(closure=optimizer_closure)
-
-        end_lr = self.config['training']['learning_rate']
-        warmup_steps = self.config['training']['warmup_steps']
-
-        if self.trainer.global_step < warmup_steps:  # cosine warmup lr
-            lr = end_lr * (1.0 - math.cos(self.trainer.global_step / warmup_steps * math.pi)) / 2.0
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = lr
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward step"""
@@ -80,12 +61,13 @@ class Model(pl.LightningModule):
             # max_epochs = self.config['training']['max_epochs']
             # epoch = self.current_epoch if self.current_epoch < 15 else 1.0
             # factor = 1 + 1000 ** math.sin(epoch / max_epochs)
-            normalize_factor = sum(1.0 / (factor ** i) for i in range(len(preds)))
 
             loss = 0.0
+            preds = preds[:-2]  # drop last two feature maps
+            normalize_factor = sum(1.0 / (factor**i) for i in range(len(preds)))
             for idx, pred in enumerate(preds):
                 pred = nn.functional.softmax(pred, dim=1)
-                loss += 1.0 / (factor ** idx) * self.criterion(pred, label)
+                loss += 1.0 / (factor**idx) * self.criterion(pred, label)
 
             loss = loss / normalize_factor
         else:  # normal mode, only last feature map is output
@@ -145,12 +127,12 @@ class Model(pl.LightningModule):
         """Predict, loss, log"""
         data, label = batch['image'], batch['label']
         label = label.cpu()
-        pred = self.inferer(data, self.net).cpu()
+        pred = self.inferer(data, self.net)
         if self.config['trainer']['tta']:
             ct = 1.0
             for dims in [[2], [3], [4], (2, 3), (2, 4), (3, 4), (2, 3, 4)]:
                 flip_inputs = torch.flip(data, dims=dims)
-                flip_pred = torch.flip(self.inferer(flip_inputs, self.net).cpu(), dims=dims)
+                flip_pred = torch.flip(self.inferer(flip_inputs, self.net), dims=dims)
                 flip_pred = nn.functional.softmax(flip_pred, dim=1)
                 del flip_inputs
                 pred += flip_pred
