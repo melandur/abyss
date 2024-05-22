@@ -76,7 +76,7 @@ def get_network(config):
         act_name=('leakyrelu', {'inplace': True, 'negative_slope': 0.01}),
         deep_supervision=True,
         deep_supr_num=len(dimensions['strides']) - 2,
-        res_block=True,
+        res_block=False,
         trans_bias=False,
     )
 

@@ -26,8 +26,17 @@ def get_trainer(config: dict) -> LightningTrainer:
         monitor='loss_val',
         min_delta=config['training']['early_stop']['min_delta'],
         patience=config['training']['early_stop']['patience'],
-        verbose=config['training']['early_stop']['verbose'],
+        verbose=True,
         mode=config['training']['early_stop']['mode'],
+    )
+
+    model_checkpoint_cb = ModelCheckpoint(
+        monitor='loss_val',
+        dirpath=results_path,
+        filename='best-{epoch:02d}-{loss_val:.2f}',
+        save_last=True,
+        save_top_k=1,
+        mode='min',
     )
 
     progress_bar_cb = RichProgressBar(

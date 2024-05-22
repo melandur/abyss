@@ -1,15 +1,16 @@
-from typing import Optional, Any
 import math
+from typing import Any, Optional
+
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 from monai.data import decollate_batch
 from monai.inferers import SlidingWindowInferer
-from monai.losses import DiceCELoss, DiceFocalLoss
+from monai.losses import DiceCELoss
 from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete
 from pytorch_lightning.utilities.types import LRSchedulerTypeUnion
-from torch.optim.lr_scheduler import LambdaLR, ExponentialLR
+from torch.optim.lr_scheduler import LambdaLR
 
 from .create_dataset import get_loader
 from .create_network import get_network
@@ -22,8 +23,8 @@ class Model(pl.LightningModule):
         super().__init__()
         self.config = config
         self.net = get_network(config)
-        # self.criterion = DiceCELoss()
-        self.criterion = DiceFocalLoss()
+        self.criterion = DiceCELoss()
+        # self.criterion_2 = DiceFocalLoss()
         self.metrics = {'dice': DiceMetric(reduction='mean_channel')}
         self.inferer = SlidingWindowInferer(
             roi_size=config['trainer']['patch_size'],
@@ -42,8 +43,7 @@ class Model(pl.LightningModule):
             nesterov=True,
         )
         total_epochs = self.config['training']['max_epochs']
-        # scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: (1 - epoch / total_epochs) ** 0.9)
-        scheduler = ExponentialLR(optimizer, gamma=0.95)
+        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: (1 - epoch / total_epochs) ** 0.9)
         return [optimizer], [scheduler]
 
     def lr_scheduler_step(self, scheduler: LRSchedulerTypeUnion, metric: Optional[Any]) -> None:

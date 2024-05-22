@@ -34,26 +34,25 @@ class ConfigFile:
             'mode': {'train': True, 'test': False},
             'trainer': {
                 'label_classes': OrderedDict({'background': 0, 'edema': 1, 'necrosis': 2, 'enhancing': 3}),
-                'patch_size': [192, 192, 192],
+                'patch_size': [96, 96, 96],
                 'lr_decay': False,  # todo: check this
                 'tta': False,
-            },
+            },  # 360
             'training': {
                 'fold': 0,
                 'fast_dev_run': False,
-                'batch_size': 2,
+                'batch_size': 4,
                 'accumulate_grad_batches': 1,
                 'clip_grad': {'norm': 'norm', 'value': 12.0},
                 'num_workers': 8,
                 'max_epochs': 1000,
-                'learning_rate': 0.1,
-                'warmup_steps': 500,
+                'learning_rate': 0.01,
+                'warmup_steps': 90 * 5,
                 'early_stop': {'patience': 50, 'min_delta': 1e-6, 'mode': 'min', 'verbose': True},
                 'local_rank': 0,
                 'cache_rate': 0.05,
                 'check_val_every_n_epoch': 1,
                 'multi_gpu': False,
-                'amp': False,
                 'compile': False,  # todo: check this
                 'deterministic': False,
                 'checkpoint_path': None,

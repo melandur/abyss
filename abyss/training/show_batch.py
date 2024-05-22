@@ -28,7 +28,7 @@ for idx, batch in enumerate(train_loader):
         ix = i + 4
         plt.subplot(3, 4, ix + 1)
         # plt.title(f"label channel {i}")
-        plt.imshow(batch["label"][0, i, :, :, 60].detach().cpu())
+        plt.imshow(batch["label"][0, i, :, :, 60].detach().cpu(), interpolation=None)
 
     plt.draw()
     plt.pause(0.0001)
