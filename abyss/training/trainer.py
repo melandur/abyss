@@ -27,6 +27,7 @@ class CustomEarlyStopping(EarlyStopping):
             lr = trainer.optimizers[0].param_groups[0]['lr']
             if lr > self.min_larning_rate:
                 should_stop = False
+                self.wait_count = 0  # reset counter
                 reason = f'Early stop criterion passed, but learning rate {lr:.5f}/{self.min_larning_rate:.5f}'
 
         # stop every ddp process if any world process decides to stop

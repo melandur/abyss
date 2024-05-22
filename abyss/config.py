@@ -48,7 +48,7 @@ class ConfigFile:
                 'max_epochs': 1000,
                 'learning_rate': 0.01,
                 'warmup_steps': 90 * 5,
-                'early_stop': {'patience': 0, 'min_delta': 10, 'mode': 'min', 'min_lr': 1e-5},
+                'early_stop': {'patience': 50, 'min_delta': 1e-5, 'mode': 'min', 'min_lr': 1e-5},
                 'local_rank': 0,
                 'cache_rate': 0.05,
                 'check_val_every_n_epoch': 1,
