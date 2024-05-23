@@ -1,9 +1,9 @@
+import math
 from typing import Any, Optional
 
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-import numpy as np
 from monai.data import decollate_batch
 from monai.inferers import SlidingWindowInferer
 from monai.losses import DiceCELoss
@@ -32,6 +32,7 @@ class Model(pl.LightningModule):
             overlap=0.5,
             mode='gaussian',
         )
+        self.factor = 2.0
 
     def configure_optimizers(self):
         """Optimizer"""
@@ -59,7 +60,7 @@ class Model(pl.LightningModule):
         warmup_steps = self.config['training']['warmup_steps']
 
         if self.trainer.global_step < warmup_steps:
-            lr = end_lr * (1.0 - np.cos(self.trainer.global_step / warmup_steps * np.pi)) / 2.0
+            lr = end_lr * (1.0 - math.cos(self.trainer.global_step / warmup_steps * math.pi)) / 2.0
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
 
@@ -75,17 +76,12 @@ class Model(pl.LightningModule):
         if len(preds.size()) - len(label.size()) == 1:  # deep supervision mode
             preds = torch.unbind(preds, dim=1)  # unbind feature maps
 
-            factor = 2.0
-            if self.trainer.global_step > self.config['training']['warmup_steps']:  # after warmup deep supervision decay
-                max_epochs = self.config['training']['max_epochs']
-                factor = 1 + 1000 ** np.sin(self.current_epoch / max_epochs)
-
             loss = 0.0
             preds = preds[:-2]  # drop last two feature maps
-            normalize_factor = sum(1.0 / (factor**i) for i in range(len(preds)))
+            normalize_factor = sum(1.0 / (self.factor**i) for i in range(len(preds)))
             for idx, pred in enumerate(preds):
                 pred = nn.functional.softmax(pred, dim=1)
-                loss += 1.0 / (factor**idx) * self.criterion(pred, label)
+                loss += 1.0 / (self.factor**idx) * self.criterion(pred, label)
 
             loss = loss / normalize_factor
         else:  # normal mode, only last feature map is output
@@ -96,6 +92,10 @@ class Model(pl.LightningModule):
         return loss
 
     def on_train_epoch_end(self) -> None:
+        if self.trainer.global_step > self.config['training']['warmup_steps']:  # after warmup deep supervision decay
+            max_epochs = self.config['training']['max_epochs']
+            self.factor = 1 + 1000 ** math.sin(self.current_epoch / max_epochs)
+
         optimizer = self.optimizers()
         lr = optimizer.param_groups[0]['lr']
         self.log('lr', lr, prog_bar=True, on_step=False, on_epoch=True)

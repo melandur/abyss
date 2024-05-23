@@ -47,7 +47,7 @@ class ConfigFile:
                 'num_workers': 8,
                 'max_epochs': 1000,
                 'learning_rate': 1e-2,
-                'warmup_steps': 90 * 5,
+                'warmup_steps': 0,
                 'early_stop': {'patience': 50, 'min_delta': 1e-5, 'mode': 'min', 'min_lr': 1e-6},
                 'local_rank': 0,
                 'cache_rate': 0.05,
