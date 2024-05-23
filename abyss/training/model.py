@@ -1,9 +1,9 @@
-import math
 from typing import Any, Optional
 
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
+import numpy as np
 from monai.data import decollate_batch
 from monai.inferers import SlidingWindowInferer
 from monai.losses import DiceCELoss
@@ -59,7 +59,7 @@ class Model(pl.LightningModule):
         warmup_steps = self.config['training']['warmup_steps']
 
         if self.trainer.global_step < warmup_steps:
-            lr = end_lr * (1.0 - math.cos(self.trainer.global_step / warmup_steps * math.pi)) / 2.0
+            lr = end_lr * (1.0 - np.cos(self.trainer.global_step / warmup_steps * np.pi)) / 2.0
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
 
@@ -76,9 +76,9 @@ class Model(pl.LightningModule):
             preds = torch.unbind(preds, dim=1)  # unbind feature maps
 
             factor = 2.0
-            # max_epochs = self.config['training']['max_epochs']
-            # epoch = self.current_epoch if self.current_epoch < 15 else 1.0
-            # factor = 1 + 1000 ** math.sin(epoch / max_epochs)
+            if self.trainer.global_step > self.config['training']['warmup_steps']:  # after warmup deep supervision decay
+                max_epochs = self.config['training']['max_epochs']
+                factor = 1 + 1000 ** np.sin(self.current_epoch / max_epochs)
 
             loss = 0.0
             preds = preds[:-2]  # drop last two feature maps

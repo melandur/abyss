@@ -32,40 +32,25 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
     load_transforms = [
         tf.LoadImaged(keys=keys),
         tf.EnsureChannelFirstd(keys=keys),
+        tf.ToTensord(keys=keys),
     ]
 
-    sample_transforms = [
-        PreprocessAnisotropic(
-            keys=keys,
-            clip_values=config['dataset']['clip_values'],
-            pixdim=config['dataset']['spacing'],
-            normalize_values=config['dataset']['normalize_values'],
-            model_mode=mode,
-        ),
-        tf.ToTensord(keys='image'),
-    ]
+    # sample_transforms = [
+    #     PreprocessAnisotropic(
+    #         keys=keys,
+    #         clip_values=config['dataset']['clip_values'],
+    #         pixdim=config['dataset']['spacing'],
+    #         normalize_values=config['dataset']['normalize_values'],
+    #         model_mode=mode,
+    #     ),
+    #     tf.ToTensord(keys='image'),
+    # ]
 
     if mode == 'train':
 
         spatial_transforms = [
-            tf.SpatialPadd(['image', 'label'], spatial_size=config['trainer']['patch_size']),
-            tf.RandCropByLabelClassesd(
-                keys=['image', 'label'],
-                label_key='label',
-                spatial_size=config['trainer']['patch_size'],
-                num_classes=len(config['trainer']['label_classes']),
-                num_samples=1,
-                warn=False,
-            ),
-            tf.RandRotated(['image', 'label'], range_x=0.4, range_y=0.4, range_z=0.4, prob=0.2),
-            tf.RandZoomd(
-                keys=['image', 'label'],
-                min_zoom=0.8,
-                max_zoom=1.2,
-                mode=('trilinear', 'nearest'),
-                align_corners=(True, None),
-                prob=0.16,
-            ),
+            tf.CropForegroundd(keys=['image', 'label'], source_key='image', allow_smaller=False),
+            tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
             tf.RandGaussianSmoothd(
                 keys=['image'],
                 sigma_x=(0.5, 1.15),
@@ -76,11 +61,31 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
             tf.RandScaleIntensityd(['image'], channel_wise=True, factors=0.1, prob=0.5),
             tf.RandShiftIntensityd(['image'], channel_wise=True, offsets=0.1, prob=0.5),
             tf.RandGaussianNoised(['image'], std=0.01, prob=0.15),
+            tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
+            tf.SpatialPadd(['image', 'label'], spatial_size=config['trainer']['patch_size']),
+            tf.RandCropByLabelClassesd(
+                keys=['image', 'label'],
+                ratios=[0.0, 0.1, 0.4, 0.5],
+                label_key='label',
+                spatial_size=config['trainer']['patch_size'],
+                num_classes=len(config['trainer']['label_classes']),
+                num_samples=1,
+                warn=False,
+            ),
+            tf.RandRotated(['image', 'label'], range_x=0.4, range_y=0.4, range_z=0.4, prob=0.2),
+            tf.RandZoomd(
+                keys=['image', 'label'],
+                min_zoom=0.9,
+                max_zoom=1.2,
+                mode=('trilinear', 'nearest'),
+                align_corners=(True, None),
+                prob=0.5,
+            ),
             tf.RandFlipd(['image', 'label'], spatial_axis=0, prob=0.5),
             tf.RandFlipd(['image', 'label'], spatial_axis=1, prob=0.5),
             tf.RandFlipd(['image', 'label'], spatial_axis=2, prob=0.5),
-        ]
 
+        ]
         other = [
             ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
             tf.CastToTyped(keys=['image', 'label'], dtype=(np.float32, np.uint8)),
@@ -91,18 +96,20 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
 
     elif mode == 'val':
         spatial_transforms = [
+            tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
             ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
             tf.CastToTyped(keys=['image', 'label'], dtype=(np.float32, np.uint8)),
             tf.EnsureTyped(keys=['image', 'label']),
         ]
     else:
         spatial_transforms = [
+            tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
             ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
             tf.CastToTyped(keys=['image'], dtype=(np.float32)),
             tf.EnsureTyped(keys=['image']),
         ]
 
-    all_transforms = load_transforms + sample_transforms + spatial_transforms
+    all_transforms = load_transforms + spatial_transforms
     return tf.Compose(all_transforms)
 
 
