@@ -1,42 +1,28 @@
 import os
-
 import torch
 from pytorch_lightning import Trainer as LightningTrainer
 from pytorch_lightning import seed_everything
-from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, RichProgressBar
+from pytorch_lightning.callbacks import RichProgressBar, Callback
 from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTheme
 from pytorch_lightning.loggers import TensorBoardLogger
 
 
-# class CustomEarlyStopping(EarlyStopping):
-#     def __init__(self, *args, min_learning_rate: float = 1e-5, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.min_larning_rate = min_learning_rate
-#
-#     def _run_early_stopping_check(self, trainer: "pl.Trainer") -> None:
-#         """Checks whether the early stopping condition is met and if so tells the trainer to stop the training."""
-#         logs = trainer.callback_metrics
-#
-#         # disable early_stopping with fast_dev_run
-#         if trainer.fast_dev_run or not self._validate_condition_metric(logs):  # short circuit if metric not present
-#             return None
-#
-#         current = logs[self.monitor].squeeze()
-#         should_stop, reason = self._evaluate_stopping_criteria(current)
-#         if should_stop:
-#             lr = trainer.optimizers[0].param_groups[0]['lr']
-#             if lr > self.min_larning_rate:
-#                 should_stop = False
-#                 self.wait_count = 0  # reset counter
-#                 reason = f'Early stop criterion passed, but learning rate {lr:.5f}/{self.min_larning_rate:.5f}'
-#
-#         # stop every ddp process if any world process decides to stop
-#         should_stop = trainer.strategy.reduce_boolean_decision(should_stop, all=False)
-#         trainer.should_stop = trainer.should_stop or should_stop
-#         if should_stop:
-#             self.stopped_epoch = trainer.current_epoch
-#         if reason and self.verbose:
-#             self._log_info(trainer, reason, self.log_rank_zero_only)
+class Improvement(Callback):
+
+    def __init__(self, monitor: str):
+        super().__init__()
+        self.monitor = monitor
+        self.best = None
+
+    def on_validation_end(self, trainer, pl_module) -> None:
+        logs = trainer.callback_metrics
+        current = logs[self.monitor].squeeze().detach().cpu().numpy()
+        if self.best is None:
+            self.best = current
+        elif current < self.best:
+            diff = self.best - current
+            print(f'Improved by {diff:.5f}')
+            self.best = current
 
 
 def get_trainer(config: dict) -> LightningTrainer:
@@ -47,15 +33,6 @@ def get_trainer(config: dict) -> LightningTrainer:
 
     # swa = StochasticWeightAveraging(swa_lrs=1e-2, swa_epoch_start=0.001)
 
-    # early_stop_cb = CustomEarlyStopping(
-    #     monitor='loss_val',
-    #     min_delta=config['training']['early_stop']['min_delta'],
-    #     patience=config['training']['early_stop']['patience'],
-    #     verbose=True,
-    #     mode=config['training']['early_stop']['mode'],
-    #     min_learning_rate=config['training']['early_stop']['min_lr'],
-    # )
-
     # model_checkpoint_cb = ModelCheckpoint(
     #     monitor='loss_val',
     #     dirpath=results_path,
@@ -64,6 +41,7 @@ def get_trainer(config: dict) -> LightningTrainer:
     #     save_top_k=1,
     #     mode='min',
     # )
+    improvement_cb = Improvement(monitor='loss_val')
 
     progress_bar_cb = RichProgressBar(
         leave=True,
@@ -76,6 +54,8 @@ def get_trainer(config: dict) -> LightningTrainer:
             time='grey82',
             processing_speed='grey82',
             metrics='grey82',
+            metrics_text_delimiter='\n',
+            metrics_format='.4f',
         ),
     )
 
@@ -94,6 +74,7 @@ def get_trainer(config: dict) -> LightningTrainer:
         callbacks=[
             # early_stop_cb,
             progress_bar_cb,
+            improvement_cb,
             # model_checkpoint_cb,
             # swa,
         ],

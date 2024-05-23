@@ -32,7 +32,7 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
     load_transforms = [
         tf.LoadImaged(keys=keys),
         tf.EnsureChannelFirstd(keys=keys),
-        tf.ToTensord(keys=keys),
+        tf.ToTensord(keys='image'),
     ]
 
     # sample_transforms = [
@@ -51,17 +51,17 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
         spatial_transforms = [
             tf.CropForegroundd(keys=['image', 'label'], source_key='image', allow_smaller=False),
             tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
-            tf.RandGaussianSmoothd(
-                keys=['image'],
-                sigma_x=(0.5, 1.15),
-                sigma_y=(0.5, 1.15),
-                sigma_z=(0.5, 1.15),
-                prob=0.15,
-            ),
-            tf.RandScaleIntensityd(['image'], channel_wise=True, factors=0.1, prob=0.5),
-            tf.RandShiftIntensityd(['image'], channel_wise=True, offsets=0.1, prob=0.5),
-            tf.RandGaussianNoised(['image'], std=0.01, prob=0.15),
-            tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
+            # tf.RandGaussianSmoothd(
+            #     keys=['image'],
+            #     sigma_x=(0.5, 1.15),
+            #     sigma_y=(0.5, 1.15),
+            #     sigma_z=(0.5, 1.15),
+            #     prob=0.15,
+            # ),
+            # tf.RandScaleIntensityd(['image'], channel_wise=True, factors=0.1, prob=0.5),
+            # tf.RandShiftIntensityd(['image'], channel_wise=True, offsets=0.1, prob=0.5),
+            # tf.RandGaussianNoised(['image'], std=0.01, prob=0.15),
+            # tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
             tf.SpatialPadd(['image', 'label'], spatial_size=config['trainer']['patch_size']),
             tf.RandCropByLabelClassesd(
                 keys=['image', 'label'],

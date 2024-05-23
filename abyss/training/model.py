@@ -92,9 +92,9 @@ class Model(pl.LightningModule):
         return loss
 
     def on_train_epoch_end(self) -> None:
-        if self.trainer.global_step > self.config['training']['warmup_steps']:  # after warmup deep supervision decay
-            max_epochs = self.config['training']['max_epochs']
-            self.factor = 1 + 1000 ** math.sin(self.current_epoch / max_epochs)
+        # if self.trainer.global_step > self.config['training']['warmup_steps']:  # after warmup deep supervision decay
+        #     max_epochs = self.config['training']['max_epochs']
+        #     self.factor = 1 + 1000 ** math.sin(self.current_epoch / max_epochs)
 
         optimizer = self.optimizers()
         lr = optimizer.param_groups[0]['lr']
