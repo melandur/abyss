@@ -66,6 +66,7 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
             tf.RandCropByLabelClassesd(
                 keys=['image', 'label'],
                 label_key='label',
+                ratios=[0, 2, 2, 2],
                 spatial_size=config['trainer']['patch_size'],
                 num_classes=len(config['trainer']['label_classes']),
                 num_samples=1,

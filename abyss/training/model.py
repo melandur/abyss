@@ -1,6 +1,3 @@
-import math
-from typing import Any, Optional
-
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
@@ -9,7 +6,6 @@ from monai.inferers import SlidingWindowInferer
 from monai.losses import DiceCELoss
 from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete
-from pytorch_lightning.utilities.types import LRSchedulerTypeUnion
 from torch.optim.lr_scheduler import LambdaLR
 
 from .create_dataset import get_loader
@@ -23,8 +19,7 @@ class Model(pl.LightningModule):
         super().__init__()
         self.config = config
         self.net = get_network(config)
-        weight = torch.tensor([0.1, 0.3, 0.3, 0.3])
-        self.criterion = DiceCELoss(weight=weight, ce_weight=weight)
+        self.criterion = DiceCELoss(weight=torch.tensor([0.1, 0.3, 0.3, 0.3]))
         self.metrics = {'dice': DiceMetric(reduction='mean_channel')}
         self.inferer = SlidingWindowInferer(
             roi_size=config['trainer']['patch_size'],
@@ -44,25 +39,8 @@ class Model(pl.LightningModule):
             nesterov=True,
         )
         total_epochs = self.config['training']['max_epochs']
-        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: (1 - epoch / total_epochs) ** 0.9)
+        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: (1 - epoch / total_epochs) ** 5)
         return [optimizer], [scheduler]
-
-    def lr_scheduler_step(self, scheduler: LRSchedulerTypeUnion, metric: Optional[Any]) -> None:
-        """LR Scheduler step"""
-        if self.trainer.global_step > self.config['training']['warmup_steps']:
-            scheduler.step()
-
-    def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_closure=None) -> None:
-        """Optimizer step with lr warmup"""
-        optimizer.step(closure=optimizer_closure)
-
-        end_lr = self.config['training']['learning_rate']
-        warmup_steps = self.config['training']['warmup_steps']
-
-        if self.trainer.global_step < warmup_steps:
-            lr = end_lr * (1.0 - math.cos(self.trainer.global_step / warmup_steps * math.pi)) / 2.0
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = lr
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward step"""
