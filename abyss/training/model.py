@@ -23,8 +23,8 @@ class Model(pl.LightningModule):
         super().__init__()
         self.config = config
         self.net = get_network(config)
-        self.criterion = DiceCELoss()
-        # self.criterion_2 = DiceFocalLoss()
+        weight = torch.tensor([0.1, 0.3, 0.3, 0.3])
+        self.criterion = DiceCELoss(weight=weight, ce_weight=weight)
         self.metrics = {'dice': DiceMetric(reduction='mean_channel')}
         self.inferer = SlidingWindowInferer(
             roi_size=config['trainer']['patch_size'],
@@ -131,7 +131,7 @@ class Model(pl.LightningModule):
     def on_validation_epoch_end(self) -> None:
         """Log dice metric"""
         dice_metric = self.metrics['dice'].aggregate()
-        dice_metric = dice_metric[1:]  # exclude background
+        dice_metric = dice_metric[1:]  # exclude background from log
         dice_per_label = {
             'dice_avg': dice_metric.mean(),
             'dice_ed': dice_metric[0],

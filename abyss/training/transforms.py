@@ -65,7 +65,6 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
             tf.SpatialPadd(['image', 'label'], spatial_size=config['trainer']['patch_size']),
             tf.RandCropByLabelClassesd(
                 keys=['image', 'label'],
-                ratios=[0.0, 0.1, 0.4, 0.5],
                 label_key='label',
                 spatial_size=config['trainer']['patch_size'],
                 num_classes=len(config['trainer']['label_classes']),
