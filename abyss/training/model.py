@@ -10,7 +10,6 @@ from torch.optim.lr_scheduler import LambdaLR
 
 from .create_dataset import get_loader
 from .create_network import get_network
-from .loss import SoftDiceLoss
 
 
 class Model(pl.LightningModule):
@@ -20,7 +19,7 @@ class Model(pl.LightningModule):
         super().__init__()
         self.config = config
         self.net = get_network(config)
-        self.criterion = SoftDiceLoss(batch_dice=True, do_bg=True)
+        self.criterion = DiceCELoss(smooth_nr=0.0, smooth_dr=0.0)
         self.metrics = {'dice': DiceMetric(reduction='mean_channel')}
         self.inferer = SlidingWindowInferer(
             roi_size=config['trainer']['patch_size'],

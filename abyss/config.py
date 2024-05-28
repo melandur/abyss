@@ -41,7 +41,7 @@ class ConfigFile:
             'training': {
                 'fold': 0,
                 'fast_dev_run': False,
-                'batch_size': 4,
+                'batch_size': 8,
                 'accumulate_grad_batches': 1,
                 'clip_grad': {'norm': 'norm', 'value': 12.0},
                 'num_workers': 8,
