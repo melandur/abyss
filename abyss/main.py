@@ -1,7 +1,8 @@
+import resource
+
 from config import ConfigFile
 from training.model import Model
 from training.trainer import get_trainer
-import resource
 
 # Increase the number of file descriptors to the maximum allowed
 rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)

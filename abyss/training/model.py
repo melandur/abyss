@@ -10,6 +10,7 @@ from torch.optim.lr_scheduler import LambdaLR
 
 from .create_dataset import get_loader
 from .create_network import get_network
+from .loss import SoftDiceLoss
 
 
 class Model(pl.LightningModule):
@@ -19,7 +20,7 @@ class Model(pl.LightningModule):
         super().__init__()
         self.config = config
         self.net = get_network(config)
-        self.criterion = DiceCELoss(weight=torch.tensor([0.1, 0.3, 0.3, 0.3]))
+        self.criterion = SoftDiceLoss(batch_dice=True, do_bg=True)
         self.metrics = {'dice': DiceMetric(reduction='mean_channel')}
         self.inferer = SlidingWindowInferer(
             roi_size=config['trainer']['patch_size'],
@@ -39,12 +40,17 @@ class Model(pl.LightningModule):
             nesterov=True,
         )
         total_epochs = self.config['training']['max_epochs']
-        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: (1 - epoch / total_epochs) ** 5)
+        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: (1 - epoch / total_epochs) ** 0.9)
         return [optimizer], [scheduler]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward step"""
         return self.net(x)
+
+    def on_train_epoch_start(self) -> None:
+        optimizer = self.optimizers()
+        lr = optimizer.param_groups[0]['lr']
+        self.log('lr', lr, prog_bar=True, on_step=False, on_epoch=True)
 
     def training_step(self, batch: torch.Tensor, batch_idx: int):
         """Predict, loss, log, (backprop and optimizer step done by lightning)"""
@@ -70,13 +76,10 @@ class Model(pl.LightningModule):
         return loss
 
     def on_train_epoch_end(self) -> None:
+        pass
         # if self.trainer.global_step > self.config['training']['warmup_steps']:  # after warmup deep supervision decay
         #     max_epochs = self.config['training']['max_epochs']
         #     self.factor = 1 + 1000 ** math.sin(self.current_epoch / max_epochs)
-
-        optimizer = self.optimizers()
-        lr = optimizer.param_groups[0]['lr']
-        self.log('lr', lr, prog_bar=True, on_step=False, on_epoch=True)
 
     def validation_step(self, batch: torch.Tensor) -> None:
         """Predict, loss, log"""

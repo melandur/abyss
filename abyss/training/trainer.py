@@ -1,8 +1,9 @@
 import os
+
 import torch
 from pytorch_lightning import Trainer as LightningTrainer
 from pytorch_lightning import seed_everything
-from pytorch_lightning.callbacks import RichProgressBar, Callback
+from pytorch_lightning.callbacks import Callback, RichProgressBar
 from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTheme
 from pytorch_lightning.loggers import TensorBoardLogger
 

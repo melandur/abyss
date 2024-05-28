@@ -15,9 +15,10 @@ class ToOneHot(MapTransform):
     def __call__(self, data):
         for key in self.keys:
             store = []
-            for _, class_label in self.label_classes.items():
+            for _, class_labels in self.label_classes.items():
                 label_mask = torch.zeros_like(data[key])
-                label_mask[data[key] == class_label] = 1
+                for class_label in class_labels:
+                    label_mask[data[key] == class_label] = 1
                 store.append(label_mask)
             data[key] = torch.vstack(store)
         return data
@@ -56,35 +57,35 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
             #     sigma_x=(0.5, 1.15),
             #     sigma_y=(0.5, 1.15),
             #     sigma_z=(0.5, 1.15),
-            #     prob=0.15,
+            #     prob=0.5,
             # ),
             # tf.RandScaleIntensityd(['image'], channel_wise=True, factors=0.1, prob=0.5),
             # tf.RandShiftIntensityd(['image'], channel_wise=True, offsets=0.1, prob=0.5),
-            # tf.RandGaussianNoised(['image'], std=0.01, prob=0.15),
+            # tf.RandGaussianNoised(['image'], std=0.01, prob=0.5),
             # tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
             tf.SpatialPadd(['image', 'label'], spatial_size=config['trainer']['patch_size']),
             tf.RandCropByLabelClassesd(
                 keys=['image', 'label'],
                 label_key='label',
-                ratios=[0, 2, 2, 2],
                 spatial_size=config['trainer']['patch_size'],
                 num_classes=len(config['trainer']['label_classes']),
                 num_samples=1,
                 warn=False,
             ),
-            tf.RandRotated(['image', 'label'], range_x=0.4, range_y=0.4, range_z=0.4, prob=0.2),
+            tf.RandRotated(
+                keys=['image', 'label'], mode=('bilinear', 'nearest'), range_x=0.3, range_y=0.3, range_z=0.3, prob=0.5
+            ),
             tf.RandZoomd(
                 keys=['image', 'label'],
                 min_zoom=0.9,
                 max_zoom=1.2,
-                mode=('trilinear', 'nearest'),
+                mode=('bilinear', 'nearest'),
                 align_corners=(True, None),
                 prob=0.5,
             ),
             tf.RandFlipd(['image', 'label'], spatial_axis=0, prob=0.5),
             tf.RandFlipd(['image', 'label'], spatial_axis=1, prob=0.5),
             tf.RandFlipd(['image', 'label'], spatial_axis=2, prob=0.5),
-
         ]
         other = [
             ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
