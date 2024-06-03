@@ -14,13 +14,15 @@ out_channels = len(config['trainer']['label_classes'])
 plt.ion()
 plt.figure("image", (12, 7))
 
+
 for idx, batch in enumerate(train_loader):
     print(f"image shape: {batch['image'].shape}")
 
     for i in range(4):
         plt.subplot(3, 4, i + 1)
         # plt.title(f"image channel {i}")
-        plt.imshow(batch["image"][0, i, :, :, 60].detach().cpu(), cmap="gray")
+        middle = batch["image"].shape[-1] // 2
+        plt.imshow(batch["image"][0, i, :, :, middle].detach().cpu(), cmap="gray")
 
     print(f"image shape: {batch['label'].shape}")
     # plt.figure("label", (18, 6))
@@ -28,12 +30,35 @@ for idx, batch in enumerate(train_loader):
         ix = i + 4
         plt.subplot(3, 4, ix + 1)
         # plt.title(f"label channel {i}")
-        plt.imshow(batch["label"][0, i, :, :, 60].detach().cpu(), filternorm=False)
+        middle = batch["label"].shape[-1] // 2
+        plt.imshow(batch["label"][0, i, :, :, middle].detach().cpu(), filternorm=False)
 
     plt.draw()
     plt.pause(0.0001)
     plt.waitforbuttonpress()
     plt.clf()
 
-    # plt.waitforbuttonpress()
-    # plt.close()
+
+# val_loader = get_loader(config, 'val')
+# for idx, batch in enumerate(val_loader):
+#     print(f"image shape: {batch['image'].shape}")
+#
+#     for i in range(4):
+#         plt.subplot(3, 4, i + 1)
+#         # plt.title(f"image channel {i}")
+#         middle = batch["image"].shape[-1] // 2
+#         plt.imshow(batch["image"][0, i, :, :, middle].detach().cpu(), cmap="gray")
+#
+#     print(f"image shape: {batch['label'].shape}")
+#     # plt.figure("label", (18, 6))
+#     for i in range(2):
+#         ix = i + 4
+#         plt.subplot(3, 4, ix + 1)
+#         # plt.title(f"label channel {i}")
+#         middle = batch["label"].shape[-1] // 2
+#         plt.imshow(batch["label"][0, i, :, :, middle].detach().cpu(), filternorm=False)
+#
+#     plt.draw()
+#     plt.pause(0.0001)
+#     plt.waitforbuttonpress()
+#     plt.clf()

@@ -42,20 +42,6 @@ def get_kernels_strides(config):
     return results
 
 
-# def get_network(config):
-#
-#     from monai.networks.nets import UNet
-#
-#     net = UNet(
-#         spatial_dims=3,
-#         in_channels=4,
-#         out_channels=len(config['trainer']['label_classes']),
-#         channels=(16, 32, 64, 128, 256),
-#         strides=(2, 2, 2, 2),
-#     )
-#     return net
-
-
 def get_network(config):
     dimensions = get_kernels_strides(config)
     out_channels = len(config['trainer']['label_classes'])
@@ -67,7 +53,8 @@ def get_network(config):
         spatial_dims=3,
         in_channels=4,
         out_channels=out_channels,
-        filters=[64, 96, 128, 192, 256, 384, 512, 768, 1024],  # [:len(strides)] aka channels
+        # filters=[64, 96, 128, 192, 256, 384, 512, 768, 1024],  # brats winner 21
+        filters=[32, 64, 128, 256, 320, 320],  # nnunet
         kernel_size=dimensions['kernel_size'],
         strides=dimensions['strides'],
         upsample_kernel_size=dimensions['upsample_kernel_size'],
