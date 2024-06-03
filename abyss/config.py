@@ -37,20 +37,20 @@ class ConfigFile:
                 'patch_size': [128, 128, 128],
                 'lr_decay': False,  # todo: check this
                 'tta': False,
-            },  # 360
+            },
             'training': {
                 'fold': 0,
                 'fast_dev_run': False,
-                'batch_size': 8,
+                'batch_size': 2,
                 'accumulate_grad_batches': 1,
-                'clip_grad': {'norm': 'norm', 'value': 12.0},
+                'clip_grad': {'norm': 'norm', 'value': 12},
                 'num_workers': 8,
                 'max_epochs': 1000,
-                'learning_rate': 1e-2,
-                'early_stop': {'patience': 50, 'min_delta': 1e-5, 'mode': 'min', 'min_lr': 1e-6},
+                'learning_rate': 0.01,
                 'local_rank': 0,
                 'cache_rate': 0.01,
                 'check_val_every_n_epoch': 1,
+                'warmup_steps': 1000,
                 'multi_gpu': False,
                 'compile': False,  # todo: check this
                 'deterministic': False,
