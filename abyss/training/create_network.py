@@ -62,8 +62,8 @@ def get_network(config):
         norm_name=('INSTANCE', {'affine': True}),
         act_name=('leakyrelu', {'inplace': True, 'negative_slope': 0.01}),
         deep_supervision=True,
-        deep_supr_num=len(dimensions['upsample_kernel_size']) - 1,
-        res_block=True,
+        deep_supr_num=2,
+        res_block=False,
         trans_bias=False,
     )
 

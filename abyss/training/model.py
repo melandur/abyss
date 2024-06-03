@@ -9,8 +9,8 @@ from monai.inferers import SlidingWindowInferer
 from monai.losses import DiceCELoss
 from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete
-from torch.optim.lr_scheduler import LambdaLR
 from pytorch_lightning.utilities.types import LRSchedulerTypeUnion
+from torch.optim.lr_scheduler import LambdaLR
 
 from .create_dataset import get_loader
 from .create_network import get_network
@@ -23,7 +23,7 @@ class Model(pl.LightningModule):
         super().__init__()
         self.config = config
         self.net = get_network(config)
-        self.criterion = DiceCELoss(sigmoid=True)
+        self.criterion = DiceCELoss(sigmoid=True, batch=True)
         self.metrics = {'dice': DiceMetric(reduction='mean_channel')}
         self.inferer = SlidingWindowInferer(
             roi_size=config['trainer']['patch_size'],
@@ -77,7 +77,7 @@ class Model(pl.LightningModule):
             loss = 0.0
             normalize_factor = sum(1.0 / (self.ds_factor**i) for i in range(len(preds)))
             for idx, pred in enumerate(preds):
-                loss += 1.0 / (self.ds_factor ** idx) * self.criterion(pred, label)
+                loss += 1.0 / (self.ds_factor**idx) * self.criterion(pred, label)
             loss = loss / normalize_factor
         else:  # only last feature map is output is used
             loss = self.criterion(preds, label)
@@ -87,9 +87,9 @@ class Model(pl.LightningModule):
 
     def on_train_epoch_end(self) -> None:
         """None"""
-        if self.trainer.global_step > self.config['training']['warmup_steps']:  # after warmup deep supervision decay
-            max_epochs = self.config['training']['max_epochs']
-            self.ds_factor = 1 + 1000 ** math.sin(self.current_epoch / max_epochs)
+        # if self.trainer.global_step > self.config['training']['warmup_steps']:  # after warmup deep supervision decay
+        #     max_epochs = self.config['training']['max_epochs']
+        #     self.ds_factor = 1 + 1000 ** math.sin(self.current_epoch / max_epochs)
 
         optimizer = self.optimizers()
         lr = optimizer.param_groups[0]['lr']

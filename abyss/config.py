@@ -35,13 +35,12 @@ class ConfigFile:
             'trainer': {
                 'label_classes': OrderedDict({'background': [0], 'wt': [1, 2, 3], 'tc': [2, 3], 'en': [3]}),
                 'patch_size': [128, 128, 128],
-                'lr_decay': False,  # todo: check this
                 'tta': False,
             },
             'training': {
                 'fold': 0,
                 'fast_dev_run': False,
-                'batch_size': 2,
+                'batch_size': 5,
                 'accumulate_grad_batches': 1,
                 'clip_grad': {'norm': 'norm', 'value': 12},
                 'num_workers': 8,
@@ -52,7 +51,6 @@ class ConfigFile:
                 'check_val_every_n_epoch': 1,
                 'warmup_steps': 1000,
                 'multi_gpu': False,
-                'compile': False,  # todo: check this
                 'deterministic': False,
                 'checkpoint_path': None,
                 'seed': 42,  # find the truth in randomness

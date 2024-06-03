@@ -1,8 +1,8 @@
 import monai.transforms as tf
 import numpy as np
 import torch
-from monai.transforms.compose import MapTransform
 import torchio as tio
+from monai.transforms.compose import MapTransform
 from monai.transforms.utils import generate_spatial_bounding_box
 from skimage.transform import resize
 
@@ -54,13 +54,23 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
         spatial_transforms = [
             tf.CropForegroundd(keys=['image', 'label'], source_key='image', allow_smaller=False),
             tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
+            tf.RandGaussianSmoothd(
+                keys=['image'],
+                sigma_x=(0.5, 1.15),
+                sigma_y=(0.5, 1.15),
+                sigma_z=(0.5, 1.15),
+                prob=0.15,
+            ),
+            tf.RandScaleIntensityd(['image'], channel_wise=True, factors=0.1, prob=0.15),
+            tio.RandomGamma(p=0.15, log_gamma=(-0.3, 0.3), keys=['image']),
+            # tf.RandShiftIntensityd(['image'], channel_wise=True, offsets=0.1, prob=0.15),
+            tf.RandGaussianNoised(['image'], std=0.01, prob=0.15),
+            tio.RandomBiasField(p=0.15, coefficients=(0.2), order=3, keys=['image']),
             tf.SpatialPadd(['image', 'label'], spatial_size=config['trainer']['patch_size']),
             tf.RandCropByLabelClassesd(
                 keys=['image', 'label'],
                 label_key='label',
                 image_key='image',
-                # ratios=[0.0001, 1.0],
-                ratios=[1.0, 1.3, 1.3, 1.3],
                 spatial_size=config['trainer']['patch_size'],
                 num_classes=len(config['trainer']['label_classes']),
                 num_samples=1,
@@ -71,33 +81,22 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
                 keys=['image', 'label'],
                 mode=('bilinear', 'nearest'),
                 align_corners=(True, None),
-                range_x=0.2,
-                range_y=0.2,
-                range_z=0.2,
-                prob=0.2,
+                range_x=0.3,
+                range_y=0.3,
+                range_z=0.3,
+                prob=1.0,
             ),
             tf.RandZoomd(
                 keys=['image', 'label'],
                 min_zoom=1.0,
-                max_zoom=1.2,
+                max_zoom=1.6,
                 mode=('bilinear', 'nearest'),
                 align_corners=(True, None),
-                prob=0.5,
+                prob=1.0,
             ),
             tf.RandFlipd(['image', 'label'], spatial_axis=0, prob=0.5),
             tf.RandFlipd(['image', 'label'], spatial_axis=1, prob=0.5),
             tf.RandFlipd(['image', 'label'], spatial_axis=2, prob=0.5),
-            tf.RandGaussianSmoothd(
-                keys=['image'],
-                sigma_x=(0.5, 1.15),
-                sigma_y=(0.5, 1.15),
-                sigma_z=(0.5, 1.15),
-                prob=0.15,
-            ),
-            tf.RandScaleIntensityd(['image'], channel_wise=True, factors=0.1, prob=0.15),
-            tf.RandShiftIntensityd(['image'], channel_wise=True, offsets=0.1, prob=0.15),
-            tf.RandGaussianNoised(['image'], std=0.01, prob=0.15),
-            tio.RandomBiasField(p=0.1, coefficients=(0.5), order=3, keys=['image']),
         ]
         other = [
             ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
