@@ -11,7 +11,6 @@ resource.setrlimit(resource.RLIMIT_NOFILE, (4096, rlimit[1]))
 
 config_file = ConfigFile()
 config = config_file.get_config()
-
 model = Model(config)
 trainer = get_trainer(config)
 

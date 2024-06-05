@@ -122,11 +122,11 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
         ]
     else:
         spatial_transforms = [
-            tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
             tf.CropForegroundd(keys=['image', 'label'], source_key='image', allow_smaller=False),
+            tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
             ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
-            tf.CastToTyped(keys=['image'], dtype=(np.float32)),
-            tf.EnsureTyped(keys=['image']),
+            tf.CastToTyped(keys=['image', 'label'], dtype=(np.float32, np.uint8)),
+            tf.EnsureTyped(keys=['image', 'label']),
         ]
 
     all_transforms = load_transforms + spatial_transforms

@@ -1,4 +1,5 @@
 import math
+import os
 from typing import Any, Optional
 
 import pytorch_lightning as pl
@@ -24,7 +25,7 @@ class Model(pl.LightningModule):
         self.config = config
         self.net = get_network(config)
         self.criterion = DiceCELoss(sigmoid=True, batch=True)
-        self.metrics = {'dice': DiceMetric(reduction='mean_channel')}
+        self.metrics = {'dice': DiceMetric(reduction='none', ignore_empty=True)}
         self.inferer = SlidingWindowInferer(
             roi_size=config['trainer']['patch_size'],
             sw_batch_size=4,
@@ -32,6 +33,29 @@ class Model(pl.LightningModule):
             mode='gaussian',
         )
         self.ds_factor = 2.0
+
+    def setup(self, stage: str) -> None:
+        """Setup"""
+        if stage == 'test':
+            results_files = os.listdir(self.config['project']['results_path'])
+            best_ckpt_file = [file for file in results_files if 'best' in file and file.endswith('.ckpt')]
+            if len(best_ckpt_file) == 1:
+                best_ckpt_path = os.path.join(self.config['project']['results_path'], best_ckpt_file[0])
+            else:
+                raise FileNotFoundError(f'No best checkpoint found in -> {self.config["project"]["results_path"]}')
+
+            checkpoint = torch.load(best_ckpt_path)
+            weights = checkpoint['state_dict']
+            for key in list(weights.keys()):
+                if 'net.' in key:
+                    new_key = key.replace('net.', '')
+                    weights[new_key] = weights.pop(key)
+                if 'criterion.' in key:
+                    weights.pop(key)
+
+            self.net.load_state_dict(weights)
+            self.net.eval()
+            # self.net.load_state_dict(torch.load(best_ckpt_path))
 
     def configure_optimizers(self):
         """Optimizer"""
@@ -121,25 +145,33 @@ class Model(pl.LightningModule):
         pred = post_pred(decollate_batch(pred)[0])
         label = decollate_batch(label)[0]
 
-        self.metrics['dice'](pred, label)
+        self.metrics['dice']([pred], [label])
         self.log('loss_val', loss, prog_bar=True, on_step=False, on_epoch=True)
+
+    def _drop_nan_cases(self, dice_metric):
+        nan_mask = torch.isnan(dice_metric).any(dim=1)
+        non_nan_mask = ~nan_mask
+        dice_metric = dice_metric[non_nan_mask]
+        return dice_metric
 
     def on_validation_epoch_end(self) -> None:
         """Log dice metric"""
         dice_metric = self.metrics['dice'].aggregate()
+        dice_metric = self._drop_nan_cases(dice_metric)
         label_classes = self.config['trainer']['label_classes']
-        dice_per_label = {'dice_avg': dice_metric.mean()}
+        dice_per_channel = torch.mean(dice_metric, dim=0)
+        metric_log = {'dice_avg': torch.mean(dice_per_channel, dim=0)}
+
         for idx, label_class in enumerate(label_classes, start=-1):
             if label_class == 'background':
                 continue
-            dice_per_label[f'dice_{label_class}'] = dice_metric[idx]
+            metric_log[f'dice_{label_class}'] = dice_per_channel[idx]
         self.metrics['dice'].reset()
-        self.log_dict(dice_per_label, prog_bar=True, on_step=False, on_epoch=True)
+        self.log_dict(metric_log, prog_bar=True, on_step=False, on_epoch=True)
 
     def test_step(self, batch: torch.Tensor) -> None:
         """Predict, loss, log"""
         data, label = batch['image'], batch['label']
-        label = label.cpu()
         pred = self.inferer(data, self.net)
 
         if self.config['trainer']['tta']:
@@ -153,45 +185,46 @@ class Model(pl.LightningModule):
                 ct += 1.0
             pred = pred / ct
 
+        pred = pred[:, 1:, ...]  # remove background
+        label = label[:, 1:, ...]
+
         pred = nn.functional.sigmoid(pred)
         post_pred = AsDiscrete(threshold=0.5)
 
         pred = post_pred(decollate_batch(pred)[0])
         label = decollate_batch(label)[0]
 
-        new = torch.zeros(240, 240, 155)
-        new[pred[1] == 1] = 1
-        new[pred[2] == 1] = 2
-        new[pred[3] == 1] = 3
-        import SimpleITK as sitk
+        self.metrics['dice']([pred], [label])
 
-        img = sitk.GetImageFromArray(new.cpu().numpy())
+        pred = torch.argmax(pred, dim=0)
+        label = torch.argmax(label, dim=0)
         import random
 
+        import SimpleITK as sitk
+
+        path = os.path.join(self.config['project']['results_path'], 'inference')
+        os.makedirs(path, exist_ok=True)
         x = random.randint(0, 1000)
-        sitk.WriteImage(img, f'{x}_pred.nii.gz')
+        img = sitk.GetImageFromArray(pred.cpu().numpy())
+        sitk.WriteImage(img, os.path.join(path, f'{x}_pred.nii.gz'))
 
-        new = torch.zeros(240, 240, 155)
-        new[label[1] == 1] = 1
-        new[label[2] == 1] = 2
-        new[label[3] == 1] = 3
-        img = sitk.GetImageFromArray(new.cpu().numpy())
-        sitk.WriteImage(img, f'{x}_label.nii.gz')
-
-        self.metrics['dice']([pred], [label])
+        img = sitk.GetImageFromArray(label.cpu().numpy())
+        sitk.WriteImage(img, os.path.join(path, f'{x}_label.nii.gz'))
+        # print(x)
 
     def on_test_epoch_end(self) -> None:
         """Log dice metric"""
         dice_metric = self.metrics['dice'].aggregate()
-        mean_dice = dice_metric.mean().item()
-        dice_per_label = {
-            'dice_avg': mean_dice,
-            'dice_ed': dice_metric[0].mean().item(),
-            'dice_nc': dice_metric[1].mean().item(),
-            'dice_en': dice_metric[2].mean().item(),
+        dice_metric = self._drop_nan_cases(dice_metric)
+        dice_per_channel = torch.mean(dice_metric, dim=0)
+        metric_log = {
+            'dice_avg': torch.mean(dice_per_channel, dim=0),
+            'dice_wt': dice_per_channel[0],
+            'dice_tc': dice_per_channel[1],
+            'dice_en': dice_per_channel[2],
         }
         self.metrics['dice'].reset()
-        self.log_dict(dice_per_label, prog_bar=True, on_step=False, on_epoch=True)
+        self.log_dict(metric_log, prog_bar=True, on_step=False, on_epoch=True)
 
     def train_dataloader(self):
         """Train dataloader"""

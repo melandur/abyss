@@ -3,7 +3,7 @@ import os
 import torch
 from pytorch_lightning import Trainer as LightningTrainer
 from pytorch_lightning import seed_everything
-from pytorch_lightning.callbacks import Callback, RichProgressBar
+from pytorch_lightning.callbacks import Callback, ModelCheckpoint, RichProgressBar
 from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTheme
 from pytorch_lightning.loggers import TensorBoardLogger
 
@@ -34,14 +34,14 @@ def get_trainer(config: dict) -> LightningTrainer:
 
     # swa = StochasticWeightAveraging(swa_lrs=1e-2, swa_epoch_start=0.001)
 
-    # model_checkpoint_cb = ModelCheckpoint(
-    #     monitor='loss_val',
-    #     dirpath=results_path,
-    #     filename='best-{epoch:02d}-{loss_val:.2f}',
-    #     save_last=True,
-    #     save_top_k=1,
-    #     mode='min',
-    # )
+    model_checkpoint_cb = ModelCheckpoint(
+        monitor='loss_val',
+        dirpath=results_path,
+        filename='best-{epoch:02d}-{loss_val:.2f}',
+        save_last=True,
+        save_top_k=1,
+        mode='min',
+    )
     improvement_cb = Improvement(monitor='loss_val')
 
     progress_bar_cb = RichProgressBar(
@@ -76,7 +76,7 @@ def get_trainer(config: dict) -> LightningTrainer:
             # early_stop_cb,
             progress_bar_cb,
             improvement_cb,
-            # model_checkpoint_cb,
+            model_checkpoint_cb,
             # swa,
         ],
         fast_dev_run=config['training']['fast_dev_run'],
@@ -86,9 +86,9 @@ def get_trainer(config: dict) -> LightningTrainer:
         min_steps=None,
         max_time=None,
         limit_train_batches=None,
-        limit_val_batches=1,
-        limit_test_batches=1,
-        limit_predict_batches=1,
+        limit_val_batches=None,
+        limit_test_batches=None,
+        limit_predict_batches=None,
         overfit_batches=0.0,
         val_check_interval=None,
         check_val_every_n_epoch=config['training']['check_val_every_n_epoch'],

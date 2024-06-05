@@ -16,7 +16,10 @@ def get_loader(config: dict, mode: str):
     with open(dataset_file_path, 'r') as path:
         data_dict = json.load(path)
 
-    datalist = data_dict[f'{mode}_fold_{config["training"]["fold"]}']
+    if mode == 'test':
+        datalist = data_dict['test']
+    else:
+        datalist = data_dict[f'{mode}_fold_{config["training"]["fold"]}']
 
     if mode in ['val', 'test']:
         if config['training']['multi_gpu']:

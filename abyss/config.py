@@ -51,7 +51,7 @@ class ConfigFile:
                 'check_val_every_n_epoch': 1,
                 'warmup_steps': 1000,
                 'multi_gpu': False,
-                'deterministic': False,
+                'deterministic': True,
                 'checkpoint_path': None,
                 'seed': 42,  # find the truth in randomness
             },
