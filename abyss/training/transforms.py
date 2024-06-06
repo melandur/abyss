@@ -2,7 +2,8 @@ import monai.transforms as tf
 import numpy as np
 import torch
 import torchio as tio
-from monai.transforms.compose import MapTransform
+from monai.transforms import MapTransform, LoadImage
+from monai.data import MetaTensor
 from monai.transforms.utils import generate_spatial_bounding_box
 from skimage.transform import resize
 
@@ -26,6 +27,31 @@ class ToOneHot(MapTransform):
         return data
 
 
+class CustomLoadImaged(MapTransform):
+    def __init__(self, keys, image_key='image', label_key='label', meta_key_postfix='meta_dict',
+                 allow_missing_keys=False):
+        super().__init__(keys, allow_missing_keys)
+        self.image_key = image_key
+        self.label_key = label_key
+        self.meta_key_postfix = meta_key_postfix
+        self.loader = LoadImage(image_only=True)
+
+    def __call__(self, data):
+        d = dict(data)
+
+        # Load and stack images
+        images = [self.loader(image_path) for image_path in d[self.image_key]]
+        stacked_images = np.stack(images, axis=0)
+        d[self.image_key] = MetaTensor(stacked_images)
+
+        # Load and stack labels
+        labels = [self.loader(label_path) for label_path in d[self.label_key]]
+        stacked_labels = np.stack(labels, axis=0)
+        d[self.label_key] = MetaTensor(stacked_labels)
+
+        return d
+
+
 def get_transforms(config: dict, mode: str) -> tf.Compose:
     # if mode == 'test':
     #     keys = ['image']
@@ -33,8 +59,8 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
     keys = ['image', 'label']
 
     load_transforms = [
-        tf.LoadImaged(keys=keys),
-        tf.EnsureChannelFirstd(keys=keys),
+        CustomLoadImaged(keys=keys),
+        # tf.EnsureChannelFirstd(keys=keys),
         tf.ToTensord(keys='image'),
     ]
 

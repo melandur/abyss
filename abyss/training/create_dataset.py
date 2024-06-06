@@ -12,14 +12,20 @@ def get_loader(config: dict, mode: str):
 
     transform = get_transforms(config, mode)
 
-    dataset_file_path = os.path.join(config['project']['config_path'], 'dataset.json')
-    with open(dataset_file_path, 'r') as path:
+    train_dataset_path = config['project']['train_dataset_path']
+    train_dataset_file = os.path.join(config['project']['config_path'], 'train_dataset.json')
+
+    with open(train_dataset_file, 'r') as path:
         data_dict = json.load(path)
 
     if mode == 'test':
         datalist = data_dict['test']
     else:
         datalist = data_dict[f'{mode}_fold_{config["training"]["fold"]}']
+
+    for subject in datalist:
+        subject['image'] = [os.path.join(train_dataset_path, subject['name'], image) for image in subject['image']]
+        subject['label'] = [os.path.join(train_dataset_path, subject['name'], label) for label in subject['label']]
 
     if mode in ['val', 'test']:
         if config['training']['multi_gpu']:
@@ -72,3 +78,10 @@ def get_loader(config: dict, mode: str):
         )
 
     raise ValueError('mode should be train, validation or test.')
+
+
+if __name__ == '__main__':
+
+    from abyss.config import ConfigFile
+    config = ConfigFile().get_config()
+    get_loader(config, 'train')

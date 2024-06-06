@@ -5,77 +5,85 @@ import numpy as np
 from sklearn.model_selection import KFold
 
 
-def create_dataset_file(config):
+def create_test_dataset_file(config):
+    """Create a dataset file with test data."""
+
+
+def create_train_dataset_file(config):
     """Create a dataset file with training data."""
-    image_folder_name = 'imagesTr'
-    label_folder_name = 'labelsTr'
+    dataset_path = config['project']['train_dataset_path']
 
-    dataset_path = config['project']['dataset_path']
-    image_path = os.path.join(dataset_path, image_folder_name)
-    label_path = os.path.join(dataset_path, label_folder_name)
+    if not os.path.exists(dataset_path):
+        raise FileNotFoundError(f'dataset path not found -> {dataset_path}')
 
-    assert os.path.exists(image_path), f'image folder not found -> {image_path}'
-    assert os.path.exists(label_path), f'label folder not found -> {label_path}'
+    subjects = os.listdir(dataset_path)
 
-    images = os.listdir(os.path.join(dataset_path, 'imagesTr'))
-    labels = os.listdir(os.path.join(dataset_path, 'labelsTr'))
+    channel_order = config['dataset']['channel_order']
+    label_order = config['dataset']['label_order']
 
-    assert set(images) == set(labels), f'files differ -> {set(labels).symmetric_difference(set(images))}'
+    datalist = {'training': []}
+    for subject in subjects:
+        files = os.listdir(os.path.join(dataset_path, subject))
+        channel_list = []
+        label_list = []
 
-    images = sorted(images)
+        for name, identifier in channel_order.items():
+            for file in files:
+                if file.endswith(identifier):
+                    channel_list.append(file)
 
-    # randome choice 10% of the dataset
-    test_images = np.random.choice(images, 30, replace=False)
-    train_images = list(set(images) - set(test_images))
+        for name, identifier in label_order.items():
+            for file in files:
+                if file.endswith(identifier):
+                    label_list.append(file)
+                    break
 
-    datalist = {'training': [], 'test': []}
-    for image in train_images:
+        if len(channel_list) != len(channel_order):
+            raise FileNotFoundError(f'channel files not found for subject -> {subject}')
+
+        if len(label_list) != len(label_order):
+            raise FileNotFoundError(f'label files not found for subject -> {subject}')
+
         datalist['training'].append(
             {
-                'image': os.path.join(dataset_path, image_folder_name, image),
-                'label': os.path.join(dataset_path, label_folder_name, image),
-            }
-        )
-
-    for image in test_images:
-        datalist['test'].append(
-            {
-                'image': os.path.join(dataset_path, image_folder_name, image),
-                'label': os.path.join(dataset_path, label_folder_name, image),
+                'name': subject,
+                'image': channel_list,
+                'label': label_list,
             }
         )
 
     config_path = config['project']['config_path']
     os.makedirs(config_path, exist_ok=True)
-    dataset_file_path = os.path.join(config_path, 'dataset.json')
+    dataset_file_path = os.path.join(config_path, 'train_dataset.json')
     with open(dataset_file_path, 'w') as f:
-        json.dump(datalist, f)
+        json.dump(datalist, f, indent=4)
     print(f'dataset file has been created -> {dataset_file_path}')
 
 
 def create_datalist(config):
     """Create a dataset file with folds."""
-    dataset_file_path = os.path.join(config['project']['config_path'], 'dataset.json')
+    dataset_file_path = os.path.join(config['project']['config_path'], 'train_dataset.json')
 
     with open(dataset_file_path, 'r') as f:
         dataset = json.load(f)
 
     dataset_with_folds = dataset.copy()
 
-    keys = [line['image'] for line in dataset['training']]
-    dataset_train_dict = dict(zip(keys, dataset['training']))
-    all_keys_sorted = np.sort(keys)
+    names = [line['name'] for line in dataset['training']]
+    # keys = [line['image'] for line in dataset['training']]
+    dataset_train_dict = dict(zip(names, dataset['training']))
+    all_names_sorted = np.sort(names)
 
     kfold = KFold(
         n_splits=config['dataset']['total_folds'],
         shuffle=True,
         random_state=config['dataset']['seed'],
     )
-    for i, (train_idx, test_idx) in enumerate(kfold.split(all_keys_sorted)):
+    for i, (train_idx, test_idx) in enumerate(kfold.split(all_names_sorted)):
         val_data = []
         train_data = []
-        train_keys = np.array(all_keys_sorted)[train_idx]
-        test_keys = np.array(all_keys_sorted)[test_idx]
+        train_keys = np.array(all_names_sorted)[train_idx]
+        test_keys = np.array(all_names_sorted)[test_idx]
         for key in test_keys:
             val_data.append(dataset_train_dict[key])
         for key in train_keys:
@@ -85,9 +93,11 @@ def create_datalist(config):
         dataset_with_folds[f'train_fold_{i}'] = train_data
     del dataset
 
-    print(dataset_with_folds)
+    print(json.dumps(dataset_with_folds, indent=4))
+
     with open(dataset_file_path, 'w') as f:
-        json.dump(dataset_with_folds, f)
+        json.dump(dataset_with_folds, f, indent=4)
+
     print(f'dataset file with folds has been created -> {dataset_file_path}')
 
 
@@ -95,5 +105,5 @@ if __name__ == '__main__':
     from abyss.config import ConfigFile
 
     config = ConfigFile().get_config()
-    create_dataset_file(config)
+    create_train_dataset_file(config)
     create_datalist(config)

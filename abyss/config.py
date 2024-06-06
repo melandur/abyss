@@ -8,7 +8,8 @@ class ConfigFile:
         self.project_name = 'aby'
         self.experiment_name = 'train'
         self.project_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.dataset_path = os.path.join(os.path.expanduser('~'), 'Downloads', 'Task01_BrainTumour')
+        self.train_dataset_path = os.path.join(os.path.expanduser('~'), 'ephemeral', 'train')
+        self.test_dataset_path = os.path.join(os.path.expanduser('~'), 'ephemeral', 'test')
 
     def get_config(self) -> dict:
         """Returns config dict"""
@@ -19,7 +20,8 @@ class ConfigFile:
                 'name': self.project_name,
                 'experiment_name': self.experiment_name,
                 'base_path': self.project_path,
-                'dataset_path': self.dataset_path,
+                'train_dataset_path': self.train_dataset_path,
+                'test_dataset_path': self.test_dataset_path,
                 'config_path': os.path.join(experiment_path, '0_config'),
                 'results_path': os.path.join(experiment_path, '1_results'),
                 'inference_path': os.path.join(experiment_path, '2_inference'),
@@ -29,11 +31,18 @@ class ConfigFile:
                 'clip_values': [0, 0],
                 'normalize_values': [0, 0],
                 'total_folds': 5,
+                'channel_order': {
+                    't1c': '_t1c.nii.gz',
+                    't1': '_t1.nii.gz',
+                    't2': '_t2.nii.gz',
+                    'flair': '_flair.nii.gz'
+                },
+                'label_order': {'seg': '_seg.nii.gz'},
                 'seed': 42,
             },
             'mode': {'train': True, 'test': False},
             'trainer': {
-                'label_classes': OrderedDict({'background': [0], 'wt': [1, 2, 3], 'tc': [2, 3], 'en': [3]}),
+                'label_classes': OrderedDict({'background': [0], 'wt': [1, 2, 3, 4], 'tc': [2, 3, 4], 'en': [3]}),
                 'patch_size': [128, 128, 128],
                 'tta': False,
             },
@@ -42,14 +51,13 @@ class ConfigFile:
                 'fast_dev_run': False,
                 'batch_size': 2,
                 'accumulate_grad_batches': 1,
-                'clip_grad': {'norm': 'norm', 'value': 12},
+                'clip_grad': {'norm': 'norm', 'value': 12},  # nnunet default
                 'num_workers': 8,
                 'max_epochs': 1000,
                 'learning_rate': 0.01,
                 'local_rank': 0,
                 'cache_rate': 0.01,
                 'check_val_every_n_epoch': 1,
-                'warmup_steps': 1000,
                 'multi_gpu': False,
                 'deterministic': True,
                 'checkpoint_path': None,

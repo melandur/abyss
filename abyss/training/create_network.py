@@ -54,8 +54,8 @@ def get_network(config):
         in_channels=4,
         out_channels=out_channels,
         # filters=[64, 128, 256, 512, 512, 512],  # brats winner 22
-        filters=[64, 96, 128, 192, 256, 384, 512, 768, 1024],  # brats winner 21
-        # filters=[32, 64, 128, 256, 320, 320],  # nnunet
+        # filters=[64, 96, 128, 192, 256, 384, 512, 768, 1024],  # brats winner 21
+        filters=[32, 64, 128, 256, 320, 320],  # nnunet
         kernel_size=dimensions['kernel_size'],
         strides=dimensions['strides'],
         upsample_kernel_size=dimensions['upsample_kernel_size'],
