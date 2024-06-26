@@ -1,16 +1,13 @@
-import math
 import os
-from typing import Any, Optional
 
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 from monai.data import decollate_batch
-from monai.inferers import SlidingWindowInferer
+from sliding_window import sliding_window_inference
 from monai.losses import DiceCELoss
 from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete
-from pytorch_lightning.utilities.types import LRSchedulerTypeUnion
 from torch.optim.lr_scheduler import LambdaLR
 
 from .create_dataset import get_loader
@@ -26,13 +23,6 @@ class Model(pl.LightningModule):
         self.net = get_network(config)
         self.criterion = DiceCELoss(sigmoid=True, batch=True)
         self.metrics = {'dice': DiceMetric(reduction='none', ignore_empty=True)}
-        self.inferer = SlidingWindowInferer(
-            roi_size=config['trainer']['patch_size'],
-            sw_batch_size=4,
-            overlap=0.5,
-            mode='gaussian',
-        )
-        self.ds_factor = 2.0
 
     def setup(self, stage: str) -> None:
         """Setup"""
@@ -55,19 +45,17 @@ class Model(pl.LightningModule):
 
             self.net.load_state_dict(weights)
             self.net.eval()
-            # self.net.load_state_dict(torch.load(best_ckpt_path))
 
     def configure_optimizers(self):
         """Optimizer"""
         optimizer = torch.optim.SGD(
             self.net.parameters(),
-            lr=self.config['training']['learning_rate'],
+            lr=0.01,
             momentum=0.99,
             weight_decay=3e-5,
             nesterov=True,
         )
-        total_epochs = self.config['training']['max_epochs']
-        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: (1 - epoch / total_epochs) ** 0.9)
+        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: (1 - epoch / 1000) ** 0.9)
         return [optimizer], [scheduler]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -87,9 +75,9 @@ class Model(pl.LightningModule):
         if len(preds.size()) - len(label.size()) == 1:  # deep supervision mode
             preds = torch.unbind(preds, dim=1)  # unbind feature maps
             loss = 0.0
-            normalize_factor = sum(1.0 / (self.ds_factor**i) for i in range(len(preds)))
+            normalize_factor = sum(1.0 / (2**i) for i in range(len(preds)))
             for idx, pred in enumerate(preds):
-                loss += 1.0 / (self.ds_factor**idx) * self.criterion(pred, label)
+                loss += 1.0 / (2**idx) * self.criterion(pred, label)
             loss = loss / normalize_factor
         else:  # only last feature map is output is used
             loss = self.criterion(preds, label)
@@ -100,13 +88,13 @@ class Model(pl.LightningModule):
     def validation_step(self, batch: torch.Tensor) -> None:
         """Predict, loss, log"""
         data, label = batch['image'], batch['label']
-        pred = self.inferer(data, self.net)
+        pred = sliding_window_inference(data, self.config['trainer']['patch_size'], self.net)
 
         if self.config['trainer']['tta']:
             ct = 1.0
             for dims in [[2], [3], [4], (2, 3), (2, 4), (3, 4), (2, 3, 4)]:
                 flip_inputs = torch.flip(data, dims=dims)
-                flip_pred = self.inferer(flip_inputs, self.net)
+                flip_pred = sliding_window_inference(flip_inputs, self.config['trainer']['patch_size'], self.net)
                 flip_pred = torch.flip(flip_pred, dims=dims)
                 del flip_inputs
                 pred += flip_pred
@@ -126,18 +114,11 @@ class Model(pl.LightningModule):
         self.metrics['dice']([pred], [label])
         self.log('loss_val', loss, prog_bar=True, on_step=False, on_epoch=True)
 
-    def _drop_nan_cases(self, dice_metric):
-        nan_mask = torch.isnan(dice_metric).any(dim=1)
-        non_nan_mask = ~nan_mask
-        dice_metric = dice_metric[non_nan_mask]
-        return dice_metric
-
     def on_validation_epoch_end(self) -> None:
         """Log dice metric"""
         dice_metric = self.metrics['dice'].aggregate()
-        dice_metric = self._drop_nan_cases(dice_metric)
         label_classes = self.config['trainer']['label_classes']
-        dice_per_channel = torch.mean(dice_metric, dim=0)
+        dice_per_channel = torch.nanmean(dice_metric, dim=0)
         metric_log = {'dice_avg': torch.mean(dice_per_channel, dim=0)}
 
         for idx, label_class in enumerate(label_classes, start=-1):
@@ -193,8 +174,7 @@ class Model(pl.LightningModule):
     def on_test_epoch_end(self) -> None:
         """Log dice metric"""
         dice_metric = self.metrics['dice'].aggregate()
-        dice_metric = self._drop_nan_cases(dice_metric)
-        dice_per_channel = torch.mean(dice_metric, dim=0)
+        dice_per_channel = torch.nanmean(dice_metric, dim=0)
         metric_log = {
             'dice_avg': torch.mean(dice_per_channel, dim=0),
             'dice_wt': dice_per_channel[0],

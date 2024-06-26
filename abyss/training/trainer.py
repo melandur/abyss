@@ -32,8 +32,6 @@ def get_trainer(config: dict) -> LightningTrainer:
     log_path = os.path.join(results_path, 'logs')
     print(f'tensorboard --logdir={log_path}')
 
-    # swa = StochasticWeightAveraging(swa_lrs=1e-2, swa_epoch_start=0.001)
-
     model_checkpoint_cb = ModelCheckpoint(
         monitor='loss_val',
         dirpath=results_path,
@@ -73,14 +71,12 @@ def get_trainer(config: dict) -> LightningTrainer:
         precision='16-mixed',  # '16-mixed', '16-false', '32'
         logger=logger,
         callbacks=[
-            # early_stop_cb,
             progress_bar_cb,
             improvement_cb,
             model_checkpoint_cb,
-            # swa,
         ],
         fast_dev_run=config['training']['fast_dev_run'],
-        max_epochs=config['training']['max_epochs'],
+        max_epochs=1000,
         min_epochs=None,
         max_steps=-1,
         min_steps=None,
@@ -91,15 +87,15 @@ def get_trainer(config: dict) -> LightningTrainer:
         limit_predict_batches=None,
         overfit_batches=0.0,
         val_check_interval=None,
-        check_val_every_n_epoch=config['training']['check_val_every_n_epoch'],
+        check_val_every_n_epoch=1,
         num_sanity_val_steps=None,
         log_every_n_steps=None,
         enable_checkpointing=None,
         enable_progress_bar=True,
         enable_model_summary=True,
-        accumulate_grad_batches=config['training']['accumulate_grad_batches'],
-        gradient_clip_val=config['training']['clip_grad']['value'],
-        gradient_clip_algorithm=config['training']['clip_grad']['norm'],
+        accumulate_grad_batches=1,
+        gradient_clip_val=12,
+        gradient_clip_algorithm='norm',
         deterministic=config['training']['deterministic'],
         benchmark=None,
         use_distributed_sampler=True,

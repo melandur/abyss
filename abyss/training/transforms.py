@@ -1,10 +1,11 @@
+import SimpleITK as sitk
 import monai.transforms as tf
 import numpy as np
 import torch
-import torchio as tio
-from monai.transforms import MapTransform, LoadImage
+
+import torch.nn.functional as F
+from monai.transforms import MapTransform, LoadImage, RandAdjustContrast
 from monai.data import MetaTensor
-from monai.transforms.utils import generate_spatial_bounding_box
 from skimage.transform import resize
 
 
@@ -29,40 +30,178 @@ class ToOneHot(MapTransform):
 
 class CustomLoadImaged(MapTransform):
     def __init__(self, keys, image_key='image', label_key='label', meta_key_postfix='meta_dict',
-                 allow_missing_keys=False):
+                 allow_missing_keys=False, inference=False):
         super().__init__(keys, allow_missing_keys)
         self.image_key = image_key
         self.label_key = label_key
         self.meta_key_postfix = meta_key_postfix
+        self.inference = inference
         self.loader = LoadImage(image_only=True)
 
     def __call__(self, data):
         d = dict(data)
 
-        # Load and stack images
-        images = [self.loader(image_path) for image_path in d[self.image_key]]
-        stacked_images = np.stack(images, axis=0)
-        d[self.image_key] = MetaTensor(stacked_images)
+        if self.inference:
+            img = sitk.ReadImage(d['image'][0])
+            d['origin'] = img.GetOrigin()
+            d['orientation'] = img.GetDirection()
+            d['spacing'] = img.GetSpacing()
 
+        if 'image' in d:
+            images = [self.loader(image_path) for image_path in d['image']]
+            stacked_images = np.stack(images, axis=0)
+            d['image'] = MetaTensor(stacked_images)
+            # Load and stack images
+        # images = [self.loader(image_path) for image_path in d[self.image_key]]
+        # stacked_images = np.stack(images, axis=0)
+        # d[self.image_key] = MetaTensor(stacked_images)
         # Load and stack labels
-        labels = [self.loader(label_path) for label_path in d[self.label_key]]
-        stacked_labels = np.stack(labels, axis=0)
-        d[self.label_key] = MetaTensor(stacked_labels)
+        if 'label' in d:
+            labels = [self.loader(label_path) for label_path in d['label']]
+            stacked_labels = np.stack(labels, axis=0)
+            d['label'] = MetaTensor(stacked_labels)
+        # labels = [self.loader(label_path) for label_path in d[self.label_key]]
+        # stacked_labels = np.stack(labels, axis=0)
+        # d[self.label_key] = MetaTensor(stacked_labels)
 
         return d
 
 
-def get_transforms(config: dict, mode: str) -> tf.Compose:
-    # if mode == 'test':
-    #     keys = ['image']
-    # else:
-    keys = ['image', 'label']
+class MultiplicativeBrightnessTransform(MapTransform, tf.RandomizableTransform):
+    def __init__(self, keys, multiplier_range=(0.75, 1.25), synchronize_channels=False, p_per_channel=1.0, prob=0.1):
+        super().__init__(keys)
+        self.keys = keys
+        self.multiplier_range = multiplier_range
+        self.synchronize_channels = synchronize_channels
+        self.p_per_channel = p_per_channel
+        self.prob = prob
 
-    load_transforms = [
-        CustomLoadImaged(keys=keys),
-        # tf.EnsureChannelFirstd(keys=keys),
-        tf.ToTensord(keys='image'),
-    ]
+    def randomize(self):
+        self.factor = self.R.uniform(self.multiplier_range[0], self.multiplier_range[1])
+
+    def __call__(self, data):
+        d = dict(data)
+        self.randomize()
+        for key in self.keys:
+            if self.synchronize_channels:
+                d[key] = d[key] * self.factor
+            else:
+                for c in range(d[key].shape[0]):  # assuming the first dimension is the channel
+                    zero_mask = d[key][c] == 0
+                    if self.R.uniform() < self.p_per_channel:
+                        d[key][c] = d[key][c] * self.factor
+                    d[key][c][zero_mask] = 0
+        return d
+
+
+class GaussianNoiseTransform(MapTransform, tf.RandomizableTransform):
+    def __init__(self, keys, noise_variance=(0, 0.1), p_per_channel=1.0, prob=0.1):
+        super().__init__(keys)
+        self.keys = keys
+        self.noise_variance = noise_variance
+        self.p_per_channel = p_per_channel
+        self.prob = prob
+
+    def __call__(self, data):
+        d = dict(data)
+        self.noise_std = np.sqrt(self.R.uniform(self.noise_variance[0], self.noise_variance[1]))
+        for key in self.keys:
+            for c in range(d[key].shape[0]):  # assuming the first dimension is the channel
+                zero_mask = d[key][c] == 0
+                if self.R.uniform() < self.p_per_channel:
+                    noise = self.R.normal(0, self.noise_std, size=d[key][c].shape)
+                    d[key][c] += torch.from_numpy(noise)
+                d[key][c][zero_mask] = 0
+        return d
+
+
+class ContrastTransform(MapTransform, tf.RandomizableTransform):
+    def __init__(self, keys, contrast_range=(0.75, 1.25), preserve_range=True, p_per_channel=1.0, prob=0.1):
+        super().__init__(keys)
+        self.keys = keys
+        self.contrast_range = contrast_range
+        self.preserve_range = preserve_range
+        self.p_per_channel = p_per_channel
+        self.transform = RandAdjustContrast(prob=1.0, gamma=self.contrast_range)
+        self.prob = prob
+
+    def __call__(self, data):
+        d = dict(data)
+        for key in self.keys:
+            for c in range(d[key].shape[0]):  # assuming channel-first format
+                if np.random.rand() < self.p_per_channel:
+                    zero_mask = d[key][c] == 0
+                    if self.preserve_range:
+                        min_val, max_val = d[key][c].min(), d[key][c].max()
+                        d[key][c] = self.transform(d[key][c])
+                        d[key][c] = torch.clip(d[key][c], min_val, max_val)
+                    else:
+                        d[key][c] = self.transform(d[key][c])
+                    d[key][c][zero_mask] = 0
+        return d
+
+
+class SimulateLowResolutionTransform(MapTransform, tf.RandomizableTransform):
+    def __init__(self, keys, scale=(0.5, 1), p_per_channel=0.5, prob=0.1):
+        super().__init__(keys)
+        self.keys = keys
+        self.scale = scale
+        self.p_per_channel = p_per_channel
+        self.prob = prob
+        self.upmodes = {
+            1: 'linear',
+            2: 'bilinear',
+            3: 'trilinear'
+        }
+
+    def __call__(self, data):
+        d = dict(data)
+        for key in self.keys:
+            for c in range(d[key].shape[0]):
+                if np.random.rand() < self.p_per_channel:
+                    zero_mask = d[key][c] == 0
+                    new_shape = [round(i * np.random.uniform(*self.scale)) for i in d[key][c].shape]
+                    downsampled = F.interpolate(d[key][c][None, None], new_shape, mode=self.upmodes[d[key][c].ndim])
+                    d[key][c] = F.interpolate(downsampled, d[key][c].shape, mode=self.upmodes[d[key][c].ndim])[0, 0]
+                    d[key][c][zero_mask] = 0
+        return d
+
+
+class GammaTransform(tf.RandomizableTransform):
+    def __init__(self, keys, gamma_range=(0.7, 1.5), prob=0.1):
+        super().__init__()
+        self.keys = keys
+        self.gamma_range = gamma_range
+        self.prob = prob
+
+    def __call__(self, data):
+        d = dict(data)
+        for key in self.keys:
+            img = d[key]
+            gamma = self.R.uniform(low=self.gamma_range[0], high=self.gamma_range[1])
+            for c in range(img.shape[0]):
+                img[c] = self.apply_gamma(img[c], gamma)
+            d[key] = img
+        return d
+
+    def apply_gamma(self, img, gamma):
+        img_min = torch.min(img)
+        img_max = torch.max(img)
+        if img_min == img_max:  # Handle the case where img_min == img_max to avoid division by zero
+            return img  # No change if the image has no variation
+        zero_mask = img == 0  # Create a mask to keep zeros as zeros
+        img_normalized = (img - img_min) / (img_max - img_min)  # Normalize the image to the [0, 1] range
+        img_gamma_corrected = img_normalized ** gamma  # Apply gamma correction to non-zero values
+        img_scaled = img_gamma_corrected * (img_max - img_min) + img_min          # Scale back to the original range
+        img_scaled[zero_mask] = 0  # Restore the zeros
+        return img_scaled
+
+
+def get_transforms(config: dict, mode: str) -> tf.Compose:
+    if mode == 'inference':
+        keys = ['image']
+    else:
+        keys = ['image', 'label']
 
     # sample_transforms = [
     #     PreprocessAnisotropic(
@@ -77,10 +216,19 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
 
     if mode == 'train':
 
+        load_transforms = [
+            CustomLoadImaged(keys=keys),
+            # tf.EnsureChannelFirstd(keys=keys),
+            tf.ToTensord(keys='image'),
+        ]
+
         spatial_transforms = [
             tf.CropForegroundd(keys=['image', 'label'], source_key='image', allow_smaller=False),
             tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
             tf.SpatialPadd(['image', 'label'], spatial_size=config['trainer']['patch_size']),
+            tf.RandFlipd(['image', 'label'], spatial_axis=0, prob=0.5),
+            tf.RandFlipd(['image', 'label'], spatial_axis=1, prob=0.5),
+            tf.RandFlipd(['image', 'label'], spatial_axis=2, prob=0.5),
             tf.RandCropByLabelClassesd(
                 keys=['image', 'label'],
                 label_key='label',
@@ -92,43 +240,63 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
                 allow_smaller=False,
                 warn=False,
             ),
-            # tf.Rand3DElasticd(
-            #     ['image', 'label'],
-            #     sigma_range=(3, 7),
-            #     magnitude_range=(3, 8),
-            #     mode=('bilinear', 'nearest'),
-            #     prob=0.3),
             tf.RandRotated(
                 keys=['image', 'label'],
                 mode=('bilinear', 'nearest'),
                 align_corners=(True, None),
-                range_x=0.3,
-                range_y=0.3,
-                range_z=0.3,
+                padding_mode=('constant', 'constant'),
+                range_x=3.14,
+                range_y=3.14,
+                range_z=3.14,
                 prob=1.0,
             ),
             tf.RandZoomd(
                 keys=['image', 'label'],
-                min_zoom=1.0,
-                max_zoom=1.6,
+                min_zoom=0.8,
+                max_zoom=1.3,
                 mode=('bilinear', 'nearest'),
                 align_corners=(True, None),
-                padding_mode=('empty', 'constant'),
+                padding_mode=('constant', 'constant'),
                 prob=1.0,
             ),
-            tf.RandFlipd(['image', 'label'], spatial_axis=0, prob=0.5),
-            tf.RandFlipd(['image', 'label'], spatial_axis=1, prob=0.5),
-            tf.RandFlipd(['image', 'label'], spatial_axis=2, prob=0.5),
+            GaussianNoiseTransform(
+                keys=['image'],
+                noise_variance=(0, 0.1),
+                p_per_channel=1.0,
+                prob=0.1,
+            ),
             tf.RandGaussianSmoothd(
                 keys=['image'],
-                sigma_x=(0.5, 1.15),
-                sigma_y=(0.5, 1.15),
-                sigma_z=(0.5, 1.15),
+                sigma_x=(0.5, 1.),
+                sigma_y=(0.5, 1.),
+                sigma_z=(0.5, 1.),
+                prob=0.2,
+            ),
+            MultiplicativeBrightnessTransform(
+                keys=['image'],
+                multiplier_range=(0.75, 1.25),
+                synchronize_channels=False,
+                p_per_channel=1.0,
                 prob=0.15,
             ),
-            tf.RandScaleIntensityd(['image'], channel_wise=True, factors=0.1, prob=0.15),
-            tf.RandShiftIntensityd(['image'], channel_wise=True, offsets=0.1, prob=0.15),
-            tf.RandGaussianNoised(['image'], std=0.01, prob=0.15),
+            ContrastTransform(
+                keys=['image'],
+                contrast_range=(0.75, 1.25),
+                preserve_range=True,
+                p_per_channel=1.0,
+                prob=0.15,
+            ),
+            SimulateLowResolutionTransform(
+                keys=['image'],
+                scale=(0.5, 1.0),
+                p_per_channel=0.5,
+                prob=0.25,
+            ),
+            GammaTransform(
+                keys=['image'],
+                gamma_range=(0.5, 1.2),
+                prob=0.3,
+            ),
         ]
         other = [
             ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
@@ -139,6 +307,12 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
         spatial_transforms = spatial_transforms + other
 
     elif mode == 'val':
+        load_transforms = [
+            CustomLoadImaged(keys=keys),
+            # tf.EnsureChannelFirstd(keys=keys),
+            tf.ToTensord(keys='image'),
+        ]
+
         spatial_transforms = [
             tf.CropForegroundd(keys=['image', 'label'], source_key='image', allow_smaller=False),
             tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
@@ -147,12 +321,16 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
             tf.EnsureTyped(keys=['image', 'label']),
         ]
     else:
+        load_transforms = [
+            CustomLoadImaged(keys=keys, inference=True),
+            # tf.EnsureChannelFirstd(keys=keys),
+            tf.ToTensord(keys='image'),
+        ]
+
         spatial_transforms = [
-            tf.CropForegroundd(keys=['image', 'label'], source_key='image', allow_smaller=False),
             tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
-            ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
-            tf.CastToTyped(keys=['image', 'label'], dtype=(np.float32, np.uint8)),
-            tf.EnsureTyped(keys=['image', 'label']),
+            tf.CastToTyped(keys=['image'], dtype=np.float32),
+            tf.EnsureTyped(keys=['image']),
         ]
 
     all_transforms = load_transforms + spatial_transforms
@@ -213,12 +391,12 @@ class PreprocessAnisotropic(MapTransform):
     """This transform class takes NNUNet's preprocessing method for reference."""
 
     def __init__(
-        self,
-        keys,
-        clip_values,
-        pixdim,
-        normalize_values,
-        model_mode,
+            self,
+            keys,
+            clip_values,
+            pixdim,
+            normalize_values,
+            model_mode,
     ) -> None:
         super().__init__(keys)
         self.keys = keys
