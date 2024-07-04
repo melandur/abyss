@@ -1,23 +1,21 @@
-import os
 import json
-import torch
-from sliding_window import sliding_window_inference
-from monai.data import CacheDataset, DataLoader
+import os
 
+import numpy as np
+import SimpleITK as sitk
+import torch
+from monai.data import CacheDataset, DataLoader, decollate_batch
+from monai.transforms import AsDiscrete
+from sliding_window import sliding_window_inference
 from transforms import get_transforms
 
-from abyss.training.create_network import get_network
 from abyss.config import ConfigFile
-import SimpleITK as sitk
-import numpy as np
-
-from monai.transforms import AsDiscrete
-from monai.data import decollate_batch
+from abyss.training.create_network import get_network
 
 dataset_path = '/home/melandur/Downloads/ucsf_corr/ucsf_images'
 dst = '/home/melandur/Downloads/ucsf_corr/ucsf_seg/ucsf_test'
 # checkpoint_path = '/home/melandur/Downloads/aby/train/1_results/best-epoch=930-loss_val=0.26.ckpt'
-checkpoint_path = '/home/melandur/Downloads/aby/train/1_results/best-epoch=434-loss_val=0.26.ckpt'
+checkpoint_path = '/home/melandur/Downloads/aby/train/1_results/best-epoch=895-loss_val=0.23.ckpt'
 datalist_file = '/home/melandur/Downloads/ucsf_corr/inference_dataset.json'
 
 with open(datalist_file, 'r') as path:
@@ -78,15 +76,15 @@ for batch in data_loader:
             counts += 1.0
         pred = pred / counts
 
-        pred = pred[:, 1:, ...]  # remove background
+        # pred = pred[:, 1:, ...]  # remove background
         pred = torch.nn.functional.sigmoid(pred)
         post_pred = AsDiscrete(threshold=0.5)
         pred = post_pred(decollate_batch(pred)[0])
 
         mask = torch.zeros_like(pred[0])
-        x = pred[0] - pred[1]
+        x = pred[1] - pred[0]
         mask[x == 1] = 1
-        x = pred[1] - pred[2]
+        x = pred[0] - pred[2]
         mask[x == 1] = 3
         mask[pred[2] == 1] = 2
 

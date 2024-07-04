@@ -4,7 +4,7 @@ import os
 import torch.distributed as dist
 from monai.data import CacheDataset, DataLoader, partition_dataset
 
-from transforms import get_transforms
+from .transforms import get_transforms
 
 
 def get_loader(config: dict, mode: str):
@@ -71,7 +71,7 @@ def get_loader(config: dict, mode: str):
 
         return DataLoader(
             dataset,
-            batch_size=config['training']['batch_size'],
+            batch_size=2,
             shuffle=True,
             num_workers=config['training']['num_workers'],
             drop_last=True,
@@ -83,5 +83,6 @@ def get_loader(config: dict, mode: str):
 if __name__ == '__main__':
 
     from abyss.config import ConfigFile
+
     config = ConfigFile().get_config()
     get_loader(config, 'train')

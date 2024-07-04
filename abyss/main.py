@@ -1,5 +1,6 @@
 import resource
 
+import torch
 from config import ConfigFile
 from training.model import Model
 from training.trainer import get_trainer
@@ -12,6 +13,8 @@ resource.setrlimit(resource.RLIMIT_NOFILE, (4096, rlimit[1]))
 config_file = ConfigFile()
 config = config_file.get_config()
 model = Model(config)
+if config['training']['compile']:
+    model = torch.compile(model)
 trainer = get_trainer(config)
 
 if config['mode']['train']:

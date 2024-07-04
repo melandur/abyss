@@ -190,9 +190,8 @@ if __name__ == '__main__':
     from abyss.config import ConfigFile
 
     config = ConfigFile().get_config()
-    # create_train_dataset_file(config)
-    # create_datalist(config)
+    create_train_dataset_file(config)
+    create_datalist(config)
 
     # create_test_dataset_file(config)
-    create_inference_dataset_file(config)
-
+    # create_inference_dataset_file(config)

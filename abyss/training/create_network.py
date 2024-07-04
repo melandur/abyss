@@ -55,17 +55,17 @@ def get_network(config):
         out_channels=out_channels,
         filters=[64, 128, 256, 512, 512, 512],  # brats winner 22
         # filters=[64, 96, 128, 192, 256, 384, 512, 768, 1024],  # brats winner 21
-        # filters=[32, 64, 128, 256, 320, 320],  # nnunet
+        # filters=[32, 64, 128, 256, 320, 320],  # nnunet winner 18/19
         kernel_size=dimensions['kernel_size'],
         strides=dimensions['strides'],
         upsample_kernel_size=dimensions['upsample_kernel_size'],
         dropout=None,
-        norm_name=('INSTANCE', {'affine': True}),
+        norm_name=('instance', {'affine': True}),
         act_name=('leakyrelu', {'inplace': True, 'negative_slope': 0.01}),
         deep_supervision=True,
         deep_supr_num=2,
         res_block=True,
-        trans_bias=False,
+        trans_bias=True,
     )
 
     checkpoint_path = config['training']['checkpoint_path']

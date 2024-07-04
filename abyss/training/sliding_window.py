@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import math
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any, Iterable
@@ -6,9 +7,7 @@ from typing import Any, Iterable
 import numpy as np
 import torch
 import torch.nn.functional as F
-
 from monai.data.meta_tensor import MetaTensor
-
 from monai.utils import (
     BlendMode,
     PytorchPadMode,
@@ -16,11 +15,11 @@ from monai.utils import (
     convert_to_dst_type,
     ensure_tuple,
     ensure_tuple_rep,
+    ensure_tuple_size,
     fall_back_tuple,
+    first,
     look_up_option,
     pytorch_after,
-    first,
-    ensure_tuple_size,
 )
 
 _nearest_mode = "nearest-exact" if pytorch_after(1, 11) else "nearest"
@@ -165,7 +164,10 @@ def sliding_window_inference(
 
 
 def _dense_patch_slices(
-    image_size: Sequence[int], patch_size: Sequence[int], scan_interval: Sequence[int], return_slice: bool = True,
+    image_size: Sequence[int],
+    patch_size: Sequence[int],
+    scan_interval: Sequence[int],
+    return_slice: bool = True,
 ) -> list[tuple[slice, ...]]:
     """
     Enumerate all slices defining ND patches of size `patch_size` from an `image_size` input image.

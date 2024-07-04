@@ -1,11 +1,13 @@
-import SimpleITK as sitk
+import copy
+
 import monai.transforms as tf
 import numpy as np
+import SimpleITK as sitk
 import torch
-
 import torch.nn.functional as F
-from monai.transforms import MapTransform, LoadImage, RandAdjustContrast
 from monai.data import MetaTensor
+from monai.transforms import LoadImage, MapTransform, RandAdjustContrast
+from monai.transforms.intensity.array import GaussianSmooth
 from skimage.transform import resize
 
 
@@ -29,8 +31,15 @@ class ToOneHot(MapTransform):
 
 
 class CustomLoadImaged(MapTransform):
-    def __init__(self, keys, image_key='image', label_key='label', meta_key_postfix='meta_dict',
-                 allow_missing_keys=False, inference=False):
+    def __init__(
+        self,
+        keys,
+        image_key='image',
+        label_key='label',
+        meta_key_postfix='meta_dict',
+        allow_missing_keys=False,
+        inference=False,
+    ):
         super().__init__(keys, allow_missing_keys)
         self.image_key = image_key
         self.label_key = label_key
@@ -115,6 +124,34 @@ class GaussianNoiseTransform(MapTransform, tf.RandomizableTransform):
         return d
 
 
+class GaussianSmoothTransform(MapTransform, tf.RandomizableTransform):
+    def __init__(self, keys, sigma_range=(0.5, 2.0), prob=0.1):
+        super().__init__(keys)
+        self.keys = keys
+        self.sigma_range = sigma_range
+        self.prob = prob
+
+    def __call__(self, data):
+        d = dict(data)
+        sigma = self.R.uniform(self.sigma_range[0], self.sigma_range[1])
+        for key in self.keys:
+            for c in range(d[key].shape[0]):  # assuming the first dimension is the channel
+                zero_mask = d[key][c] == 0  # Identify background
+                smooth = GaussianSmooth(sigma, approx='erf')
+                d[key][c] = smooth(d[key][c])
+                d[key][c][zero_mask] = 0
+        return d
+
+
+tf.RandGaussianSmoothd(
+    keys=['image'],
+    sigma_x=(0.5, 1.0),
+    sigma_y=(0.5, 1.0),
+    sigma_z=(0.5, 1.0),
+    prob=0.2,
+),
+
+
 class ContrastTransform(MapTransform, tf.RandomizableTransform):
     def __init__(self, keys, contrast_range=(0.75, 1.25), preserve_range=True, p_per_channel=1.0, prob=0.1):
         super().__init__(keys)
@@ -148,11 +185,7 @@ class SimulateLowResolutionTransform(MapTransform, tf.RandomizableTransform):
         self.scale = scale
         self.p_per_channel = p_per_channel
         self.prob = prob
-        self.upmodes = {
-            1: 'linear',
-            2: 'bilinear',
-            3: 'trilinear'
-        }
+        self.upmodes = {1: 'linear', 2: 'bilinear', 3: 'trilinear'}
 
     def __call__(self, data):
         d = dict(data)
@@ -191,8 +224,8 @@ class GammaTransform(tf.RandomizableTransform):
             return img  # No change if the image has no variation
         zero_mask = img == 0  # Create a mask to keep zeros as zeros
         img_normalized = (img - img_min) / (img_max - img_min)  # Normalize the image to the [0, 1] range
-        img_gamma_corrected = img_normalized ** gamma  # Apply gamma correction to non-zero values
-        img_scaled = img_gamma_corrected * (img_max - img_min) + img_min          # Scale back to the original range
+        img_gamma_corrected = img_normalized**gamma  # Apply gamma correction to non-zero values
+        img_scaled = img_gamma_corrected * (img_max - img_min) + img_min  # Scale back to the original range
         img_scaled[zero_mask] = 0  # Restore the zeros
         return img_scaled
 
@@ -219,84 +252,168 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
         load_transforms = [
             CustomLoadImaged(keys=keys),
             # tf.EnsureChannelFirstd(keys=keys),
+            tf.Orientationd(keys=['image', 'label'], axcodes='RAS'),
             tf.ToTensord(keys='image'),
         ]
 
         spatial_transforms = [
             tf.CropForegroundd(keys=['image', 'label'], source_key='image', allow_smaller=False),
             tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
-            tf.SpatialPadd(['image', 'label'], spatial_size=config['trainer']['patch_size']),
-            tf.RandFlipd(['image', 'label'], spatial_axis=0, prob=0.5),
-            tf.RandFlipd(['image', 'label'], spatial_axis=1, prob=0.5),
-            tf.RandFlipd(['image', 'label'], spatial_axis=2, prob=0.5),
-            tf.RandCropByLabelClassesd(
+            tf.SpatialPadd(keys=['image', 'label'], spatial_size=config['trainer']['patch_size']),
+            tf.RandSpatialCropd(
                 keys=['image', 'label'],
-                label_key='label',
-                image_key='image',
-                ratios=[0.01, 1.0, 1.0, 1.0],
-                spatial_size=config['trainer']['patch_size'],
-                num_classes=len(config['trainer']['label_classes']),
-                num_samples=1,
-                allow_smaller=False,
-                warn=False,
+                roi_size=config['trainer']['patch_size'],
+                random_size=False,
+                random_center=True,
             ),
             tf.RandRotated(
                 keys=['image', 'label'],
-                mode=('bilinear', 'nearest'),
+                mode=('trilinear', 'nearest'),
                 align_corners=(True, None),
                 padding_mode=('constant', 'constant'),
-                range_x=3.14,
-                range_y=3.14,
-                range_z=3.14,
-                prob=1.0,
+                range_x=0.5,
+                range_y=0.5,
+                range_z=0.5,
+                prob=0.2,
             ),
             tf.RandZoomd(
                 keys=['image', 'label'],
-                min_zoom=0.8,
-                max_zoom=1.3,
-                mode=('bilinear', 'nearest'),
+                min_zoom=0.9,
+                max_zoom=1.2,
+                mode=('trilinear', 'nearest'),
                 align_corners=(True, None),
-                padding_mode=('constant', 'constant'),
-                prob=1.0,
+                prob=0.15,
             ),
-            GaussianNoiseTransform(
-                keys=['image'],
-                noise_variance=(0, 0.1),
-                p_per_channel=1.0,
-                prob=0.1,
-            ),
+            tf.RandGaussianNoised(keys=['image'], std=0.01, prob=0.15),
             tf.RandGaussianSmoothd(
                 keys=['image'],
-                sigma_x=(0.5, 1.),
-                sigma_y=(0.5, 1.),
-                sigma_z=(0.5, 1.),
-                prob=0.2,
-            ),
-            MultiplicativeBrightnessTransform(
-                keys=['image'],
-                multiplier_range=(0.75, 1.25),
-                synchronize_channels=False,
-                p_per_channel=1.0,
+                sigma_x=(0.5, 1.15),
+                sigma_y=(0.5, 1.15),
+                sigma_z=(0.5, 1.15),
                 prob=0.15,
             ),
-            ContrastTransform(
-                keys=['image'],
-                contrast_range=(0.75, 1.25),
-                preserve_range=True,
-                p_per_channel=1.0,
-                prob=0.15,
-            ),
-            SimulateLowResolutionTransform(
-                keys=['image'],
-                scale=(0.5, 1.0),
-                p_per_channel=0.5,
-                prob=0.25,
-            ),
-            GammaTransform(
-                keys=['image'],
-                gamma_range=(0.5, 1.2),
-                prob=0.3,
-            ),
+            tf.RandScaleIntensityd(keys=['image'], factors=0.3, prob=0.15),
+            tf.RandFlipd(['image', 'label'], spatial_axis=(0, 1, 2), prob=0.7),
+            # ######  https://github.com/Alxaline/BraTS21/blob/main/src/definer.py
+            # tf.CropForegroundd(keys=['image', 'label'], source_key='image'),
+            # tf.SpatialPadd(keys=['image', 'label'], spatial_size=config['trainer']['patch_size']),
+            # tf.RandSpatialCropd(
+            #     keys=['image', 'label'],
+            #     roi_size=config['trainer']['patch_size'],
+            #     random_size=False,
+            #     random_center=True
+            # ),
+            # tf.RandRotate90d(keys=['image', 'label'], prob=0.7, spatial_axes=(0, 2)),
+            # tf.RandZoomd(
+            #     keys=['image', 'label'],
+            #     min_zoom=0.9,
+            #     max_zoom=1.2,
+            #     mode=('trilinear', 'nearest'),
+            #     align_corners=(True, None),
+            #     prob=0.2,
+            # ),
+            # tf.RandRotated(
+            #     keys=['image', 'label'],
+            #     mode=('trilinear', 'nearest'),
+            #     align_corners=(True, None),
+            #     padding_mode=('constant', 'constant'),
+            #     range_x=0.5,
+            #     range_y=0.5,
+            #     range_z=0.5,
+            #     prob=0.2,
+            # ),
+            # tf.RandFlipd(keys=['image', 'label'], prob=0.7, spatial_axis=(0, 1, 2)),
+            # tf.RandShiftIntensityd(keys=['image'], prob=0.7, offsets=0.1),
+            # tf.RandAdjustContrastd(keys=['image'], prob=0.2, gamma=(0.5, 4.5)),
+            # tf.RandGaussianNoised(keys=['image'], prob=0.5, mean=0.0, std=0.1),
+            # tf.RandGaussianSmoothd(keys=['image'], prob=0.2),
+            # tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
+            # old ##################################################################################
+            # GaussianNoiseTransform(
+            #     keys=['image'],
+            #     noise_variance=(0, 0.1),
+            #     p_per_channel=0.5,
+            #     prob=0.1,
+            # ),
+            # GaussianSmoothTransform(
+            #     keys=['image'],
+            #     sigma_range=(0.5, 1.),
+            #     prob=0.2,
+            # ),
+            #
+            # MultiplicativeBrightnessTransform(
+            #     keys=['image'],
+            #     multiplier_range=(0.75, 1.25),
+            #     synchronize_channels=False,
+            #     p_per_channel=1.0,
+            #     prob=0.15,
+            # ),
+            # ContrastTransform(
+            #     keys=['image'],
+            #     contrast_range=(0.75, 1.25),
+            #     preserve_range=True,
+            #     p_per_channel=1.0,
+            #     prob=0.15,
+            # ),
+            # SimulateLowResolutionTransform(
+            #     keys=['image'],
+            #     scale=(0.5, 1.0),
+            #     p_per_channel=0.5,
+            #     prob=0.25,
+            # ),
+            # GammaTransform(
+            #     keys=['image'],
+            #     gamma_range=(0.5, 1.2),
+            #     prob=0.1,
+            # ),
+            # tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
+            # tf.SpatialPadd(['image', 'label'], spatial_size=config['trainer']['patch_size'], mode='constant'),
+            # tf.RandSpatialCropd(
+            #     keys=['image', 'label'],
+            #     roi_size=config['trainer']['patch_size'],
+            #     random_size=False,
+            #     random_center=True,
+            # ),
+            # tf.RandCropByLabelClassesd(
+            #     keys=['image', 'label'],
+            #     label_key='label',
+            #     image_key='image',
+            #     spatial_size=config['trainer']['patch_size'],
+            #     num_classes=len(config['trainer']['label_classes']),
+            #     num_samples=1,
+            #     allow_smaller=False,
+            #     warn=False,
+            # ),
+            # tf.RandZoomd(
+            #     keys=['image', 'label'],
+            #     min_zoom=0.9,
+            #     max_zoom=1.3,
+            #     mode=('trilinear', 'nearest'),
+            #     align_corners=(True, None),
+            #     padding_mode=('constant', 'constant'),
+            #     prob=0.1,
+            # ),
+            # tf.RandRotated(
+            #     keys=['image', 'label'],
+            #     mode=('trilinear', 'nearest'),
+            #     align_corners=(True, None),
+            #     padding_mode=('constant', 'constant'),
+            #     range_x=0.5,
+            #     range_y=0.5,
+            #     range_z=0.5,
+            #     prob=0.2,
+            # ),
+            # tf.RandFlipd(['image', 'label'], spatial_axis=0, prob=0.3),
+            # tf.RandFlipd(['image', 'label'], spatial_axis=1, prob=0.3),
+            # tf.RandFlipd(['image', 'label'], spatial_axis=2, prob=0.3),
+            # tf.Rand3DElasticd(
+            #     keys=['image', 'label'],
+            #     sigma_range=(5, 8),
+            #     magnitude_range=(100, 200),
+            #     mode=('trilinear', 'nearest'),
+            #     spatial_size=config['trainer']['patch_size'],
+            #     prob=1.0
+            # ),
         ]
         other = [
             ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
@@ -310,6 +427,7 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
         load_transforms = [
             CustomLoadImaged(keys=keys),
             # tf.EnsureChannelFirstd(keys=keys),
+            tf.Orientationd(keys=['image', 'label'], axcodes='RAS'),
             tf.ToTensord(keys='image'),
         ]
 
@@ -391,12 +509,12 @@ class PreprocessAnisotropic(MapTransform):
     """This transform class takes NNUNet's preprocessing method for reference."""
 
     def __init__(
-            self,
-            keys,
-            clip_values,
-            pixdim,
-            normalize_values,
-            model_mode,
+        self,
+        keys,
+        clip_values,
+        pixdim,
+        normalize_values,
+        model_mode,
     ) -> None:
         super().__init__(keys)
         self.keys = keys

@@ -85,7 +85,7 @@ def get_trainer(config: dict) -> LightningTrainer:
         limit_val_batches=None,
         limit_test_batches=None,
         limit_predict_batches=None,
-        overfit_batches=0.0,
+        overfit_batches=0,
         val_check_interval=None,
         check_val_every_n_epoch=1,
         num_sanity_val_steps=None,

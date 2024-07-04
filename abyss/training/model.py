@@ -4,7 +4,7 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 from monai.data import decollate_batch
-from sliding_window import sliding_window_inference
+from monai.inferers import SlidingWindowInferer
 from monai.losses import DiceCELoss
 from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete
@@ -12,6 +12,7 @@ from torch.optim.lr_scheduler import LambdaLR
 
 from .create_dataset import get_loader
 from .create_network import get_network
+from .sliding_window import sliding_window_inference
 
 
 class Model(pl.LightningModule):
@@ -21,8 +22,11 @@ class Model(pl.LightningModule):
         super().__init__()
         self.config = config
         self.net = get_network(config)
-        self.criterion = DiceCELoss(sigmoid=True, batch=True)
+        self.criterion = DiceCELoss(sigmoid=True, batch=True, squared_pred=True)  # squared=True
         self.metrics = {'dice': DiceMetric(reduction='none', ignore_empty=True)}
+        self.infi = SlidingWindowInferer(
+            roi_size=self.config['trainer']['patch_size'], sw_batch_size=1, overlap=0.5, mode='gaussian'
+        )
 
     def setup(self, stage: str) -> None:
         """Setup"""
@@ -88,13 +92,15 @@ class Model(pl.LightningModule):
     def validation_step(self, batch: torch.Tensor) -> None:
         """Predict, loss, log"""
         data, label = batch['image'], batch['label']
-        pred = sliding_window_inference(data, self.config['trainer']['patch_size'], self.net)
+        # pred = sliding_window_inference(data, self.config['trainer']['patch_size'], self.net)
+        pred = self.infi(data, self.net)
 
         if self.config['trainer']['tta']:
             ct = 1.0
             for dims in [[2], [3], [4], (2, 3), (2, 4), (3, 4), (2, 3, 4)]:
                 flip_inputs = torch.flip(data, dims=dims)
-                flip_pred = sliding_window_inference(flip_inputs, self.config['trainer']['patch_size'], self.net)
+                # flip_pred = sliding_window_inference(flip_inputs, self.config['trainer']['patch_size'], self.net)
+                flip_pred = self.infi(flip_inputs, self.net)
                 flip_pred = torch.flip(flip_pred, dims=dims)
                 del flip_inputs
                 pred += flip_pred
@@ -102,12 +108,9 @@ class Model(pl.LightningModule):
                 ct += 1.0
             pred = pred / ct
 
-        label = label[:, 1:, ...]  # remove background
-        pred = pred[:, 1:, ...]
-
         loss = self.criterion(pred, label)
-        post_pred = AsDiscrete(threshold=0.5)
         pred = nn.functional.sigmoid(pred)
+        post_pred = AsDiscrete(threshold=0.5)
         pred = post_pred(decollate_batch(pred)[0])
         label = decollate_batch(label)[0]
 
@@ -120,10 +123,7 @@ class Model(pl.LightningModule):
         label_classes = self.config['trainer']['label_classes']
         dice_per_channel = torch.nanmean(dice_metric, dim=0)
         metric_log = {'dice_avg': torch.mean(dice_per_channel, dim=0)}
-
-        for idx, label_class in enumerate(label_classes, start=-1):
-            if label_class == 'background':
-                continue
+        for idx, label_class in enumerate(label_classes):
             metric_log[f'dice_{label_class}'] = dice_per_channel[idx]
         self.metrics['dice'].reset()
         self.log_dict(metric_log, prog_bar=True, on_step=False, on_epoch=True)
@@ -143,9 +143,6 @@ class Model(pl.LightningModule):
                 del flip_pred
                 ct += 1.0
             pred = pred / ct
-
-        pred = pred[:, 1:, ...]  # remove background
-        label = label[:, 1:, ...]
 
         pred = nn.functional.sigmoid(pred)
         post_pred = AsDiscrete(threshold=0.5)
@@ -177,8 +174,8 @@ class Model(pl.LightningModule):
         dice_per_channel = torch.nanmean(dice_metric, dim=0)
         metric_log = {
             'dice_avg': torch.mean(dice_per_channel, dim=0),
-            'dice_wt': dice_per_channel[0],
-            'dice_tc': dice_per_channel[1],
+            'dice_tc': dice_per_channel[0],
+            'dice_wt': dice_per_channel[1],
             'dice_en': dice_per_channel[2],
         }
         self.metrics['dice'].reset()
