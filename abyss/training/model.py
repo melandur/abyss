@@ -22,7 +22,7 @@ class Model(pl.LightningModule):
         super().__init__()
         self.config = config
         self.net = get_network(config)
-        self.criterion = DiceCELoss(sigmoid=True, batch=True, squared_pred=True)  # squared=True
+        self.criterion = DiceCELoss(sigmoid=True, batch=True, squared_pred=True)
         self.metrics = {'dice': DiceMetric(reduction='none', ignore_empty=True)}
         self.infi = SlidingWindowInferer(
             roi_size=self.config['trainer']['patch_size'], sw_batch_size=1, overlap=0.5, mode='gaussian'
@@ -54,7 +54,7 @@ class Model(pl.LightningModule):
         """Optimizer"""
         optimizer = torch.optim.SGD(
             self.net.parameters(),
-            lr=0.01,
+            lr=1e-2,
             momentum=0.99,
             weight_decay=3e-5,
             nesterov=True,
@@ -166,7 +166,6 @@ class Model(pl.LightningModule):
 
         img = sitk.GetImageFromArray(label.cpu().numpy())
         sitk.WriteImage(img, os.path.join(path, f'{x}_label.nii.gz'))
-        # print(x)
 
     def on_test_epoch_end(self) -> None:
         """Log dice metric"""

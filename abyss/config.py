@@ -32,8 +32,8 @@ class ConfigFile:
                 'normalize_values': [0, 0],
                 'total_folds': 5,
                 'channel_order': {
-                    't1c': '_t1c.nii.gz',
                     't1': '_t1.nii.gz',
+                    't1c': '_t1c.nii.gz',
                     't2': '_t2.nii.gz',
                     'flair': '_flair.nii.gz',
                 },
@@ -49,13 +49,13 @@ class ConfigFile:
             'training': {
                 'fold': 1,
                 'fast_dev_run': False,
-                'compile': False,
                 'num_workers': 4,
                 'local_rank': 0,
-                'cache_rate': 0.01,
+                'cache_rate': 0.05,
                 'multi_gpu': False,
                 'deterministic': True,
                 'checkpoint_path': None,
+                # 'checkpoint_path': '/home/melandur/Downloads/hd_glio_v2_params/fold_0/model_final_checkpoint.model',
                 'seed': 42,  # find the truth in randomness
             },
         }

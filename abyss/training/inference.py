@@ -13,9 +13,9 @@ from abyss.config import ConfigFile
 from abyss.training.create_network import get_network
 
 dataset_path = '/home/melandur/Downloads/ucsf_corr/ucsf_images'
-dst = '/home/melandur/Downloads/ucsf_corr/ucsf_seg/ucsf_test'
+dst = '/home/melandur/Downloads/ucsf_corr/ucsf_seg/ucsf_test_new'
 # checkpoint_path = '/home/melandur/Downloads/aby/train/1_results/best-epoch=930-loss_val=0.26.ckpt'
-checkpoint_path = '/home/melandur/Downloads/aby/train/1_results/best-epoch=895-loss_val=0.23.ckpt'
+checkpoint_path = '/home/melandur/Downloads/aby/train/1_results/best-epoch=758-loss_val=0.20.ckpt'
 datalist_file = '/home/melandur/Downloads/ucsf_corr/inference_dataset.json'
 
 with open(datalist_file, 'r') as path:
@@ -82,10 +82,10 @@ for batch in data_loader:
         pred = post_pred(decollate_batch(pred)[0])
 
         mask = torch.zeros_like(pred[0])
-        x = pred[1] - pred[0]
-        mask[x == 1] = 1
-        x = pred[0] - pred[2]
+        x = pred[1] - pred[2]
         mask[x == 1] = 3
+        x = pred[0] - pred[1]
+        mask[x == 1] = 1
         mask[pred[2] == 1] = 2
 
         mask = mask.permute(2, 1, 0)

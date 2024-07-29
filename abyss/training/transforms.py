@@ -1,14 +1,15 @@
-import copy
-
 import monai.transforms as tf
-import numpy as np
 import SimpleITK as sitk
 import torch
 import torch.nn.functional as F
 from monai.data import MetaTensor
-from monai.transforms import LoadImage, MapTransform, RandAdjustContrast
-from monai.transforms.intensity.array import GaussianSmooth
+from monai.transforms import LoadImage
 from skimage.transform import resize
+from scipy.ndimage import gaussian_filter
+import numpy as np
+
+from monai.transforms.intensity.array import (GaussianSmooth, NormalizeIntensity, RandAdjustContrast)
+from monai.transforms.transform import MapTransform
 
 
 class ToOneHot(MapTransform):
@@ -32,13 +33,13 @@ class ToOneHot(MapTransform):
 
 class CustomLoadImaged(MapTransform):
     def __init__(
-        self,
-        keys,
-        image_key='image',
-        label_key='label',
-        meta_key_postfix='meta_dict',
-        allow_missing_keys=False,
-        inference=False,
+            self,
+            keys,
+            image_key='image',
+            label_key='label',
+            meta_key_postfix='meta_dict',
+            allow_missing_keys=False,
+            inference=False,
     ):
         super().__init__(keys, allow_missing_keys)
         self.image_key = image_key
@@ -76,54 +77,6 @@ class CustomLoadImaged(MapTransform):
         return d
 
 
-class MultiplicativeBrightnessTransform(MapTransform, tf.RandomizableTransform):
-    def __init__(self, keys, multiplier_range=(0.75, 1.25), synchronize_channels=False, p_per_channel=1.0, prob=0.1):
-        super().__init__(keys)
-        self.keys = keys
-        self.multiplier_range = multiplier_range
-        self.synchronize_channels = synchronize_channels
-        self.p_per_channel = p_per_channel
-        self.prob = prob
-
-    def randomize(self):
-        self.factor = self.R.uniform(self.multiplier_range[0], self.multiplier_range[1])
-
-    def __call__(self, data):
-        d = dict(data)
-        self.randomize()
-        for key in self.keys:
-            if self.synchronize_channels:
-                d[key] = d[key] * self.factor
-            else:
-                for c in range(d[key].shape[0]):  # assuming the first dimension is the channel
-                    zero_mask = d[key][c] == 0
-                    if self.R.uniform() < self.p_per_channel:
-                        d[key][c] = d[key][c] * self.factor
-                    d[key][c][zero_mask] = 0
-        return d
-
-
-class GaussianNoiseTransform(MapTransform, tf.RandomizableTransform):
-    def __init__(self, keys, noise_variance=(0, 0.1), p_per_channel=1.0, prob=0.1):
-        super().__init__(keys)
-        self.keys = keys
-        self.noise_variance = noise_variance
-        self.p_per_channel = p_per_channel
-        self.prob = prob
-
-    def __call__(self, data):
-        d = dict(data)
-        self.noise_std = np.sqrt(self.R.uniform(self.noise_variance[0], self.noise_variance[1]))
-        for key in self.keys:
-            for c in range(d[key].shape[0]):  # assuming the first dimension is the channel
-                zero_mask = d[key][c] == 0
-                if self.R.uniform() < self.p_per_channel:
-                    noise = self.R.normal(0, self.noise_std, size=d[key][c].shape)
-                    d[key][c] += torch.from_numpy(noise)
-                d[key][c][zero_mask] = 0
-        return d
-
-
 class GaussianSmoothTransform(MapTransform, tf.RandomizableTransform):
     def __init__(self, keys, sigma_range=(0.5, 2.0), prob=0.1):
         super().__init__(keys)
@@ -152,34 +105,175 @@ tf.RandGaussianSmoothd(
 ),
 
 
-class ContrastTransform(MapTransform, tf.RandomizableTransform):
-    def __init__(self, keys, contrast_range=(0.75, 1.25), preserve_range=True, p_per_channel=1.0, prob=0.1):
-        super().__init__(keys)
-        self.keys = keys
-        self.contrast_range = contrast_range
-        self.preserve_range = preserve_range
-        self.p_per_channel = p_per_channel
-        self.transform = RandAdjustContrast(prob=1.0, gamma=self.contrast_range)
-        self.prob = prob
 
-    def __call__(self, data):
-        d = dict(data)
-        for key in self.keys:
-            for c in range(d[key].shape[0]):  # assuming channel-first format
-                if np.random.rand() < self.p_per_channel:
-                    zero_mask = d[key][c] == 0
-                    if self.preserve_range:
-                        min_val, max_val = d[key][c].min(), d[key][c].max()
-                        d[key][c] = self.transform(d[key][c])
-                        d[key][c] = torch.clip(d[key][c], min_val, max_val)
-                    else:
-                        d[key][c] = self.transform(d[key][c])
-                    d[key][c][zero_mask] = 0
-        return d
+# class ContrastTransform(MapTransform, tf.RandomizableTransform):
+#     def __init__(self, keys, contrast_range=(0.75, 1.25), preserve_range=True, p_per_channel=1.0, prob=0.1):
+#         super().__init__(keys)
+#         self.keys = keys
+#         self.contrast_range = contrast_range
+#         self.preserve_range = preserve_range
+#         self.p_per_channel = p_per_channel
+#         self.transform = RandAdjustContrast(prob=1.0, gamma=self.contrast_range)
+#         self.prob = prob
+#
+#     def __call__(self, data):
+#         d = dict(data)
+#         for key in self.keys:
+#             for c in range(d[key].shape[0]):  # assuming channel-first format
+#                 if np.random.rand() < self.p_per_channel:
+#                     zero_mask = d[key][c] == 0
+#                     if self.preserve_range:
+#                         min_val, max_val = d[key][c].min(), d[key][c].max()
+#                         d[key][c] = self.transform(d[key][c])
+#                         d[key][c] = torch.clip(d[key][c], min_val, max_val)
+#                     else:
+#                         d[key][c] = self.transform(d[key][c])
+#                     d[key][c][zero_mask] = 0
+#         return d
 
 
-class SimulateLowResolutionTransform(MapTransform, tf.RandomizableTransform):
-    def __init__(self, keys, scale=(0.5, 1), p_per_channel=0.5, prob=0.1):
+# class SimulateLowResolution(MapTransform, tf.RandomizableTransform):
+#     """"""
+#     def __init__(self, keys, scale=(0.5, 1), p_per_channel=0.5, prob=0.25):
+#         super().__init__(keys)
+#         self.keys = keys
+#         self.scale = scale
+#         self.p_per_channel = p_per_channel
+#         self.prob = prob
+#         self.upmodes = {1: 'linear', 2: 'bilinear', 3: 'trilinear'}
+#
+#     def __call__(self, data):
+#         d = dict(data)
+#         for key in self.keys:
+#             for c in range(d[key].shape[0]):
+#                 if self.R.uniform() < self.p_per_channel:
+#                     zero_mask = d[key][c] == 0
+#                     new_shape = [round(i * np.random.uniform(*self.scale)) for i in d[key][c].shape]
+#                     downsampled = F.interpolate(d[key][c][None, None], new_shape, mode=self.upmodes[d[key][c].ndim])
+#                     d[key][c] = F.interpolate(downsampled, d[key][c].shape, mode=self.upmodes[d[key][c].ndim])[0, 0]
+#                     d[key][c][zero_mask] = 0
+#         return d
+
+
+# class GaussianNoise(MapTransform, tf.RandomizableTransform):
+#     """"""
+#
+#     def __init__(self, keys, noise_variance=(0, 0.1), p_per_channel=1.0, prob=0.1):
+#         super().__init__(keys)
+#         self.keys = keys
+#         self.noise_variance = noise_variance
+#         self.p_per_channel = p_per_channel
+#         self.prob = prob
+#
+#     def __call__(self, data):
+#         d = dict(data)
+#         noise_std = self.R.uniform(self.noise_variance[0], self.noise_variance[1])
+#         for key in self.keys:
+#             for c in range(d[key].shape[0]):  # assuming the first dimension is the channel
+#                 zero_mask = d[key][c] == 0
+#                 if self.R.uniform() < self.p_per_channel:
+#                     noise = self.R.normal(0.0, noise_std, size=d[key][c].shape)
+#                     d[key][c] += torch.from_numpy(noise)
+#                 d[key][c][zero_mask] = 0
+#         return d
+#
+#
+# class GaussianBlur(MapTransform, tf.RandomizableTransform):
+#     """"""
+#
+#     def __init__(self, keys, sigma_range=(0.5, 1.0), p_per_channel=0.5, prob=0.2):
+#         super().__init__(keys)
+#         self.keys = keys
+#         self.sigma_range = sigma_range
+#         self.p_per_channel = p_per_channel
+#         self.prob = prob
+#
+#     def __call__(self, data):
+#         d = dict(data)
+#         for key in self.keys:
+#             for c in range(d[key].shape[0]):  # assuming the first dimension is the channel
+#                 if self.R.uniform() < self.p_per_channel:
+#                     sigma = self.R.uniform(self.sigma_range[0], self.sigma_range[1])
+#                     image = d[key][c].numpy()
+#                     image = gaussian_filter(image, sigma, order=0)
+#                     d[key][c] = torch.from_numpy(image)
+#         return d
+#
+#
+# class MultiplicativeBrightness(MapTransform, tf.RandomizableTransform):
+#     """"""
+#
+#     def __init__(self, keys, multiplier_range=(0.75, 1.25), synchronize_channels=False, p_per_channel=1.0, prob=0.15):
+#         super().__init__(keys)
+#         self.keys = keys
+#         self.multiplier_range = multiplier_range
+#         self.synchronize_channels = synchronize_channels
+#         self.p_per_channel = p_per_channel
+#         self.prob = prob
+#
+#     def __call__(self, data):
+#         d = dict(data)
+#         for key in self.keys:
+#             if self.synchronize_channels:
+#                 d[key] *= d[key] * self.R.uniform(self.multiplier_range[0], self.multiplier_range[1])
+#             else:
+#                 for c in range(d[key].shape[0]):  # assuming the first dimension is the channel
+#                     zero_mask = d[key][c] == 0
+#                     if self.R.uniform() < self.p_per_channel:
+#                         d[key][c] *= self.R.uniform(self.multiplier_range[0], self.multiplier_range[1])
+#                     d[key][c][zero_mask] = 0
+#         return d
+
+#
+# class Contrast(MapTransform, tf.RandomizableTransform):
+#     """"""
+#
+#     def __init__(
+#             self,
+#             keys,
+#             contrast_range=(0.75, 1.25),
+#             preserve_range=True,
+#             synchronize_channels=False,
+#             p_per_channel=1.0,
+#             prob=0.15,
+#     ):
+#         super().__init__(keys)
+#         self.keys = keys
+#         self.contrast_range = contrast_range
+#         self.preserve_range = preserve_range
+#         self.synchronize_channels = synchronize_channels
+#         self.p_per_channel = p_per_channel
+#         self.prob = prob
+#
+#     def __call__(self, data):
+#         d = dict(data)
+#         for key in self.keys:
+#             if self.synchronize_channels:
+#                 factor = self.R.uniform(self.contrast_range[0], self.contrast_range[1])
+#             else:
+#                 for c in range(d[key].shape[0]):  # assuming the first dimension is the channel
+#
+#                     if self.R.uniform() < self.p_per_channel:
+#                         zero_mask = d[key][c] == 0
+#                         if not self.synchronize_channels:
+#                             factor = self.R.uniform(self.contrast_range[0], self.contrast_range[1])
+#                         mn = d[key][c].mean()
+#                         if self.preserve_range:
+#                             minm = d[key][c].min()
+#                             maxm = d[key][c].max()
+#
+#                         d[key][c] = (d[key][c] - mn) * factor + mn
+#
+#                         if self.preserve_range:
+#                             d[key][c][d[key][c] < minm] = minm
+#                             d[key][c][d[key][c] > maxm] = maxm
+#                         d[key][c][zero_mask] = 0
+#         return d
+
+
+class SimulateLowResolution(MapTransform, tf.RandomizableTransform):
+    """"""
+    def __init__(self, keys, scale=(0.5, 1), p_per_channel=0.5, prob=0.25):
         super().__init__(keys)
         self.keys = keys
         self.scale = scale
@@ -191,43 +285,138 @@ class SimulateLowResolutionTransform(MapTransform, tf.RandomizableTransform):
         d = dict(data)
         for key in self.keys:
             for c in range(d[key].shape[0]):
-                if np.random.rand() < self.p_per_channel:
+                if self.R.rand() < self.p_per_channel:
                     zero_mask = d[key][c] == 0
-                    new_shape = [round(i * np.random.uniform(*self.scale)) for i in d[key][c].shape]
+                    new_shape = [round(i * self.R.uniform(self.scale[0], self.scale[1])) for i in d[key][c].shape]
                     downsampled = F.interpolate(d[key][c][None, None], new_shape, mode=self.upmodes[d[key][c].ndim])
                     d[key][c] = F.interpolate(downsampled, d[key][c].shape, mode=self.upmodes[d[key][c].ndim])[0, 0]
                     d[key][c][zero_mask] = 0
         return d
 
 
-class GammaTransform(tf.RandomizableTransform):
-    def __init__(self, keys, gamma_range=(0.7, 1.5), prob=0.1):
-        super().__init__()
-        self.keys = keys
-        self.gamma_range = gamma_range
-        self.prob = prob
+# class Gamma1(MapTransform, tf.RandomizableTransform):
+#     """"""
+#     def __init__(self, keys, gamma_range=(0.7, 1.5), invert=True, p_per_channel=1.0, prob=0.1):
+#         super().__init__(keys)
+#         self.keys = keys
+#         self.gamma_range = gamma_range
+#         self.invert = invert
+#         self.p_per_channel = p_per_channel
+#         self.prob = prob
+#
+#     def __call__(self, data):
+#         d = dict(data)
+#         for key in self.keys:
+#             for c in range(d[key].shape[0]):  # assuming channel-first format
+#                 if self.R.uniform() < self.p_per_channel:
+#                     zero_mask = d[key][c] == 0  # Identify background
+#                     image = d[key][c].numpy()
+#
+#                     mn = image.mean()
+#                     sd = image.std()
+#
+#                     if self.R.uniform() < 0.5 and self.gamma_range[0] < 1:
+#                         gamma = np.random.uniform(self.gamma_range[0], 1.0)
+#                     else:
+#                         gamma = np.random.uniform(max(self.gamma_range[0], 1.0), self.gamma_range[1])
+#
+#                     eps = 1e-8
+#                     minm = image.min()
+#                     rnge = image.max() - minm
+#
+#                     image = np.power(((image - minm) / float(rnge + eps)), gamma) * float(rnge + eps) + minm
+#
+#                     image = image - image.mean()
+#                     image = image / (image.std() + eps) * sd
+#                     image = image + mn
+#
+#                     if self.invert:
+#                         d[key][c] = -d[key][c]
+#
+#                     d[key][c] = torch.from_numpy(image)
+#
+#
+#                     d[key][c][zero_mask] = 0
+#
+#
+#
+#         return d
 
-    def __call__(self, data):
-        d = dict(data)
-        for key in self.keys:
-            img = d[key]
-            gamma = self.R.uniform(low=self.gamma_range[0], high=self.gamma_range[1])
-            for c in range(img.shape[0]):
-                img[c] = self.apply_gamma(img[c], gamma)
-            d[key] = img
-        return d
+# class Gamma2(MapTransform, tf.RandomizableTransform):
+#     """"""
+#     def __init__(self, keys, gamma_range=(0.7, 1.5), invert=False, p_per_channel=1.0, prob=0.3):
+#         super().__init__(keys)
+#         self.keys = keys
+#         self.gamma_range = gamma_range
+#         self.invert = invert
+#         self.p_per_channel = p_per_channel
+#         self.prob = prob
+#
+#     def __call__(self, data):
+#         d = dict(data)
+#         for key in self.keys:
+#             for c in range(d[key].shape[0]):  # assuming channel-first format
+#                 if self.R.uniform() < self.p_per_channel:
+#                     zero_mask = d[key][c] == 0  # Identify background
+#                     image = d[key][c].numpy()
+#
+#                     mn = image.mean()
+#                     sd = image.std()
+#
+#                     if self.R.uniform() < 0.5 and self.gamma_range[0] < 1:
+#                         gamma = np.random.uniform(self.gamma_range[0], 1)
+#                     else:
+#                         gamma = np.random.uniform(max(self.gamma_range[0], 1), self.gamma_range[1])
+#
+#                     eps = 1e-8
+#                     minm = image.min()
+#                     rnge = image.max() - minm
+#
+#                     image = np.power(((image - minm) / float(rnge + eps)), gamma) * float(rnge + eps) + minm
+#
+#                     image = image - image.mean()
+#                     image = image / (image.std() + eps) * sd
+#                     image = image + mn
+#
+#                     if self.invert:
+#                         image = - image
+#
+#                     d[key][c] = torch.from_numpy(image)
+#
+#                     d[key][c][zero_mask] = 0
+#
+#         return d
 
-    def apply_gamma(self, img, gamma):
-        img_min = torch.min(img)
-        img_max = torch.max(img)
-        if img_min == img_max:  # Handle the case where img_min == img_max to avoid division by zero
-            return img  # No change if the image has no variation
-        zero_mask = img == 0  # Create a mask to keep zeros as zeros
-        img_normalized = (img - img_min) / (img_max - img_min)  # Normalize the image to the [0, 1] range
-        img_gamma_corrected = img_normalized**gamma  # Apply gamma correction to non-zero values
-        img_scaled = img_gamma_corrected * (img_max - img_min) + img_min  # Scale back to the original range
-        img_scaled[zero_mask] = 0  # Restore the zeros
-        return img_scaled
+
+class MedianNormalizeIntensity(NormalizeIntensity):
+    """"""
+
+    def __init__(self, subtrahend=None, divisor=None, nonzero=False, channel_wise=False, dtype=np.float32):
+        super().__init__(subtrahend, divisor, nonzero, channel_wise, dtype)
+
+    @staticmethod
+    def _mean(x):
+        if isinstance(x, np.ndarray):
+            return np.median(x)
+        x = torch.median(x.float())
+        return x.item() if x.numel() == 1 else x
+
+
+class ZScoreNormalizationd(tf.NormalizeIntensityd):
+    """"""
+
+    def __init__(
+            self,
+            keys,
+            subtrahend=None,
+            divisor=None,
+            nonzero=False,
+            channel_wise=False,
+            dtype=np.float32,
+            allow_missing_keys=False,
+    ):
+        super().__init__(keys, subtrahend, divisor, nonzero, channel_wise, dtype, allow_missing_keys)
+        self.normalizer = MedianNormalizeIntensity(subtrahend, divisor, nonzero, channel_wise, dtype)
 
 
 def get_transforms(config: dict, mode: str) -> tf.Compose:
@@ -258,7 +447,7 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
 
         spatial_transforms = [
             tf.CropForegroundd(keys=['image', 'label'], source_key='image', allow_smaller=False),
-            tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
+            ZScoreNormalizationd(keys=['image'], nonzero=True, channel_wise=True),
             tf.SpatialPadd(keys=['image', 'label'], spatial_size=config['trainer']['patch_size']),
             tf.RandSpatialCropd(
                 keys=['image', 'label'],
@@ -278,11 +467,12 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
             ),
             tf.RandZoomd(
                 keys=['image', 'label'],
-                min_zoom=0.9,
-                max_zoom=1.2,
+                min_zoom=0.7,
+                max_zoom=1.3,
                 mode=('trilinear', 'nearest'),
+                padding_mode=('constant', 'constant'),
                 align_corners=(True, None),
-                prob=0.15,
+                prob=0.3,
             ),
             tf.RandGaussianNoised(keys=['image'], std=0.01, prob=0.15),
             tf.RandGaussianSmoothd(
@@ -292,129 +482,135 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
                 sigma_z=(0.5, 1.15),
                 prob=0.15,
             ),
-            tf.RandScaleIntensityd(keys=['image'], factors=0.3, prob=0.15),
-            tf.RandFlipd(['image', 'label'], spatial_axis=(0, 1, 2), prob=0.7),
-            # ######  https://github.com/Alxaline/BraTS21/blob/main/src/definer.py
-            # tf.CropForegroundd(keys=['image', 'label'], source_key='image'),
-            # tf.SpatialPadd(keys=['image', 'label'], spatial_size=config['trainer']['patch_size']),
-            # tf.RandSpatialCropd(
-            #     keys=['image', 'label'],
-            #     roi_size=config['trainer']['patch_size'],
-            #     random_size=False,
-            #     random_center=True
-            # ),
-            # tf.RandRotate90d(keys=['image', 'label'], prob=0.7, spatial_axes=(0, 2)),
-            # tf.RandZoomd(
-            #     keys=['image', 'label'],
-            #     min_zoom=0.9,
-            #     max_zoom=1.2,
-            #     mode=('trilinear', 'nearest'),
-            #     align_corners=(True, None),
-            #     prob=0.2,
-            # ),
-            # tf.RandRotated(
-            #     keys=['image', 'label'],
-            #     mode=('trilinear', 'nearest'),
-            #     align_corners=(True, None),
-            #     padding_mode=('constant', 'constant'),
-            #     range_x=0.5,
-            #     range_y=0.5,
-            #     range_z=0.5,
-            #     prob=0.2,
-            # ),
-            # tf.RandFlipd(keys=['image', 'label'], prob=0.7, spatial_axis=(0, 1, 2)),
-            # tf.RandShiftIntensityd(keys=['image'], prob=0.7, offsets=0.1),
-            # tf.RandAdjustContrastd(keys=['image'], prob=0.2, gamma=(0.5, 4.5)),
-            # tf.RandGaussianNoised(keys=['image'], prob=0.5, mean=0.0, std=0.1),
-            # tf.RandGaussianSmoothd(keys=['image'], prob=0.2),
-            # tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
-            # old ##################################################################################
-            # GaussianNoiseTransform(
-            #     keys=['image'],
-            #     noise_variance=(0, 0.1),
-            #     p_per_channel=0.5,
-            #     prob=0.1,
-            # ),
-            # GaussianSmoothTransform(
-            #     keys=['image'],
-            #     sigma_range=(0.5, 1.),
-            #     prob=0.2,
-            # ),
-            #
-            # MultiplicativeBrightnessTransform(
-            #     keys=['image'],
-            #     multiplier_range=(0.75, 1.25),
-            #     synchronize_channels=False,
-            #     p_per_channel=1.0,
-            #     prob=0.15,
-            # ),
-            # ContrastTransform(
-            #     keys=['image'],
-            #     contrast_range=(0.75, 1.25),
-            #     preserve_range=True,
-            #     p_per_channel=1.0,
-            #     prob=0.15,
-            # ),
-            # SimulateLowResolutionTransform(
-            #     keys=['image'],
-            #     scale=(0.5, 1.0),
-            #     p_per_channel=0.5,
-            #     prob=0.25,
-            # ),
-            # GammaTransform(
-            #     keys=['image'],
-            #     gamma_range=(0.5, 1.2),
-            #     prob=0.1,
-            # ),
-            # tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
-            # tf.SpatialPadd(['image', 'label'], spatial_size=config['trainer']['patch_size'], mode='constant'),
-            # tf.RandSpatialCropd(
-            #     keys=['image', 'label'],
-            #     roi_size=config['trainer']['patch_size'],
-            #     random_size=False,
-            #     random_center=True,
-            # ),
-            # tf.RandCropByLabelClassesd(
-            #     keys=['image', 'label'],
-            #     label_key='label',
-            #     image_key='image',
-            #     spatial_size=config['trainer']['patch_size'],
-            #     num_classes=len(config['trainer']['label_classes']),
-            #     num_samples=1,
-            #     allow_smaller=False,
-            #     warn=False,
-            # ),
-            # tf.RandZoomd(
-            #     keys=['image', 'label'],
-            #     min_zoom=0.9,
-            #     max_zoom=1.3,
-            #     mode=('trilinear', 'nearest'),
-            #     align_corners=(True, None),
-            #     padding_mode=('constant', 'constant'),
-            #     prob=0.1,
-            # ),
-            # tf.RandRotated(
-            #     keys=['image', 'label'],
-            #     mode=('trilinear', 'nearest'),
-            #     align_corners=(True, None),
-            #     padding_mode=('constant', 'constant'),
-            #     range_x=0.5,
-            #     range_y=0.5,
-            #     range_z=0.5,
-            #     prob=0.2,
-            # ),
-            # tf.RandFlipd(['image', 'label'], spatial_axis=0, prob=0.3),
-            # tf.RandFlipd(['image', 'label'], spatial_axis=1, prob=0.3),
-            # tf.RandFlipd(['image', 'label'], spatial_axis=2, prob=0.3),
-            # tf.Rand3DElasticd(
-            #     keys=['image', 'label'],
-            #     sigma_range=(5, 8),
-            #     magnitude_range=(100, 200),
-            #     mode=('trilinear', 'nearest'),
-            #     spatial_size=config['trainer']['patch_size'],
-            #     prob=1.0
-            # ),
+            SimulateLowResolution(keys=['image']),
+            tf.RandScaleIntensityd(keys=['image'], channel_wise=True, factors=0.3, prob=0.15),
+            tf.RandAdjustContrastd(keys=['image'], invert_image=True, retain_stats=True, gamma=(0.5, 4.5), prob=0.1),
+            tf.RandAdjustContrastd(keys=['image'], invert_image=False, retain_stats=True, gamma=(0.5, 4.5), prob=0.3),
+            tf.RandAxisFlipd(['image', 'label'], prob=0.5),
+            tf.RandRotate90d(['image', 'label'], prob=0.5),
         ]
+
+        # ######  https://github.com/Alxaline/BraTS21/blob/main/src/definer.py
+        # tf.CropForegroundd(keys=['image', 'label'], source_key='image'),
+        # tf.SpatialPadd(keys=['image', 'label'], spatial_size=config['trainer']['patch_size']),
+        # tf.RandSpatialCropd(
+        #     keys=['image', 'label'],
+        #     roi_size=config['trainer']['patch_size'],
+        #     random_size=False,
+        #     random_center=True
+        # ),
+        # tf.RandRotate90d(keys=['image', 'label'], prob=0.7, spatial_axes=(0, 2)),
+        # # tf.RandZoomd(
+        # #     keys=['image', 'label'],
+        # #     min_zoom=0.9,
+        # #     max_zoom=1.2,
+        # #     mode=('trilinear', 'nearest'),
+        # #     align_corners=(True, None),
+        # #     prob=0.2,
+        # # ),
+        # # tf.RandRotated(
+        # #     keys=['image', 'label'],
+        # #     mode=('trilinear', 'nearest'),
+        # #     align_corners=(True, None),
+        # #     padding_mode=('constant', 'constant'),
+        # #     range_x=0.5,
+        # #     range_y=0.5,
+        # #     range_z=0.5,
+        # #     prob=0.2,
+        # # ),
+        # tf.RandFlipd(keys=['image', 'label'], prob=0.7, spatial_axis=(0, 1, 2)),
+        # tf.RandShiftIntensityd(keys=['image'], prob=0.7, offsets=0.1),
+        # tf.RandAdjustContrastd(keys=['image'], prob=0.2, gamma=(0.5, 4.5)),
+        # tf.RandGaussianNoised(keys=['image'], prob=0.5, mean=0.0, std=0.1),
+        # tf.RandGaussianSmoothd(keys=['image'], prob=0.2),
+        # tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
+        # old ##################################################################################
+        # GaussianNoiseTransform(
+        #     keys=['image'],
+        #     noise_variance=(0, 0.1),
+        #     p_per_channel=0.5,
+        #     prob=0.1,
+        # ),
+        # GaussianSmoothTransform(
+        #     keys=['image'],
+        #     sigma_range=(0.5, 1.),
+        #     prob=0.2,
+        # ),
+        #
+        # MultiplicativeBrightnessTransform(
+        #     keys=['image'],
+        #     multiplier_range=(0.75, 1.25),
+        #     synchronize_channels=False,
+        #     p_per_channel=1.0,
+        #     prob=0.15,
+        # ),
+        # ContrastTransform(
+        #     keys=['image'],
+        #     contrast_range=(0.75, 1.25),
+        #     preserve_range=True,
+        #     p_per_channel=1.0,
+        #     prob=0.15,
+        # ),
+        # SimulateLowResolutionTransform(
+        #     keys=['image'],
+        #     scale=(0.5, 1.0),
+        #     p_per_channel=0.5,
+        #     prob=0.25,
+        # ),
+        # GammaTransform(
+        #     keys=['image'],
+        #     gamma_range=(0.5, 1.2),
+        #     prob=0.1,
+        # ),
+        # tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
+        # tf.SpatialPadd(['image', 'label'], spatial_size=config['trainer']['patch_size'], mode='constant'),
+        # tf.RandSpatialCropd(
+        #     keys=['image', 'label'],
+        #     roi_size=config['trainer']['patch_size'],
+        #     random_size=False,
+        #     random_center=True,
+        # ),
+        # tf.RandCropByLabelClassesd(
+        #     keys=['image', 'label'],
+        #     label_key='label',
+        #     image_key='image',
+        #     spatial_size=config['trainer']['patch_size'],
+        #     num_classes=len(config['trainer']['label_classes']),
+        #     num_samples=1,
+        #     allow_smaller=False,
+        #     warn=False,
+        # ),
+        # tf.RandZoomd(
+        #     keys=['image', 'label'],
+        #     min_zoom=0.9,
+        #     max_zoom=1.3,
+        #     mode=('trilinear', 'nearest'),
+        #     align_corners=(True, None),
+        #     padding_mode=('constant', 'constant'),
+        #     prob=0.1,
+        # ),
+        # tf.RandRotated(
+        #     keys=['image', 'label'],
+        #     mode=('trilinear', 'nearest'),
+        #     align_corners=(True, None),
+        #     padding_mode=('constant', 'constant'),
+        #     range_x=0.5,
+        #     range_y=0.5,
+        #     range_z=0.5,
+        #     prob=0.2,
+        # ),
+        # tf.RandFlipd(['image', 'label'], spatial_axis=0, prob=0.3),
+        # tf.RandFlipd(['image', 'label'], spatial_axis=1, prob=0.3),
+        # tf.RandFlipd(['image', 'label'], spatial_axis=2, prob=0.3),
+        # tf.Rand3DElasticd(
+        #     keys=['image', 'label'],
+        #     sigma_range=(5, 8),
+        #     magnitude_range=(100, 200),
+        #     mode=('trilinear', 'nearest'),
+        #     spatial_size=config['trainer']['patch_size'],
+        #     prob=1.0
+        # ),
+        # ]
         other = [
             ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
             tf.CastToTyped(keys=['image', 'label'], dtype=(np.float32, np.uint8)),
@@ -433,7 +629,7 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
 
         spatial_transforms = [
             tf.CropForegroundd(keys=['image', 'label'], source_key='image', allow_smaller=False),
-            tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
+            ZScoreNormalizationd(keys=['image'], nonzero=True, channel_wise=True),
             ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
             tf.CastToTyped(keys=['image', 'label'], dtype=(np.float32, np.uint8)),
             tf.EnsureTyped(keys=['image', 'label']),
@@ -446,7 +642,7 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
         ]
 
         spatial_transforms = [
-            tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
+            ZScoreNormalizationd(keys=['image'], nonzero=True, channel_wise=True),
             tf.CastToTyped(keys=['image'], dtype=np.float32),
             tf.EnsureTyped(keys=['image']),
         ]
@@ -509,12 +705,12 @@ class PreprocessAnisotropic(MapTransform):
     """This transform class takes NNUNet's preprocessing method for reference."""
 
     def __init__(
-        self,
-        keys,
-        clip_values,
-        pixdim,
-        normalize_values,
-        model_mode,
+            self,
+            keys,
+            clip_values,
+            pixdim,
+            normalize_values,
+            model_mode,
     ) -> None:
         super().__init__(keys)
         self.keys = keys
