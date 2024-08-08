@@ -1,15 +1,14 @@
 import monai.transforms as tf
+import numpy as np
 import SimpleITK as sitk
 import torch
 import torch.nn.functional as F
 from monai.data import MetaTensor
 from monai.transforms import LoadImage
-from skimage.transform import resize
-from scipy.ndimage import gaussian_filter
-import numpy as np
-
-from monai.transforms.intensity.array import (GaussianSmooth, NormalizeIntensity, RandAdjustContrast)
+from monai.transforms.intensity.array import GaussianSmooth, NormalizeIntensity, RandAdjustContrast
 from monai.transforms.transform import MapTransform
+from scipy.ndimage import gaussian_filter
+from skimage.transform import resize
 
 
 class ToOneHot(MapTransform):
@@ -31,15 +30,43 @@ class ToOneHot(MapTransform):
         return data
 
 
+# def bias_field_correction(image):
+#     img = sitk.GetImageFromArray(image)
+#     downscale_factor = 2
+#     original_size = img.GetSize()
+#     original_spacing = img.GetSpacing()
+#     new_size = [int(sz / downscale_factor) for sz in original_size]
+#     new_spacing = [sp * downscale_factor for sp in original_spacing]
+#     downsampled_image = sitk.Resample(img, new_size, sitk.Transform(), sitk.sitkBSpline,
+#                                       img.GetOrigin(), new_spacing, img.GetDirection(), 0,
+#                                       img.GetPixelID())
+#
+#     # Step 3: Apply N4 Bias Field Correction on downsampled image
+#     downsampled_mask = sitk.OtsuThreshold(downsampled_image, 0, 1, 200)
+#     corrector = sitk.N4BiasFieldCorrectionImageFilter()
+#     corrected_downsampled_image = corrector.Execute(downsampled_image, downsampled_mask)
+#     log_bias_field = corrector.GetLogBiasFieldAsImage(corrected_downsampled_image)
+#
+#     # Step 4: Upscale the corrected image back to the original resolution
+#     corr_log_bias_field = sitk.Resample(log_bias_field, original_size, sitk.Transform(), sitk.sitkBSpline,
+#                                         img.GetOrigin(), original_spacing, img.GetDirection(), 0,
+#                                         img.GetPixelID())
+#
+#     img = img / sitk.Exp(corr_log_bias_field)
+#     img = sitk.Cast(img, sitk.sitkFloat32)
+#     img = sitk.GetArrayFromImage(img)
+#     return img
+
+
 class CustomLoadImaged(MapTransform):
     def __init__(
-            self,
-            keys,
-            image_key='image',
-            label_key='label',
-            meta_key_postfix='meta_dict',
-            allow_missing_keys=False,
-            inference=False,
+        self,
+        keys,
+        image_key='image',
+        label_key='label',
+        meta_key_postfix='meta_dict',
+        allow_missing_keys=False,
+        inference=False,
     ):
         super().__init__(keys, allow_missing_keys)
         self.image_key = image_key
@@ -59,6 +86,8 @@ class CustomLoadImaged(MapTransform):
 
         if 'image' in d:
             images = [self.loader(image_path) for image_path in d['image']]
+            # images = [bias_field_correction(img) for img in images]
+
             stacked_images = np.stack(images, axis=0)
             d['image'] = MetaTensor(stacked_images)
             # Load and stack images
@@ -103,7 +132,6 @@ tf.RandGaussianSmoothd(
     sigma_z=(0.5, 1.0),
     prob=0.2,
 ),
-
 
 
 # class ContrastTransform(MapTransform, tf.RandomizableTransform):
@@ -273,6 +301,7 @@ tf.RandGaussianSmoothd(
 
 class SimulateLowResolution(MapTransform, tf.RandomizableTransform):
     """"""
+
     def __init__(self, keys, scale=(0.5, 1), p_per_channel=0.5, prob=0.25):
         super().__init__(keys)
         self.keys = keys
@@ -406,14 +435,14 @@ class ZScoreNormalizationd(tf.NormalizeIntensityd):
     """"""
 
     def __init__(
-            self,
-            keys,
-            subtrahend=None,
-            divisor=None,
-            nonzero=False,
-            channel_wise=False,
-            dtype=np.float32,
-            allow_missing_keys=False,
+        self,
+        keys,
+        subtrahend=None,
+        divisor=None,
+        nonzero=False,
+        channel_wise=False,
+        dtype=np.float32,
+        allow_missing_keys=False,
     ):
         super().__init__(keys, subtrahend, divisor, nonzero, channel_wise, dtype, allow_missing_keys)
         self.normalizer = MedianNormalizeIntensity(subtrahend, divisor, nonzero, channel_wise, dtype)
@@ -474,6 +503,7 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
                 align_corners=(True, None),
                 prob=0.3,
             ),
+            # tf.RandBiasFieldd(keys=['image'], coeff_range=(0.1, 0.9), prob=0.3),
             tf.RandGaussianNoised(keys=['image'], std=0.01, prob=0.15),
             tf.RandGaussianSmoothd(
                 keys=['image'],
@@ -705,12 +735,12 @@ class PreprocessAnisotropic(MapTransform):
     """This transform class takes NNUNet's preprocessing method for reference."""
 
     def __init__(
-            self,
-            keys,
-            clip_values,
-            pixdim,
-            normalize_values,
-            model_mode,
+        self,
+        keys,
+        clip_values,
+        pixdim,
+        normalize_values,
+        model_mode,
     ) -> None:
         super().__init__(keys)
         self.keys = keys

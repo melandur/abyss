@@ -1,6 +1,7 @@
 import os
 
 import torch
+
 from abyss.training.network_definitions import DynUNet
 
 
@@ -46,16 +47,13 @@ def get_network(config):
     dimensions = get_kernels_strides(config)
     out_channels = len(config['trainer']['label_classes'])
 
-    print(dimensions)
-    print(out_channels)
-
     net = DynUNet(
         spatial_dims=3,
         in_channels=4,
         out_channels=out_channels,
         # filters=[64, 128, 256, 512, 512, 512],  # brats winner 22
-        filters=[64, 96, 128, 192, 256, 384, 512, 768, 1024],  # brats winner 21
-        # filters=[30, 60, 120, 240, 320, 320],  # nnunet winner 18/19
+        # filters=[64, 96, 128, 192, 256, 384, 512, 768, 1024],  # brats winner 21
+        filters=[30, 60, 120, 240, 320, 320],  # nnunet winner 18/19
         kernel_size=dimensions['kernel_size'],
         strides=dimensions['strides'],
         upsample_kernel_size=dimensions['upsample_kernel_size'],
@@ -231,7 +229,7 @@ def get_network(config):
     #     for key, values in decoder_dict.items():
     #         decoder_mapping[tag + key] = values
     #
-    #""""""
+    # """"""
 
     # weight_mapping_encoder = {
     #     "module.conv_blocks_context.0.blocks.0.conv.weight": "input_block.conv1.conv.weight",
@@ -427,5 +425,3 @@ def get_network(config):
     # for name, param in net.named_parameters():
     #     if name in freeze_decoder:
     #         param.requires_grad = False
-
-

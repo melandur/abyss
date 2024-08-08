@@ -13,19 +13,16 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import List, Optional, Sequence, Tuple, Union
 
 import numpy as np
-
 import torch
 import torch.nn as nn
-from torch.nn.functional import interpolate
-
-from collections.abc import Sequence
-
 from monai.networks.blocks.convolutions import Convolution
 from monai.networks.layers.factories import Act, Norm
 from monai.networks.layers.utils import get_act_layer, get_norm_layer
+from torch.nn.functional import interpolate
 
 __all__ = ["DynUNet", "DynUnet", "Dynunet"]
 
@@ -386,6 +383,7 @@ class DynUNet(nn.Module):
 
 
 DynUnet = Dynunet = DynUNet
+
 
 class UnetResBlock(nn.Module):
     """
