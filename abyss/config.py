@@ -6,10 +6,10 @@ class ConfigFile:
 
     def __init__(self) -> None:
         self.project_name = 'aby'
-        self.experiment_name = 'train'
-        self.project_path = os.path.join(os.path.expanduser('~'), 'Downloads')
-        self.train_dataset_path = os.path.join(os.path.expanduser('~'), 'ephemeral', 'train')
-        self.test_dataset_path = os.path.join(os.path.expanduser('~'), 'ephemeral', 'test')
+        self.experiment_name = 'mets'
+        self.project_path = os.path.join(os.path.expanduser('~'), 'code', 'abyss', 'data')
+        self.train_dataset_path = os.path.join(os.path.expanduser('~'), 'code', 'abyss', 'data', 'data', 'mets')
+        self.test_dataset_path = os.path.join(os.path.expanduser('~'), 'code', 'abyss', 'data', 'raw')
 
     def get_config(self) -> dict:
         """Returns config dict"""
@@ -28,34 +28,34 @@ class ConfigFile:
             },
             'dataset': {
                 'spacing': [1.0, 1.0, 1.0],
-                'clip_values': [0, 0],
-                'normalize_values': [0, 0],
                 'total_folds': 5,
-                'channel_order': {
-                    't1': '_t1.nii.gz',
-                    't1c': '_t1c.nii.gz',
-                    't2': '_t2.nii.gz',
-                    'flair': '_flair.nii.gz',
-                },
+                # 'channel_order': {
+                    # 't1': '_t1.nii.gz',
+                    # 't1c': '_t1c.nii.gz'
+                    # 't2': '_t2.nii.gz',
+                    # 'flair': '_flair.nii.gz',
+                # },
+                'channel_order': {'t1c': '_t1c.nii.gz'},
                 'label_order': {'seg': '_seg.nii.gz'},
                 'seed': 42,
             },
             'mode': {'train': True, 'test': False},
             'trainer': {
-                'label_classes': OrderedDict({'wt': [1, 2, 3, 4], 'tc': [2, 3, 4], 'en': [2]}),
+                # 'label_classes': OrderedDict({'wt': [1, 2, 3, 4], 'tc': [2, 3, 4], 'en': [2]}),
+                'label_classes': OrderedDict({'wt': [1, 2], 'en': [1]}),
                 'patch_size': [128, 128, 128],
-                'tta': False,
             },
             'training': {
-                'fold': 1,
+                'fold': 0,
                 'fast_dev_run': False,
-                'num_workers': 4,
+                'num_workers': 12,
                 'local_rank': 0,
-                'cache_rate': 0.05,
+                'cache_rate': 0.1,
                 'multi_gpu': False,
                 'deterministic': True,
+                'compile': False,
+                'reload_checkpoint': True,
                 'checkpoint_path': None,
-                # 'checkpoint_path': '/home/melandur/Downloads/hd_glio_v2_params/fold_0/model_final_checkpoint.model',
                 'seed': 42,  # find the truth in randomness
             },
         }

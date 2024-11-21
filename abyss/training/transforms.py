@@ -71,18 +71,18 @@ class CustomLoadImaged(MapTransform):
             labels = [self.loader(label_path) for label_path in d['label']]
             stacked_labels = np.stack(labels, axis=0)
             d['label'] = MetaTensor(stacked_labels)
-
         return d
 
 
 class SpatialTrans(MapTransform):
-    def __init__(self, keys=['image', 'label']):
+    def __init__(self, keys=['image', 'label'], patch_size=(128, 128, 128)):
         super().__init__(keys)
+        self.patch_size = patch_size
 
     def __call__(self, data):
         d = dict(data)
         transform = SpatialTransform(
-            (128, 128, 128),
+            patch_size=self.patch_size,
             patch_center_dist_from_border=0,
             random_crop=False,
             p_elastic_deform=0,
@@ -100,14 +100,14 @@ class SpatialTrans(MapTransform):
         return d
 
 
-class GaussianNoiseTrans(MapTransform):
+class GaussianNoiseTrans(MapTransform, tf.RandomizableTransform):
     def __init__(self, keys=['image'], prob=0.1):
         super().__init__(keys)
         self.prob = prob
 
     def __call__(self, data):
         d = dict(data)
-        if np.random.rand() < self.prob:
+        if self.R.rand() < self.prob:
             transform = GaussianNoiseTransform(noise_variance=(0, 0.1), p_per_channel=1, synchronize_channels=True)
             data_dict = {'image': d['image']}
             output_dict = transform(**data_dict)
@@ -115,14 +115,14 @@ class GaussianNoiseTrans(MapTransform):
         return d
 
 
-class GaussianBlurTrans(MapTransform):
+class GaussianBlurTrans(MapTransform, tf.RandomizableTransform):
     def __init__(self, keys=['image'], prob=0.2):
         super().__init__(keys)
         self.prob = prob
 
     def __call__(self, data):
         d = dict(data)
-        if np.random.rand() < self.prob:
+        if self.R.rand() < self.prob:
             transform = GaussianBlurTransform(blur_sigma=(0.5, 1.),
                 synchronize_channels=False,
                 synchronize_axes=False,
@@ -134,14 +134,14 @@ class GaussianBlurTrans(MapTransform):
         return d
 
 
-class MultiplicativeBrightnessTrans(MapTransform):
+class MultiplicativeBrightnessTrans(MapTransform, tf.RandomizableTransform):
     def __init__(self, keys=['image'], prob=0.15):
         super().__init__(keys)
         self.prob = prob
 
     def __call__(self, data):
         d = dict(data)
-        if np.random.rand() < self.prob:
+        if self.R.rand() < self.prob:
             transform = MultiplicativeBrightnessTransform(
                 multiplier_range=BGContrast((0.75, 1.25)),
                 synchronize_channels=False,
@@ -153,14 +153,14 @@ class MultiplicativeBrightnessTrans(MapTransform):
         return d
 
 
-class ContrastTrans(MapTransform):
+class ContrastTrans(MapTransform, tf.RandomizableTransform):
     def __init__(self, keys=['image'], prob=0.15):
         super().__init__(keys)
         self.prob = prob
 
     def __call__(self, data):
         d = dict(data)
-        if np.random.rand() < self.prob:
+        if self.R.rand() < self.prob:
             transform =  ContrastTransform(
                 contrast_range=BGContrast((0.75, 1.25)),
                 preserve_range=True,
@@ -173,14 +173,14 @@ class ContrastTrans(MapTransform):
         return d
 
 
-class SimulateLowResolutionTrans(MapTransform):
+class SimulateLowResolutionTrans(MapTransform, tf.RandomizableTransform):
     def __init__(self, keys=['image'], prob=0.25):
         super().__init__(keys)
         self.prob = prob
 
     def __call__(self, data):
         d = dict(data)
-        if np.random.rand() < self.prob:
+        if self.R.rand() < self.prob:
             transform = SimulateLowResolutionTransform(
                 scale=(0.5, 1),
                 synchronize_channels=False,
@@ -195,14 +195,14 @@ class SimulateLowResolutionTrans(MapTransform):
         return d
 
 
-class GammaTrans(MapTransform):
+class GammaTrans(MapTransform, tf.RandomizableTransform):
     def __init__(self, keys=['image'], prob=0.1):
         super().__init__(keys)
         self.prob = prob
 
     def __call__(self, data):
         d = dict(data)
-        if np.random.rand() < self.prob:
+        if self.R.rand() < self.prob:
             transform = GammaTransform(
                 gamma=BGContrast((0.7, 1.5)),
                 p_invert_image=1,
@@ -231,13 +231,13 @@ class MirrorTrans(MapTransform):
 
 
 def get_transforms(config: dict, mode: str) -> tf.Compose:
+    keys = ['image', 'label']
+
     if mode == 'inference':
         keys = ['image']
-    else:
-        keys = ['image', 'label']
+
 
     if mode == 'train':
-
         load_transforms = [
             CustomLoadImaged(keys=keys),
             tf.Orientationd(keys=['image', 'label'], axcodes='RAS'),
@@ -247,7 +247,7 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
 
         spatial_transforms = [
             tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
-            SpatialTrans(),
+            SpatialTrans(patch_size=config['trainer']['patch_size']),
             GaussianNoiseTrans(prob=0.1),
             GaussianBlurTrans(prob=0.2),
             MultiplicativeBrightnessTrans(prob=0.15),
@@ -271,7 +271,7 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
 
         spatial_transforms = [
             tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
-            SpatialTrans(),
+            SpatialTrans(patch_size=config['trainer']['patch_size']),
             MirrorTrans(),
             ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
             tf.CastToTyped(keys=['image', 'label'], dtype=(np.float32, np.uint8)),

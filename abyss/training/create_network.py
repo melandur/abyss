@@ -1,9 +1,11 @@
 import os
+import re
 
 import torch
+from grpc.beta.implementations import insecure_channel
 
 from abyss.training.network_definitions import DynUNet
-
+from monai.networks.nets import resnet18
 
 def get_kernels_strides(config):
     """
@@ -45,15 +47,16 @@ def get_kernels_strides(config):
 
 def get_network(config):
     dimensions = get_kernels_strides(config)
+    in_channels = len(config['dataset']['channel_order'])
     out_channels = len(config['trainer']['label_classes'])
 
     net = DynUNet(
         spatial_dims=3,
-        in_channels=4,
+        in_channels=in_channels,
         out_channels=out_channels,
-        # filters=[64, 128, 256, 512, 512, 512],  # brats winner 22
+        filters=[64, 128, 256, 512, 512, 512],  # brats winner 22
         # filters=[64, 96, 128, 192, 256, 384, 512, 768, 1024],  # brats winner 21
-        filters=[30, 60, 120, 240, 320, 320],  # nnunet winner 18/19
+        # filters=[30, 60, 120, 240, 320, 320],  # nnunet winner 18/19
         kernel_size=dimensions['kernel_size'],
         strides=dimensions['strides'],
         upsample_kernel_size=dimensions['upsample_kernel_size'],
@@ -65,6 +68,35 @@ def get_network(config):
         res_block=True,
         trans_bias=True,
     )
+
+    # if config['training']['reload_checkpoint']:
+    #     ckpt_folder_path = config['project']['results_path']
+    #     best_ckpt_path = os.path.join(ckpt_folder_path, 'best.ckpt')
+    #     if not os.path.exists(best_ckpt_path):
+    #         raise FileNotFoundError(f'checkpoint: {best_ckpt_path} not found')
+    #
+    #     ckpt = torch.load(best_ckpt_path)
+    #     weights = ckpt['state_dict']
+    #     for key in list(weights.keys()):
+    #         if 'net._orig_mod.' in key:
+    #             new_key = key.replace('net._orig_mod.', '')
+    #             weights[new_key] = weights.pop(key)
+    #         # if 'criterion.' in key:
+    #         #     weights.pop(key)
+    #
+    #     net.load_state_dict(weights)
+
+    # ckpt_folder_path = config['project']['results_path']
+    # best_ckpt_path = os.path.join(ckpt_folder_path, 'best.ckpt')
+    # ckpt = torch.load(best_ckpt_path)
+
+    # print(ckpt.keys())
+    # print(ckpt['optimizer_states'])
+
+
+    if config['training']['compile']:
+        net = torch.compile(net)
+
     return net
 
     """asd"""

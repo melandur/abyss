@@ -35,10 +35,11 @@ def get_trainer(config: dict) -> LightningTrainer:
     model_checkpoint_cb = ModelCheckpoint(
         monitor='loss_val',
         dirpath=results_path,
-        filename='best-{epoch:02d}-{loss_val:.2f}',
+        filename='best',
         save_last=True,
         save_top_k=1,
         mode='min',
+        enable_version_counter=False
     )
     improvement_cb = Improvement(monitor='loss_val')
 

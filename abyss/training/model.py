@@ -4,7 +4,7 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 from monai.data import decollate_batch
-from monai.inferers import SlidingWindowInferer
+
 from monai.losses import DiceCELoss
 from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete
@@ -12,7 +12,8 @@ from torch.optim.lr_scheduler import LambdaLR
 
 from .create_dataset import get_loader
 from .create_network import get_network
-from .sliding_window import sliding_window_inference
+
+torch.set_float32_matmul_precision('medium')
 
 
 class Model(pl.LightningModule):
@@ -24,9 +25,6 @@ class Model(pl.LightningModule):
         self.net = get_network(config)
         self.criterion = DiceCELoss(sigmoid=True, batch=True, squared_pred=True)
         self.metrics = {'dice': DiceMetric(reduction='none', ignore_empty=True)}
-        self.infi = SlidingWindowInferer(
-            roi_size=self.config['trainer']['patch_size'], sw_batch_size=1, overlap=0.5, mode='gaussian'
-        )
 
     def setup(self, stage: str) -> None:
         """Setup"""
@@ -92,24 +90,15 @@ class Model(pl.LightningModule):
     def validation_step(self, batch: torch.Tensor) -> None:
         """Predict, loss, log"""
         data, label = batch['image'], batch['label']
-        # pred = sliding_window_inference(data, self.config['trainer']['patch_size'], self.net)
-        pred = self.infi(data, self.net)
 
-        if self.config['trainer']['tta']:
-            ct = 1.0
-            for dims in [[2], [3], [4], (2, 3), (2, 4), (3, 4), (2, 3, 4)]:
-                flip_inputs = torch.flip(data, dims=dims)
-                # flip_pred = sliding_window_inference(flip_inputs, self.config['trainer']['patch_size'], self.net)
-                flip_pred = self.infi(flip_inputs, self.net)
-                flip_pred = torch.flip(flip_pred, dims=dims)
-                del flip_inputs
-                pred += flip_pred
-                del flip_pred
-                ct += 1.0
-            pred = pred / ct
+        preds = self(data)
 
-        loss = self.criterion(pred, label)
-        pred = nn.functional.sigmoid(pred)
+        if len(preds.size()) - len(label.size()) == 1:  # deep supervision mode
+            preds = torch.unbind(preds, dim=1)  # unbind feature maps
+            preds = preds[0]  # only last feature map is used
+
+        loss = self.criterion(preds, label)
+        pred = nn.functional.sigmoid(preds)
         post_pred = AsDiscrete(threshold=0.5)
         pred = post_pred(decollate_batch(pred)[0])
         label = decollate_batch(label)[0]
