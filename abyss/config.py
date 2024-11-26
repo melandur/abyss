@@ -44,7 +44,7 @@ class ConfigFile:
             'trainer': {
                 # 'label_classes': OrderedDict({'wt': [1, 2, 3, 4], 'tc': [2, 3, 4], 'en': [2]}),
                 'label_classes': OrderedDict({'wt': [1, 2], 'en': [1]}),
-                'patch_size': [160, 160, 128],  # y, x, z
+                'patch_size': [128, 128, 128],  # y, x, z
             },
             'training': {
                 'fold': 0,
