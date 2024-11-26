@@ -1,8 +1,8 @@
 import os
 
 import torch
-from pytorch_lightning import Trainer as LightningTrainer
 from pytorch_lightning import seed_everything
+from pytorch_lightning import Trainer as LightningTrainer
 from pytorch_lightning.callbacks import Callback, ModelCheckpoint, RichProgressBar
 from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTheme
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -32,15 +32,6 @@ def get_trainer(config: dict) -> LightningTrainer:
     log_path = os.path.join(results_path, 'logs')
     print(f'tensorboard --logdir={log_path}')
 
-    model_checkpoint_cb = ModelCheckpoint(
-        monitor='loss_val',
-        dirpath=results_path,
-        filename='best',
-        save_last=True,
-        save_top_k=1,
-        mode='min',
-        enable_version_counter=False
-    )
     improvement_cb = Improvement(monitor='loss_val')
 
     progress_bar_cb = RichProgressBar(
@@ -59,6 +50,16 @@ def get_trainer(config: dict) -> LightningTrainer:
         ),
     )
 
+    model_checkpoint_cb = ModelCheckpoint(
+        monitor='loss_val',
+        dirpath=results_path,
+        filename='best',
+        save_last=True,
+        save_top_k=1,
+        mode='min',
+        enable_version_counter=False
+    )
+
     if config['training']['seed']:
         seed_everything(config['training']['seed'])
 
@@ -69,11 +70,11 @@ def get_trainer(config: dict) -> LightningTrainer:
         strategy='auto',
         devices=[0],
         num_nodes=1,
-        precision='16-mixed',  # '16-mixed', '16-false', '32'
+        precision='16-mixed',
         logger=logger,
         callbacks=[
-            progress_bar_cb,
             improvement_cb,
+            progress_bar_cb,
             model_checkpoint_cb,
         ],
         fast_dev_run=config['training']['fast_dev_run'],

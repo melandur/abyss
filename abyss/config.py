@@ -2,6 +2,7 @@ import os
 from collections import OrderedDict
 
 
+
 class ConfigFile:
 
     def __init__(self) -> None:
@@ -43,7 +44,7 @@ class ConfigFile:
             'trainer': {
                 # 'label_classes': OrderedDict({'wt': [1, 2, 3, 4], 'tc': [2, 3, 4], 'en': [2]}),
                 'label_classes': OrderedDict({'wt': [1, 2], 'en': [1]}),
-                'patch_size': [128, 128, 128],
+                'patch_size': [160, 160, 128],  # y, x, z
             },
             'training': {
                 'fold': 0,
@@ -51,10 +52,10 @@ class ConfigFile:
                 'num_workers': 12,
                 'local_rank': 0,
                 'cache_rate': 0.1,
+                'compile': True,
                 'multi_gpu': False,
                 'deterministic': True,
-                'compile': False,
-                'reload_checkpoint': True,
+                'reload_checkpoint': False,
                 'checkpoint_path': None,
                 'seed': 42,  # find the truth in randomness
             },

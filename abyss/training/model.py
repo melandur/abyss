@@ -29,23 +29,6 @@ class Model(pl.LightningModule):
     def setup(self, stage: str) -> None:
         """Setup"""
         if stage == 'test':
-            results_files = os.listdir(self.config['project']['results_path'])
-            best_ckpt_file = [file for file in results_files if 'best' in file and file.endswith('.ckpt')]
-            if len(best_ckpt_file) == 1:
-                best_ckpt_path = os.path.join(self.config['project']['results_path'], best_ckpt_file[0])
-            else:
-                raise FileNotFoundError(f'No best checkpoint found in -> {self.config["project"]["results_path"]}')
-
-            checkpoint = torch.load(best_ckpt_path)
-            weights = checkpoint['state_dict']
-            for key in list(weights.keys()):
-                if 'net.' in key:
-                    new_key = key.replace('net.', '')
-                    weights[new_key] = weights.pop(key)
-                if 'criterion.' in key:
-                    weights.pop(key)
-
-            self.net.load_state_dict(weights)
             self.net.eval()
 
     def configure_optimizers(self):
