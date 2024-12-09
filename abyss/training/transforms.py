@@ -247,6 +247,7 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
 
         spatial_transforms = [
             tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
+            # tf.CropForegroundd(keys=['image', 'label'], source_key='image', allow_smaller=False),
             SpatialTrans(patch_size=config['trainer']['patch_size']),
             GaussianNoiseTrans(prob=0.1),
             GaussianBlurTrans(prob=0.2),

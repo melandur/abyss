@@ -109,8 +109,8 @@ def create_train_dataset_file(config):
 
 def create_inference_dataset_file(config):
     """Create a dataset file with test data."""
-    dataset_path = '/home/melandur/Downloads/ucsf_corr/ucsf_images'
-    datalist_path = '/home/melandur/Downloads/ucsf_corr'
+    dataset_path = '/home/melandur/Downloads/mets_test_ac'
+    datalist_path = '/home/melandur/Downloads/'
 
     if not os.path.exists(dataset_path):
         raise FileNotFoundError(f'dataset path not found -> {dataset_path}')
@@ -190,8 +190,8 @@ if __name__ == '__main__':
     from abyss.config import ConfigFile
 
     config = ConfigFile().get_config()
-    create_train_dataset_file(config)
-    create_datalist(config)
+    # create_train_dataset_file(config)
+    # create_datalist(config)
 
     # create_test_dataset_file(config)
-    # create_inference_dataset_file(config)
+    create_inference_dataset_file(config)
