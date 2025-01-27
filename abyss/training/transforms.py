@@ -89,7 +89,7 @@ class SpatialTrans(MapTransform):
             p_rotation=0.2,
             rotation=(-np.pi, np.pi),  # isotropic rotation
             p_scaling=0.2,
-            scaling=(0.7, 1.4),
+            scaling=(0.6, 1.5),
             p_synchronize_scaling_across_axes=1,
             bg_style_seg_sampling=False
         )
@@ -247,7 +247,7 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
 
         spatial_transforms = [
             tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
-            # tf.CropForegroundd(keys=['image', 'label'], source_key='image', allow_smaller=False),
+            tf.CropForegroundd(keys=['image', 'label'], margin=[100, 100, 100], source_key='label', allow_smaller=False),
             SpatialTrans(patch_size=config['trainer']['patch_size']),
             GaussianNoiseTrans(prob=0.1),
             GaussianBlurTrans(prob=0.2),

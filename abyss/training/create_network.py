@@ -2,7 +2,7 @@ import torch
 torch._dynamo.config.cache_size_limit = 24  # increase cache size limit
 
 from abyss.training.network_definitions import DynUNet
-
+from abyss.training.network_definitions import UNETR
 
 def get_kernels_strides(config):
     """
@@ -52,24 +52,39 @@ def get_network(config):
     in_channels = len(config['dataset']['channel_order'])
     out_channels = len(config['trainer']['label_classes'])
 
-    net = DynUNet(
-        spatial_dims=3,
+    net = UNETR(
         in_channels=in_channels,
         out_channels=out_channels,
-        filters=[64, 128, 256, 512, 512, 512],  # brats winner 22
-        # filters=[64, 96, 128, 192, 256, 384, 512, 768, 1024],  # brats winner 21
-        # filters=[30, 60, 120, 240, 320, 320],  # nnunet winner 18/19
-        kernel_size=dimensions['kernel_size'],
-        strides=dimensions['strides'],
-        upsample_kernel_size=dimensions['upsample_kernel_size'],
-        dropout=None,
-        norm_name=('instance', {'affine': True}),
-        act_name=('leakyrelu', {'inplace': True, 'negative_slope': 0.01}),
-        deep_supervision=True,
-        deep_supr_num=2,
-        res_block=True,
-        trans_bias=True,
+        img_size=config['trainer']['patch_size'],
+        feature_size=32,
+        hidden_size=768,
+        mlp_dim=3072,
+        num_heads=12,
+        proj_type='conv',
+        norm_name='instance',
+        dropout_rate=0.0,
+        qkv_bias=True,
+        save_attn=False,
     )
+
+    # net = DynUNet(
+    #     spatial_dims=3,
+    #     in_channels=in_channels,
+    #     out_channels=out_channels,
+    #     filters=[64, 128, 256, 512, 512, 512],  # brats winner 22
+    #     # filters=[64, 96, 128, 192, 256, 384, 512, 768, 1024],  # brats winner 21
+    #     # filters=[30, 60, 120, 240, 320, 320],  # nnunet winner 18/19
+    #     kernel_size=dimensions['kernel_size'],
+    #     strides=dimensions['strides'],
+    #     upsample_kernel_size=dimensions['upsample_kernel_size'],
+    #     dropout=None,
+    #     norm_name=('instance', {'affine': True}),
+    #     act_name=('leakyrelu', {'inplace': True, 'negative_slope': 0.01}),
+    #     deep_supervision=True,
+    #     deep_supr_num=2,
+    #     res_block=True,
+    #     trans_bias=True,
+    # )
 
     if config['training']['compile']:
         net = torch.compile(net)
