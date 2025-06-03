@@ -1,8 +1,8 @@
 import os
 
 import torch
-from pytorch_lightning import seed_everything
 from pytorch_lightning import Trainer as LightningTrainer
+from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks import Callback, ModelCheckpoint, RichProgressBar
 from pytorch_lightning.callbacks.progress.rich_progress import RichProgressBarTheme
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -57,7 +57,7 @@ def get_trainer(config: dict) -> LightningTrainer:
         save_last=True,
         save_top_k=1,
         mode='min',
-        enable_version_counter=False
+        enable_version_counter=False,
     )
 
     if config['training']['seed']:
@@ -96,7 +96,7 @@ def get_trainer(config: dict) -> LightningTrainer:
         enable_progress_bar=True,
         enable_model_summary=True,
         accumulate_grad_batches=1,
-        gradient_clip_val=12,
+        gradient_clip_val=1,  # 12
         gradient_clip_algorithm='norm',
         deterministic=config['training']['deterministic'],
         benchmark=None,

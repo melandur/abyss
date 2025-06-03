@@ -1,8 +1,10 @@
 import torch
+
 torch._dynamo.config.cache_size_limit = 24  # increase cache size limit
 
-from abyss.training.network_definitions import DynUNet
-from abyss.training.network_definitions import UNETR
+from abyss.training.network_definitions import UNETR, DynUNet
+from abyss.training.primer import PrimusB, PrimusL, PrimusM, PrimusS
+
 
 def get_kernels_strides(config):
     """
@@ -52,20 +54,20 @@ def get_network(config):
     in_channels = len(config['dataset']['channel_order'])
     out_channels = len(config['trainer']['label_classes'])
 
-    net = UNETR(
-        in_channels=in_channels,
-        out_channels=out_channels,
-        img_size=config['trainer']['patch_size'],
-        feature_size=32,
-        hidden_size=768,
-        mlp_dim=3072,
-        num_heads=12,
-        proj_type='conv',
-        norm_name='instance',
-        dropout_rate=0.0,
-        qkv_bias=True,
-        save_attn=False,
-    )
+    # net = UNETR(
+    #     in_channels=in_channels,
+    #     out_channels=out_channels,
+    #     img_size=config['trainer']['patch_size'],
+    #     feature_size=32,
+    #     hidden_size=768,
+    #     mlp_dim=3072,
+    #     num_heads=12,
+    #     proj_type='conv',
+    #     norm_name='instance',
+    #     dropout_rate=0.0,
+    #     qkv_bias=True,
+    #     save_attn=False,
+    # )
 
     # net = DynUNet(
     #     spatial_dims=3,
@@ -85,6 +87,14 @@ def get_network(config):
     #     res_block=True,
     #     trans_bias=True,
     # )
+
+    net = PrimusB(
+        input_channels=in_channels,
+        output_channels=out_channels,
+        patch_embed_size=(8, 8, 8),
+        input_shape=config['trainer']['patch_size'],
+        drop_path_rate=0.2,
+    )
 
     if config['training']['compile']:
         net = torch.compile(net)

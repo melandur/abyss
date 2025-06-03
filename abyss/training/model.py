@@ -4,7 +4,6 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 from monai.data import decollate_batch
-
 from monai.losses import DiceCELoss
 from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete
@@ -33,13 +32,21 @@ class Model(pl.LightningModule):
 
     def configure_optimizers(self):
         """Optimizer"""
-        optimizer = torch.optim.SGD(
+        optimizer = torch.optim.AdamW(
             self.net.parameters(),
-            lr=1e-2,
-            momentum=0.99,
-            weight_decay=3e-5,
-            nesterov=True,
+            lr=3e-4,
+            weight_decay=5e-2,
+            eps=1e-8,
+            betas=(0.9, 0.98),
+            fused=False,  # lightning clipping clash
         )
+        # optimizer = torch.optim.SGD(
+        #     self.net.parameters(),
+        #     lr=1e-2,
+        #     momentum=0.99,
+        #     weight_decay=3e-5,
+        #     nesterov=True,
+        # )
         scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: (1 - epoch / 1000) ** 0.9)
         return [optimizer], [scheduler]
 

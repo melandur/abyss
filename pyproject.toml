@@ -20,6 +20,8 @@ tensorboard = "^2.18.0"
 rich = "^13.9.4"
 acvl-utils = "^0.2.2"
 matplotlib = "^3.9.2"
+dynamic-network-architectures = "^0.4.1"
+fvcore = "^0.1.5.post20221221"
 
 [tool.poetry.dev-dependencies]
 black = "^24.10.0"

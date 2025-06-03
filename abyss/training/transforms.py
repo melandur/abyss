@@ -2,19 +2,17 @@ import monai.transforms as tf
 import numpy as np
 import SimpleITK as sitk
 import torch
-
-from monai.data import MetaTensor
-from monai.transforms import LoadImage
-from monai.transforms.transform import MapTransform
-
 from batchgeneratorsv2.transforms.intensity.brightness import MultiplicativeBrightnessTransform
-from batchgeneratorsv2.transforms.intensity.contrast import ContrastTransform, BGContrast
+from batchgeneratorsv2.transforms.intensity.contrast import BGContrast, ContrastTransform
 from batchgeneratorsv2.transforms.intensity.gamma import GammaTransform
 from batchgeneratorsv2.transforms.intensity.gaussian_noise import GaussianNoiseTransform
 from batchgeneratorsv2.transforms.noise.gaussian_blur import GaussianBlurTransform
 from batchgeneratorsv2.transforms.spatial.low_resolution import SimulateLowResolutionTransform
 from batchgeneratorsv2.transforms.spatial.mirroring import MirrorTransform
 from batchgeneratorsv2.transforms.spatial.spatial import SpatialTransform
+from monai.data import MetaTensor
+from monai.transforms import LoadImage
+from monai.transforms.transform import MapTransform
 
 
 class ToOneHot(MapTransform):
@@ -38,13 +36,13 @@ class ToOneHot(MapTransform):
 
 class CustomLoadImaged(MapTransform):
     def __init__(
-            self,
-            keys,
-            image_key='image',
-            label_key='label',
-            meta_key_postfix='meta_dict',
-            allow_missing_keys=False,
-            inference=False,
+        self,
+        keys,
+        image_key='image',
+        label_key='label',
+        meta_key_postfix='meta_dict',
+        allow_missing_keys=False,
+        inference=False,
     ):
         super().__init__(keys, allow_missing_keys)
         self.image_key = image_key
@@ -91,7 +89,7 @@ class SpatialTrans(MapTransform):
             p_scaling=0.2,
             scaling=(0.6, 1.5),
             p_synchronize_scaling_across_axes=1,
-            bg_style_seg_sampling=False
+            bg_style_seg_sampling=False,
         )
         data_dict = {'image': d['image'], 'segmentation': d['label']}
         output_dict = transform(**data_dict)
@@ -123,10 +121,12 @@ class GaussianBlurTrans(MapTransform, tf.RandomizableTransform):
     def __call__(self, data):
         d = dict(data)
         if self.R.rand() < self.prob:
-            transform = GaussianBlurTransform(blur_sigma=(0.5, 1.),
+            transform = GaussianBlurTransform(
+                blur_sigma=(0.5, 1.0),
                 synchronize_channels=False,
                 synchronize_axes=False,
-                p_per_channel=0.5, benchmark=True
+                p_per_channel=0.5,
+                benchmark=True,
             )
             data_dict = {'image': d['image']}
             output_dict = transform(**data_dict)
@@ -143,9 +143,7 @@ class MultiplicativeBrightnessTrans(MapTransform, tf.RandomizableTransform):
         d = dict(data)
         if self.R.rand() < self.prob:
             transform = MultiplicativeBrightnessTransform(
-                multiplier_range=BGContrast((0.75, 1.25)),
-                synchronize_channels=False,
-                p_per_channel=1
+                multiplier_range=BGContrast((0.75, 1.25)), synchronize_channels=False, p_per_channel=1
             )
             data_dict = {'image': d['image']}
             output_dict = transform(**data_dict)
@@ -161,11 +159,11 @@ class ContrastTrans(MapTransform, tf.RandomizableTransform):
     def __call__(self, data):
         d = dict(data)
         if self.R.rand() < self.prob:
-            transform =  ContrastTransform(
+            transform = ContrastTransform(
                 contrast_range=BGContrast((0.75, 1.25)),
                 preserve_range=True,
                 synchronize_channels=False,
-                p_per_channel=1
+                p_per_channel=1,
             )
             data_dict = {'image': d['image']}
             output_dict = transform(**data_dict)
@@ -187,7 +185,7 @@ class SimulateLowResolutionTrans(MapTransform, tf.RandomizableTransform):
                 synchronize_axes=True,
                 ignore_axes=None,
                 allowed_channels=None,
-                p_per_channel=0.5
+                p_per_channel=0.5,
             )
             data_dict = {'image': d['image']}
             output_dict = transform(**data_dict)
@@ -208,7 +206,7 @@ class GammaTrans(MapTransform, tf.RandomizableTransform):
                 p_invert_image=1,
                 synchronize_channels=False,
                 p_per_channel=1,
-                p_retain_stats=1
+                p_retain_stats=1,
             )
             data_dict = {'image': d['image']}
             output_dict = transform(**data_dict)
@@ -222,7 +220,7 @@ class MirrorTrans(MapTransform):
 
     def __call__(self, data):
         d = dict(data)
-        transform =  MirrorTransform(allowed_axes=(0, 1, 2))  # assuming 3D data
+        transform = MirrorTransform(allowed_axes=(0, 1, 2))  # assuming 3D data
         data_dict = {'image': d['image'], 'segmentation': d['label']}
         output_dict = transform(**data_dict)
         d['image'] = output_dict['image']
@@ -236,18 +234,18 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
     if mode == 'inference':
         keys = ['image']
 
-
     if mode == 'train':
         load_transforms = [
             CustomLoadImaged(keys=keys),
             tf.Orientationd(keys=['image', 'label'], axcodes='RAS'),
             tf.ToTensord(keys='image'),
-
         ]
 
         spatial_transforms = [
             tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
-            tf.CropForegroundd(keys=['image', 'label'], margin=[100, 100, 100], source_key='label', allow_smaller=False),
+            tf.CropForegroundd(
+                keys=['image', 'label'], margin=[100, 100, 100], source_key='label', allow_smaller=False
+            ),
             SpatialTrans(patch_size=config['trainer']['patch_size']),
             GaussianNoiseTrans(prob=0.1),
             GaussianBlurTrans(prob=0.2),
@@ -265,7 +263,6 @@ def get_transforms(config: dict, mode: str) -> tf.Compose:
     elif mode == 'val':
         load_transforms = [
             CustomLoadImaged(keys=keys),
-
             tf.Orientationd(keys=['image', 'label'], axcodes='RAS'),
             tf.ToTensord(keys='image'),
         ]

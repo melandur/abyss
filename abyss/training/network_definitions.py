@@ -19,11 +19,11 @@ from typing import List, Optional, Sequence, Tuple, Union
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from monai.networks.blocks.convolutions import Convolution
 from monai.networks.layers.factories import Act, Norm
 from monai.networks.layers.utils import get_act_layer, get_norm_layer
 from torch.nn.functional import interpolate
-import torch.nn.functional as F
 
 __all__ = ["DynUNet", "DynUnet", "Dynunet"]
 
@@ -697,12 +697,9 @@ def get_output_padding(
     return out_padding if len(out_padding) > 1 else out_padding[0]
 
 
-
-
 from collections.abc import Sequence
 
 import torch.nn as nn
-
 from monai.networks.blocks.dynunet_block import UnetOutBlock
 from monai.networks.blocks.unetr_block import UnetrBasicBlock, UnetrPrUpBlock, UnetrUpBlock
 from monai.networks.nets.vit import ViT
@@ -875,8 +872,7 @@ class UNETR(nn.Module):
             res_block=res_block,
         )
 
-
-       # self.out = UnetOutBlock(spatial_dims=spatial_dims, in_channels=feature_size, out_channels=out_channels)
+        # self.out = UnetOutBlock(spatial_dims=spatial_dims, in_channels=feature_size, out_channels=out_channels)
         # self.ds_out4 = UnetOutBlock(spatial_dims=spatial_dims, in_channels=feature_size * 8,
         #                             out_channels=out_channels)
         self.ds_out3 = UnetOutBlock(spatial_dims=spatial_dims, in_channels=feature_size * 8, out_channels=out_channels)

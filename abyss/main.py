@@ -31,6 +31,3 @@ if config['mode']['test']:
             raise FileNotFoundError(f'No checkpoint found in -> {config["training"]["checkpoint_path"]}')
         ckpt_path = config['training']['checkpoint_path']
         trainer.test(model, ckpt_path=ckpt_path)
-
-
-

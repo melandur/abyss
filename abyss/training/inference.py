@@ -33,7 +33,9 @@ patch_size = config['trainer']['patch_size']
 def get_net(net, fold):
     torch.cuda.empty_cache()
 
-    checkpoint = torch.load(os.path.join(checkpoint_path, f'mets_fold_{fold}', '1_results', 'best.ckpt'), weights_only=False)
+    checkpoint = torch.load(
+        os.path.join(checkpoint_path, f'mets_fold_{fold}', '1_results', 'best.ckpt'), weights_only=False
+    )
     state_dict = checkpoint['state_dict']
     new_state_dict = {}
 

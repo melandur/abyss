@@ -2,7 +2,6 @@ import os
 from collections import OrderedDict
 
 
-
 class ConfigFile:
 
     def __init__(self) -> None:
@@ -31,10 +30,10 @@ class ConfigFile:
                 'spacing': [1.0, 1.0, 1.0],
                 'total_folds': 5,
                 # 'channel_order': {
-                    # 't1': '_t1.nii.gz',
-                    # 't1c': '_t1c.nii.gz'
-                    # 't2': '_t2.nii.gz',
-                    # 'flair': '_flair.nii.gz',
+                # 't1': '_t1.nii.gz',
+                # 't1c': '_t1c.nii.gz'
+                # 't2': '_t2.nii.gz',
+                # 'flair': '_flair.nii.gz',
                 # },
                 'channel_order': {'t1c': '_t1c.nii.gz'},
                 'label_order': {'seg': '_seg.nii.gz'},
@@ -44,7 +43,7 @@ class ConfigFile:
             'trainer': {
                 # 'label_classes': OrderedDict({'wt': [1, 2, 3, 4], 'tc': [2, 3, 4], 'en': [2]}),
                 'label_classes': OrderedDict({'wt': [1, 2], 'en': [1]}),
-                'patch_size': [128, 128, 128],  # y, x, z
+                'patch_size': [96, 96, 96],  # y, x, z
             },
             'training': {
                 'fold': 0,
@@ -52,7 +51,7 @@ class ConfigFile:
                 'num_workers': 12,
                 'local_rank': 0,
                 'cache_rate': 0.1,
-                'compile': True,
+                'compile': False,
                 'multi_gpu': False,
                 'deterministic': True,
                 'reload_checkpoint': False,
