@@ -69,32 +69,32 @@ def get_network(config):
     #     save_attn=False,
     # )
 
-    # net = DynUNet(
-    #     spatial_dims=3,
-    #     in_channels=in_channels,
-    #     out_channels=out_channels,
-    #     filters=[64, 128, 256, 512, 512, 512],  # brats winner 22
-    #     # filters=[64, 96, 128, 192, 256, 384, 512, 768, 1024],  # brats winner 21
-    #     # filters=[30, 60, 120, 240, 320, 320],  # nnunet winner 18/19
-    #     kernel_size=dimensions['kernel_size'],
-    #     strides=dimensions['strides'],
-    #     upsample_kernel_size=dimensions['upsample_kernel_size'],
-    #     dropout=None,
-    #     norm_name=('instance', {'affine': True}),
-    #     act_name=('leakyrelu', {'inplace': True, 'negative_slope': 0.01}),
-    #     deep_supervision=True,
-    #     deep_supr_num=2,
-    #     res_block=True,
-    #     trans_bias=True,
-    # )
-
-    net = PrimusB(
-        input_channels=in_channels,
-        output_channels=out_channels,
-        patch_embed_size=(8, 8, 8),
-        input_shape=config['trainer']['patch_size'],
-        drop_path_rate=0.2,
+    net = DynUNet(
+        spatial_dims=3,
+        in_channels=in_channels,
+        out_channels=out_channels,
+        filters=[64, 128, 256, 512, 512, 512],  # brats winner 22
+        # filters=[64, 96, 128, 192, 256, 384, 512, 768, 1024],  # brats winner 21
+        # filters=[30, 60, 120, 240, 320, 320],  # nnunet winner 18/19
+        kernel_size=dimensions['kernel_size'],
+        strides=dimensions['strides'],
+        upsample_kernel_size=dimensions['upsample_kernel_size'],
+        dropout=None,
+        norm_name=('instance', {'affine': True}),
+        act_name=('leakyrelu', {'inplace': True, 'negative_slope': 0.01}),
+        deep_supervision=True,
+        deep_supr_num=2,
+        res_block=True,
+        trans_bias=True,
     )
+
+    # net = PrimusB(
+    #     input_channels=in_channels,
+    #     output_channels=out_channels,
+    #     patch_embed_size=(8, 8, 8),
+    #     input_shape=config['trainer']['patch_size'],
+    #     drop_path_rate=0.2,
+    # )
 
     if config['training']['compile']:
         net = torch.compile(net)
