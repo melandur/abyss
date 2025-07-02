@@ -187,7 +187,7 @@ def create_datalist(config):
 
 
 if __name__ == '__main__':
-    from abyss.config import ConfigFile
+    from config import ConfigFile
 
     config = ConfigFile().get_config()
     create_train_dataset_file(config)

@@ -81,7 +81,7 @@ def get_loader(config: dict, mode: str):
 
 
 if __name__ == '__main__':
-    from abyss.config import ConfigFile
+    from config import ConfigFile
 
     config = ConfigFile().get_config()
     get_loader(config, 'train')

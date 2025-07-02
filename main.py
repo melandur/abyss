@@ -2,8 +2,8 @@ import os
 import resource
 
 from config import ConfigFile
-from training.model import Model
-from training.trainer import get_trainer
+from abyss.training.model import Model
+from abyss.training.trainer import get_trainer
 
 # Increase the number of file descriptors to the maximum allowed
 rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
