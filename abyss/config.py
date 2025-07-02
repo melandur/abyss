@@ -6,7 +6,7 @@ class ConfigFile:
 
     def __init__(self) -> None:
         self.project_name = 'aby'
-        self.experiment_name = 'mets'
+        self.experiment_name = 'gbm'
         self.project_path = os.path.join(os.path.expanduser('~'), 'code', 'abyss', 'data')
         self.train_dataset_path = os.path.join(os.path.expanduser('~'), 'code', 'abyss', 'data', 'training', 'gbm')
         self.test_dataset_path = os.path.join(os.path.expanduser('~'), 'code', 'abyss', 'data', 'training', 'raw')
