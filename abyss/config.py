@@ -8,8 +8,8 @@ class ConfigFile:
         self.project_name = 'aby'
         self.experiment_name = 'mets'
         self.project_path = os.path.join(os.path.expanduser('~'), 'code', 'abyss', 'data')
-        self.train_dataset_path = os.path.join(os.path.expanduser('~'), 'code', 'abyss', 'data', 'data', 'mets')
-        self.test_dataset_path = os.path.join(os.path.expanduser('~'), 'code', 'abyss', 'data', 'raw')
+        self.train_dataset_path = os.path.join(os.path.expanduser('~'), 'code', 'abyss', 'data', 'training', 'gbm')
+        self.test_dataset_path = os.path.join(os.path.expanduser('~'), 'code', 'abyss', 'data', 'training', 'raw')
 
     def get_config(self) -> dict:
         """Returns config dict"""
@@ -35,7 +35,7 @@ class ConfigFile:
                 # 't2': '_t2.nii.gz',
                 # 'flair': '_flair.nii.gz',
                 # },
-                'channel_order': {'t1c': '_t1c.nii.gz'},
+                'channel_order': {'t1c': '_t1ce.nii.gz'},
                 'label_order': {'seg': '_seg.nii.gz'},
                 'seed': 42,
             },
