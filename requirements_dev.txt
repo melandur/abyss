@@ -1,0 +1,117 @@
+absl-py==2.1.0
+acvl-utils==0.2.2
+aiohappyeyeballs==2.4.3
+aiohttp==3.11.6
+aiosignal==1.3.1
+anyio==4.6.2.post1
+argparse==1.4.0
+attrs==24.2.0
+batchgenerators==0.25.1
+batchgeneratorsv2==0.2.1
+blosc2==3.0.0b4
+certifi==2024.8.30
+charset-normalizer==3.4.2
+colorama==0.4.6
+connected-components-3d==3.20.0
+contourpy==1.3.1
+cycler==0.12.1
+dynamic-network-architectures==0.4.1
+einops==0.8.1
+fft-conv-pytorch==1.2.0
+filelock==3.16.1
+fonttools==4.55.0
+frozenlist==1.5.0
+fsspec==2024.10.0
+fsspec[http]==2024.10.0
+future==1.0.0
+fvcore==0.1.5.post20221221
+grpcio==1.68.0
+h11==0.14.0
+hf-xet==1.1.2
+httpcore==1.0.7
+httpx==0.27.2
+huggingface-hub==0.32.3
+idna==3.10
+imageio==2.36.0
+iopath==0.1.10
+jinja2==3.1.4
+joblib==1.4.2
+kiwisolver==1.4.7
+lazy-loader==0.4
+lightning-utilities==0.11.9
+lightning==2.4.0
+linecache2==1.0.0
+loguru==0.7.2
+markdown-it-py==3.0.0
+markdown==3.7
+markupsafe==3.0.2
+matplotlib==3.9.2
+mdurl==0.1.2
+monai==1.4.0
+mpmath==1.3.0
+msgpack==1.1.0
+multidict==6.1.0
+ndindex==1.9.2
+networkx==3.4.2
+nibabel==5.3.2
+numexpr==2.10.1
+numpy==1.26.4
+nvidia-cublas-cu12==12.4.5.8 ; platform_system == "Linux" and platform_machine == "x86_64" and python_full_version == "3.12.7"
+nvidia-cuda-cupti-cu12==12.4.127 ; platform_system == "Linux" and platform_machine == "x86_64" and python_full_version == "3.12.7"
+nvidia-cuda-nvrtc-cu12==12.4.127 ; platform_system == "Linux" and platform_machine == "x86_64" and python_full_version == "3.12.7"
+nvidia-cuda-runtime-cu12==12.4.127 ; platform_system == "Linux" and platform_machine == "x86_64" and python_full_version == "3.12.7"
+nvidia-cudnn-cu12==9.1.0.70 ; platform_system == "Linux" and platform_machine == "x86_64" and python_full_version == "3.12.7"
+nvidia-cufft-cu12==11.2.1.3 ; platform_system == "Linux" and platform_machine == "x86_64" and python_full_version == "3.12.7"
+nvidia-curand-cu12==10.3.5.147 ; platform_system == "Linux" and platform_machine == "x86_64" and python_full_version == "3.12.7"
+nvidia-cusolver-cu12==11.6.1.9 ; platform_system == "Linux" and platform_machine == "x86_64" and python_full_version == "3.12.7"
+nvidia-cusparse-cu12==12.3.1.170 ; platform_system == "Linux" and platform_machine == "x86_64" and python_full_version == "3.12.7"
+nvidia-nccl-cu12==2.21.5 ; platform_system == "Linux" and platform_machine == "x86_64" and python_full_version == "3.12.7"
+nvidia-nvjitlink-cu12==12.4.127 ; platform_system == "Linux" and platform_machine == "x86_64" and python_full_version == "3.12.7"
+nvidia-nvtx-cu12==12.4.127 ; platform_system == "Linux" and platform_machine == "x86_64" and python_full_version == "3.12.7"
+packaging==24.2
+pandas==2.2.3
+pillow==11.0.0
+portalocker==3.1.1
+propcache==0.2.0
+protobuf==5.28.3
+py-cpuinfo==9.0.0
+pygments==2.18.0
+pyparsing==3.2.0
+python-dateutil==2.9.0.post0
+pytorch-lightning==2.4.0
+pytz==2024.2
+pywin32==310 ; platform_system == "Windows" and python_full_version == "3.12.7"
+pyyaml==6.0.2
+requests==2.32.3
+rich==13.9.4
+safetensors==0.5.3
+scikit-image==0.24.0
+scikit-learn==1.5.2
+scipy==1.14.1
+setuptools==75.5.0
+simpleitk==2.4.0
+six==1.16.0
+sniffio==1.3.1
+sympy==1.13.1
+tabulate==0.9.0
+tensorboard-data-server==0.7.2
+tensorboard==2.18.0
+tensorboardx==2.6.2.2
+termcolor==3.1.0
+threadpoolctl==3.5.0
+tifffile==2024.9.20
+timm==1.0.15
+torch==2.5.1
+torchmetrics==1.6.0
+torchvision==0.20.1
+tqdm==4.67.0
+traceback2==1.4.0
+triton==3.1.0 ; platform_system == "Linux" and platform_machine == "x86_64" and python_full_version == "3.12.7"
+typing-extensions==4.12.2
+tzdata==2024.2
+unittest2==1.1.0
+urllib3==2.4.0
+werkzeug==3.1.3
+win32-setctime==1.1.0 ; sys_platform == "win32" and python_full_version == "3.12.7"
+yacs==0.1.8
+yarl==1.17.2
