@@ -1,3 +1,4 @@
+from calendar import c
 import os
 
 import torch
@@ -9,6 +10,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 
 
 class Improvement(Callback):
+    """Callback to track improvement"""
 
     def __init__(self, monitor: str):
         super().__init__()
@@ -27,10 +29,13 @@ class Improvement(Callback):
 
 
 def get_trainer(config: dict) -> LightningTrainer:
+    """Get the PyTorch Lightning trainer"""
+
     results_path = config['project']['results_path']
     logger = TensorBoardLogger(save_dir=results_path, name='logs')  # TBoard, MLflow, Comet, Neptune, WandB
     log_path = os.path.join(results_path, 'logs')
     print(f'tensorboard --logdir={log_path}')
+    print(f'Task: {config["trainer"]["task"]}')
 
     improvement_cb = Improvement(monitor='loss_val')
 
@@ -78,7 +83,7 @@ def get_trainer(config: dict) -> LightningTrainer:
             model_checkpoint_cb,
         ],
         fast_dev_run=config['training']['fast_dev_run'],
-        max_epochs=1000,
+        max_epochs=config['training']['epochs'] + config['training']['warmup_epochs'],
         min_epochs=None,
         max_steps=-1,
         min_steps=None,
@@ -96,7 +101,7 @@ def get_trainer(config: dict) -> LightningTrainer:
         enable_progress_bar=True,
         enable_model_summary=True,
         accumulate_grad_batches=1,
-        gradient_clip_val=1,  # 12
+        gradient_clip_val=12,
         gradient_clip_algorithm='norm',
         deterministic=config['training']['deterministic'],
         benchmark=None,

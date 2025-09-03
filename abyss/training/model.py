@@ -3,14 +3,15 @@ import os
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from monai.data import decollate_batch
 from monai.losses import DiceCELoss
 from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete
-from torch.optim.lr_scheduler import LambdaLR
 
 from .create_dataset import get_loader
 from .create_network import get_network
+from .scheduler import WarmupPolyLRScheduler
 
 torch.set_float32_matmul_precision('medium')
 
@@ -22,7 +23,17 @@ class Model(pl.LightningModule):
         super().__init__()
         self.config = config
         self.net = get_network(config)
-        self.criterion = DiceCELoss(sigmoid=True, batch=True, squared_pred=True)
+        task = config['trainer']['task']
+
+        if task == 'classification':
+            self.criterion = nn.CrossEntropyLoss()
+        elif task == 'segmentation':
+            self.criterion = DiceCELoss(sigmoid=True, batch=True, squared_pred=True)
+        elif task == 'detection':
+            raise NotImplementedError('Detection task is not implemented yet.')
+        else:
+            raise ValueError(f'Unknown task: {task}, config -> trainer -> task')
+
         self.metrics = {'dice': DiceMetric(reduction='none', ignore_empty=True)}
 
     def setup(self, stage: str) -> None:
@@ -32,22 +43,20 @@ class Model(pl.LightningModule):
 
     def configure_optimizers(self):
         """Optimizer"""
-        # optimizer = torch.optim.AdamW(
-        #     self.net.parameters(),
-        #     lr=3e-4,
-        #     weight_decay=5e-2,
-        #     eps=1e-8,
-        #     betas=(0.9, 0.98),
-        #     fused=False,  # lightning clipping clash
-        # )
         optimizer = torch.optim.SGD(
             self.net.parameters(),
-            lr=1e-2,
+            lr=self.config['training']['lr'],
             momentum=0.99,
             weight_decay=3e-5,
             nesterov=True,
         )
-        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: (1 - epoch / 1000) ** 0.9)
+        scheduler = WarmupPolyLRScheduler(
+            optimizer,
+            base_lr=self.config['training']['lr'],
+            total_steps=self.config['training']['epochs'],
+            warmup_steps=self.config['training']['warmup_epochs'],
+            exponent=0.9,
+        )
         return [optimizer], [scheduler]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -64,14 +73,20 @@ class Model(pl.LightningModule):
         data, label = batch['image'], batch['label']
         preds = self(data)
 
-        if len(preds.size()) - len(label.size()) == 1:  # deep supervision mode
-            preds = torch.unbind(preds, dim=1)  # unbind feature maps
+        if isinstance(preds, (list, tuple)):
             loss = 0.0
             normalize_factor = sum(1.0 / (2**i) for i in range(len(preds)))
-            for idx, pred in enumerate(preds):
-                loss += 1.0 / (2**idx) * self.criterion(pred, label)
+
+            for idx, (pred, scale) in enumerate(zip(preds, [1, 0.5, 0.25])):
+                scaled_target = F.interpolate(
+                    label,
+                    scale_factor=scale,
+                    mode='nearest'
+                )
+                loss += (1.0 / (2**idx)) * self.criterion(pred, scaled_target)
+
             loss = loss / normalize_factor
-        else:  # only last feature map is output is used
+        else:
             loss = self.criterion(preds, label)
 
         self.log('loss_train', loss, prog_bar=True, on_step=False, on_epoch=True)
@@ -83,9 +98,8 @@ class Model(pl.LightningModule):
 
         preds = self(data)
 
-        if len(preds.size()) - len(label.size()) == 1:  # deep supervision mode
-            preds = torch.unbind(preds, dim=1)  # unbind feature maps
-            preds = preds[0]  # only last feature map is used
+        if isinstance(preds, (list, tuple)):
+            preds = preds[0]
 
         loss = self.criterion(preds, label)
         pred = nn.functional.sigmoid(preds)

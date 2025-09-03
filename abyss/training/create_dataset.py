@@ -4,13 +4,13 @@ import os
 import torch.distributed as dist
 from monai.data import CacheDataset, DataLoader, partition_dataset
 
-from abyss.training.transforms import get_transforms
+from abyss.training.transforms import get_segmentation_transforms
 
 
-def get_loader(config: dict, mode: str):
+def get_loader(config: dict, mode: str) -> DataLoader:
     """Get the dataloader for training, validation or test."""
 
-    transform = get_transforms(config, mode)
+    transform = get_segmentation_transforms(config, mode)
 
     train_dataset_path = config['project']['train_dataset_path']
     train_dataset_file = os.path.join(config['project']['config_path'], 'train_dataset.json')

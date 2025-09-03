@@ -6,7 +6,7 @@ authors = ["melandur <account@qunit.ch>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.12.7"
+python = "3.12.11"
 torch = "^2.5.1"
 numpy = "1.26.4"
 lightning = "^2.4.0"

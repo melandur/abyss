@@ -1,5 +1,4 @@
 import os
-from collections import OrderedDict
 
 
 class ConfigFile:
@@ -29,21 +28,15 @@ class ConfigFile:
             'dataset': {
                 'spacing': [1.0, 1.0, 1.0],
                 'total_folds': 5,
-                # 'channel_order': {
-                # 't1': '_t1.nii.gz',
-                # 't1c': '_t1c.nii.gz'
-                # 't2': '_t2.nii.gz',
-                # 'flair': '_flair.nii.gz',
-                # },
-                'channel_order': {'t1c': '_t1ce.nii.gz'},
+                'channel_order': {'t1c': '_t1c.nii.gz'},
                 'label_order': {'seg': '_seg.nii.gz'},
                 'seed': 42,
             },
             'mode': {'train': True, 'test': False},
             'trainer': {
-                # 'label_classes': OrderedDict({'wt': [1, 2, 3, 4], 'tc': [2, 3, 4], 'en': [2]}),
-                'label_classes': OrderedDict({'wt': [1, 2], 'en': [1]}),
-                'patch_size': [96, 96, 96],  # y, x, z
+                'label_classes': {'nec': [1], 'en': [2], 'ed': [3]},
+                'patch_size': [160, 160, 160],  # y, x, z
+                'task': 'segmentation',  # 'segmentation', 'classification', 'detection'
             },
             'training': {
                 'fold': 0,
@@ -53,9 +46,13 @@ class ConfigFile:
                 'cache_rate': 0.1,
                 'compile': False,
                 'multi_gpu': False,
-                'deterministic': True,
+                'deterministic': False,
                 'reload_checkpoint': False,
                 'checkpoint_path': None,
+                'batch_size': 2,
+                'epochs': 1000,
+                'warmup_epochs': 50,
+                'lr': 1e-3,
                 'seed': 42,  # find the truth in randomness
             },
         }

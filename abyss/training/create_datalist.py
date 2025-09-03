@@ -5,57 +5,6 @@ import numpy as np
 from sklearn.model_selection import KFold
 
 
-def create_test_dataset_file(config):
-    """Create a dataset file with test data."""
-    dataset_path = config['project']['test_dataset_path']
-
-    if not os.path.exists(dataset_path):
-        raise FileNotFoundError(f'dataset path not found -> {dataset_path}')
-
-    subjects = os.listdir(dataset_path)
-
-    channel_order = config['dataset']['channel_order']
-    label_order = config['dataset']['label_order']
-
-    datalist = {'test': []}
-    for subject in subjects:
-        files = os.listdir(os.path.join(dataset_path, subject))
-        channel_list = []
-        label_list = []
-
-        for name, identifier in channel_order.items():
-            for file in files:
-                if file.endswith(identifier):
-                    channel_list.append(file)
-
-        for name, identifier in label_order.items():
-            for file in files:
-                if file.endswith(identifier):
-                    label_list.append(file)
-                    break
-
-        if len(channel_list) != len(channel_order):
-            raise FileNotFoundError(f'channel files not found for subject -> {subject}')
-
-        if len(label_list) != len(label_order):
-            raise FileNotFoundError(f'label files not found for subject -> {subject}')
-
-        datalist['training'].append(
-            {
-                'name': subject,
-                'image': channel_list,
-                'label': label_list,
-            }
-        )
-
-    config_path = config['project']['config_path']
-    os.makedirs(config_path, exist_ok=True)
-    dataset_file_path = os.path.join(config_path, 'test_dataset.json')
-    with open(dataset_file_path, 'w') as f:
-        json.dump(datalist, f, indent=4)
-    print(f'dataset file has been created -> {dataset_file_path}')
-
-
 def create_train_dataset_file(config):
     """Create a dataset file with training data."""
     dataset_path = config['project']['train_dataset_path']
@@ -102,6 +51,57 @@ def create_train_dataset_file(config):
     config_path = config['project']['config_path']
     os.makedirs(config_path, exist_ok=True)
     dataset_file_path = os.path.join(config_path, 'train_dataset.json')
+    with open(dataset_file_path, 'w') as f:
+        json.dump(datalist, f, indent=4)
+    print(f'dataset file has been created -> {dataset_file_path}')
+
+
+def create_test_dataset_file(config):
+    """Create a dataset file with test data."""
+    dataset_path = config['project']['test_dataset_path']
+
+    if not os.path.exists(dataset_path):
+        raise FileNotFoundError(f'dataset path not found -> {dataset_path}')
+
+    subjects = os.listdir(dataset_path)
+
+    channel_order = config['dataset']['channel_order']
+    label_order = config['dataset']['label_order']
+
+    datalist = {'test': []}
+    for subject in subjects:
+        files = os.listdir(os.path.join(dataset_path, subject))
+        channel_list = []
+        label_list = []
+
+        for name, identifier in channel_order.items():
+            for file in files:
+                if file.endswith(identifier):
+                    channel_list.append(file)
+
+        for name, identifier in label_order.items():
+            for file in files:
+                if file.endswith(identifier):
+                    label_list.append(file)
+                    break
+
+        if len(channel_list) != len(channel_order):
+            raise FileNotFoundError(f'channel files not found for subject -> {subject}')
+
+        if len(label_list) != len(label_order):
+            raise FileNotFoundError(f'label files not found for subject -> {subject}')
+
+        datalist['training'].append(
+            {
+                'name': subject,
+                'image': channel_list,
+                'label': label_list,
+            }
+        )
+
+    config_path = config['project']['config_path']
+    os.makedirs(config_path, exist_ok=True)
+    dataset_file_path = os.path.join(config_path, 'test_dataset.json')
     with open(dataset_file_path, 'w') as f:
         json.dump(datalist, f, indent=4)
     print(f'dataset file has been created -> {dataset_file_path}')
