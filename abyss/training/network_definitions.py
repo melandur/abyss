@@ -20,12 +20,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from dynamic_network_architectures.architectures.unet import ResidualEncoderUNet
 from monai.networks.blocks.convolutions import Convolution
 from monai.networks.layers.factories import Act, Norm
 from monai.networks.layers.utils import get_act_layer, get_norm_layer
 from torch.nn.functional import interpolate
-
-from dynamic_network_architectures.architectures.unet import ResidualEncoderUNet
 
 __all__ = ["DynUNet", "DynUnet", "Dynunet"]
 

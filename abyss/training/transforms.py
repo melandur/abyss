@@ -1,8 +1,7 @@
 import monai.transforms as tf
 import numpy as np
 import SimpleITK as sitk
-import torch   
-import numpy as np
+import torch
 from batchgeneratorsv2.transforms.intensity.brightness import MultiplicativeBrightnessTransform
 from batchgeneratorsv2.transforms.intensity.contrast import BGContrast, ContrastTransform
 from batchgeneratorsv2.transforms.intensity.gamma import GammaTransform
@@ -124,17 +123,21 @@ class SpatialTrans(MapTransform):
 
     def __call__(self, data) -> dict:
         d = dict(data)
+        patch_center_dist = (
+            min(p // 3 for p in self.patch_size) if isinstance(self.patch_size, (list, tuple)) else self.patch_size // 3
+        )
         transform = SpatialTransform(
             patch_size=self.patch_size,
-            patch_center_dist_from_border=0,
-            random_crop=False,
+            patch_center_dist_from_border=patch_center_dist,
+            random_crop=True,
             p_elastic_deform=0,
             p_rotation=0.2,
-            rotation=(-np.pi, np.pi),  # isotropic rotation
+            rotation=(-np.pi / 6, np.pi / 6),
             p_scaling=0.2,
-            scaling=(0.6, 1.5),
-            p_synchronize_scaling_across_axes=1,
-            bg_style_seg_sampling=False,
+            scaling=(0.7, 1.4),
+            p_synchronize_scaling_across_axes=1.0,
+            bg_style_seg_sampling=True,
+            border_mode_seg='border',
         )
         data_dict = {'image': d['image'], 'segmentation': d['label']}
         output_dict = transform(**data_dict)
@@ -337,14 +340,22 @@ def get_segmentation_transforms(config: dict, mode: str) -> tf.Compose:
             tf.ToTensord(keys='image'),
         ]
 
+        patch_size = config['trainer']['patch_size']
+        crop_margin = [max(p // 2, 20) for p in patch_size]
+        target_spacing = config['dataset'].get('target_spacing', config['dataset']['spacing'])
+
         spatial_transforms = [
-            tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
-            tf.CropForegroundd(
-                keys=['image', 'label'], margin=[100, 100, 100], source_key='label', allow_smaller=False
+            tf.Spacingd(
+                keys=['image', 'label'],
+                pixdim=target_spacing,
+                mode=['bilinear', 'nearest'],
+                padding_mode='border',
             ),
+            tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
+            tf.CropForegroundd(keys=['image', 'label'], margin=crop_margin, source_key='label', allow_smaller=False),
             SpatialTrans(keys=['image', 'label'], patch_size=config['trainer']['patch_size']),
             GaussianNoiseTrans(prob=0.1),
-            # GaussianBlurTrans(prob=0.2),
+            GaussianBlurTrans(prob=0.2),
             MultiplicativeBrightnessTrans(prob=0.15),
             ContrastTrans(prob=0.15),
             SimulateLowResolutionTrans(prob=0.25),
@@ -363,10 +374,20 @@ def get_segmentation_transforms(config: dict, mode: str) -> tf.Compose:
             tf.ToTensord(keys='image'),
         ]
 
+        target_spacing = config['dataset'].get('target_spacing', config['dataset']['spacing'])
+        patch_size = config['trainer']['patch_size']
+        crop_margin = [max(p // 2, 20) for p in patch_size]
+
         spatial_transforms = [
+            tf.Spacingd(
+                keys=['image', 'label'],
+                pixdim=target_spacing,
+                mode=['bilinear', 'nearest'],
+                padding_mode='border',
+            ),
             tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
-            SpatialTrans(keys=['image', 'label'], patch_size=config['trainer']['patch_size']),
-            MirrorTrans(keys=['image', 'label']),
+            tf.CropForegroundd(keys=['image', 'label'], margin=crop_margin, source_key='label', allow_smaller=False),
+            tf.CenterSpatialCropd(keys=['image', 'label'], roi_size=patch_size),
             ToOneHot(keys=['label'], label_classes=config['trainer']['label_classes']),
             tf.CastToTyped(keys=['image', 'label'], dtype=(np.float32, np.uint8)),
             tf.EnsureTyped(keys=['image', 'label']),
@@ -374,10 +395,19 @@ def get_segmentation_transforms(config: dict, mode: str) -> tf.Compose:
     else:
         load_transforms = [
             CustomLoadImagedSegmentation(keys=['image'], inference=True),
+            tf.Orientationd(keys=['image'], axcodes='RAS'),
             tf.ToTensord(keys='image'),
         ]
 
+        target_spacing = config['dataset'].get('target_spacing', config['dataset']['spacing'])
+
         spatial_transforms = [
+            tf.Spacingd(
+                keys=['image'],
+                pixdim=target_spacing,
+                mode='bilinear',
+                padding_mode='border',
+            ),
             tf.NormalizeIntensityd(keys=['image'], nonzero=True, channel_wise=True),
             tf.CastToTyped(keys=['image'], dtype=np.float32),
             tf.EnsureTyped(keys=['image']),

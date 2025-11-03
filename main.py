@@ -1,9 +1,32 @@
 import os
 import resource
+import warnings
 
-from config import ConfigFile
+from loguru import logger
+
+# Suppress deprecation warning from fft-conv-pytorch (third-party library issue)
+# This warning is from fft_conv_pytorch using deprecated indexing that will break in PyTorch 2.9
+warnings.filterwarnings(
+    'ignore',
+    message='Using a non-tuple sequence for multidimensional indexing is deprecated',
+    category=UserWarning,
+    module='fft_conv_pytorch',
+)
+
+# Suppress informational warning from PyTorch Lightning model summary
+# Model size estimation is not accurate with 16-mixed precision, but this doesn't affect training
+warnings.filterwarnings(
+    'ignore',
+    message='Precision 16-mixed is not supported by the model summary',
+    category=UserWarning,
+    module='pytorch_lightning',
+)
+
+from abyss.training.create_datalist import create_datalist, create_train_dataset_file
+from abyss.training.dataset_fingerprint import fingerprint_dataset
 from abyss.training.model import Model
 from abyss.training.trainer import get_trainer
+from config import ConfigFile
 
 # Increase the number of file descriptors to the maximum allowed
 rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
@@ -11,6 +34,33 @@ resource.setrlimit(resource.RLIMIT_NOFILE, (4096, rlimit[1]))
 
 config_file = ConfigFile()
 config = config_file.get_config()
+
+# Create dataset files if they don't exist (train_dataset.json and folds)
+if config['mode']['train']:
+    train_dataset_file = os.path.join(config['project']['config_path'], 'train_dataset.json')
+
+    if not os.path.exists(train_dataset_file):
+        logger.info('Creating dataset files (train_dataset.json and folds)')
+        create_train_dataset_file(config)
+        create_datalist(config)
+        logger.success('Dataset files created successfully')
+    else:
+        # Check if folds exist in the file
+        import json
+
+        with open(train_dataset_file, 'r', encoding='utf-8') as f:
+            dataset = json.load(f)
+
+        # Check if folds are missing (only 'training' key exists)
+        if 'training' in dataset and not any(key.startswith('train_fold_') for key in dataset.keys()):
+            logger.info('Creating dataset folds')
+            create_datalist(config)
+            logger.success('Dataset folds created successfully')
+
+    # Run dataset fingerprinting to compute automatic parameters (nnUNet v2 style)
+    logger.info('Running dataset fingerprinting')
+    config = fingerprint_dataset(config)
+
 model = Model(config)
 trainer = get_trainer(config)
 

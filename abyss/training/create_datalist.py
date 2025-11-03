@@ -2,6 +2,7 @@ import json
 import os
 
 import numpy as np
+from loguru import logger
 from sklearn.model_selection import KFold
 
 
@@ -51,9 +52,9 @@ def create_train_dataset_file(config):
     config_path = config['project']['config_path']
     os.makedirs(config_path, exist_ok=True)
     dataset_file_path = os.path.join(config_path, 'train_dataset.json')
-    with open(dataset_file_path, 'w') as f:
+    with open(dataset_file_path, 'w', encoding='utf-8') as f:
         json.dump(datalist, f, indent=4)
-    print(f'dataset file has been created -> {dataset_file_path}')
+    logger.success(f'Dataset file has been created -> {dataset_file_path}')
 
 
 def create_test_dataset_file(config):
@@ -102,9 +103,9 @@ def create_test_dataset_file(config):
     config_path = config['project']['config_path']
     os.makedirs(config_path, exist_ok=True)
     dataset_file_path = os.path.join(config_path, 'test_dataset.json')
-    with open(dataset_file_path, 'w') as f:
+    with open(dataset_file_path, 'w', encoding='utf-8') as f:
         json.dump(datalist, f, indent=4)
-    print(f'dataset file has been created -> {dataset_file_path}')
+    logger.success(f'Dataset file has been created -> {dataset_file_path}')
 
 
 def create_inference_dataset_file(config):
@@ -140,16 +141,16 @@ def create_inference_dataset_file(config):
         )
 
     dataset_file_path = os.path.join(datalist_path, 'inference_dataset.json')
-    with open(dataset_file_path, 'w') as f:
+    with open(dataset_file_path, 'w', encoding='utf-8') as f:
         json.dump(datalist, f, indent=4)
-    print(f'dataset file has been created -> {dataset_file_path}')
+    logger.success(f'Dataset file has been created -> {dataset_file_path}')
 
 
 def create_datalist(config):
     """Create a dataset file with folds."""
     dataset_file_path = os.path.join(config['project']['config_path'], 'train_dataset.json')
 
-    with open(dataset_file_path, 'r') as f:
+    with open(dataset_file_path, 'r', encoding='utf-8') as f:
         dataset = json.load(f)
 
     dataset_with_folds = dataset.copy()
@@ -176,14 +177,13 @@ def create_datalist(config):
 
         dataset_with_folds[f'val_fold_{i}'] = val_data
         dataset_with_folds[f'train_fold_{i}'] = train_data
+        logger.debug(f"Fold {i}: {len(train_data)} train, {len(val_data)} validation cases")
     del dataset
 
-    print(json.dumps(dataset_with_folds, indent=4))
-
-    with open(dataset_file_path, 'w') as f:
+    with open(dataset_file_path, 'w', encoding='utf-8') as f:
         json.dump(dataset_with_folds, f, indent=4)
 
-    print(f'dataset file with folds has been created -> {dataset_file_path}')
+    logger.success(f'Dataset file with folds has been created -> {dataset_file_path}')
 
 
 if __name__ == '__main__':

@@ -1,14 +1,15 @@
+import os
+from typing import Union
+
 import torch
 import torch.nn.functional as F
 from einops import rearrange
+from loguru import logger
 from torch import nn
 
 torch._dynamo.config.cache_size_limit = 24  # increase cache size limit
 
-
 from dynamic_network_architectures.architectures.unet import ResidualEncoderUNet
-
-from abyss.training.network_definitions import DynUNet
 
 
 def get_kernels_strides(config):
@@ -79,18 +80,21 @@ def get_network(config):
         deep_supervision=True,
     )
 
-    net = load_pretrained_weights(
-        net,
-        pretrained_weights_path='/home/melandur/code/abyss/data/training/checkpoint_final_ResEncL_MAE.pth',
-        pt_input_channels=1,
-        downstream_input_channels=in_channels,
-        pt_input_patchsize=[160, 160, 160],
-        downstream_input_patchsize=config['trainer']['patch_size'][0],
-        pt_key_to_encoder='encoder.stages',
-        pt_key_to_stem='encoder.stem',
-        pt_keys_to_in_proj=["encoder.stem.convs.0.conv", "encoder.stem.convs.0.all_modules.0"],
-        pt_key_to_lpe=None,
-    )[0]
+    # Load pretrained weights if checkpoint path is provided
+    pretrained_checkpoint_path = config['training'].get('pretrained_checkpoint_path')
+    if pretrained_checkpoint_path is not None and os.path.exists(pretrained_checkpoint_path):
+        logger.info(f'Loading pretrained weights from: {pretrained_checkpoint_path}')
+        net = load_pretrained_weights(
+            net,
+            pretrained_weights_path=pretrained_checkpoint_path,
+            downstream_input_channels=in_channels,
+            downstream_input_patchsize=config['trainer']['patch_size'],
+        )[0]
+    elif pretrained_checkpoint_path is not None:
+        logger.warning(f'Pretrained checkpoint not found: {pretrained_checkpoint_path}')
+        logger.info('Continuing with randomly initialized weights')
+    else:
+        logger.info('No pretrained checkpoint specified, using randomly initialized weights')
 
     if config['training']['compile']:
         net = torch.compile(net)
@@ -101,95 +105,126 @@ def get_network(config):
 def load_pretrained_weights(
     network,
     pretrained_weights_path: str,
-    pt_input_channels: int,
     downstream_input_channels: int,
-    pt_input_patchsize: int,
-    downstream_input_patchsize: int,
-    pt_key_to_encoder: str,
-    pt_key_to_stem: str,
-    pt_keys_to_in_proj: tuple[str, ...],
-    pt_key_to_lpe: str,
+    downstream_input_patchsize: Union[int, list[int]],
+    pt_input_channels: Union[int, None] = None,
+    pt_input_patchsize: Union[int, list[int], None] = None,
+    pt_key_to_encoder: Union[str, None] = None,
+    pt_key_to_stem: Union[str, None] = None,
+    pt_keys_to_in_proj: Union[tuple[str, ...], None] = None,
+    pt_key_to_lpe: Union[str, None] = None,
 ) -> tuple[nn.Module, bool]:
     """
-    Load pretrained weights into the network.
-    Per default we only load the encoder and the stem weights. The stem weights are adapted to the number of input channels through repeats.
-    The decoder is initialized from scratch.
+    Load pretrained weights from nnssl checkpoint into the network.
 
-    :param network: The neural network to load weights into.
-    :param pretrained_weights_path: Path to the pretrained weights file.
-    :param pt_input_channels: Number of input channels used in the pretrained model.
-    :param downstream_input_channels: Number of input channels used during adaptation (currently).
-    :param pt_input_patchsize: Patch size used in the pretrained model.
-    :param downstream_input_patchsize: Patch size used during adaptation (currently).
-    :param pt_key_to_encoder: Key to the encoder in the pretrained model.
-    :param pt_key_to_stem: Key to the stem in the pretrained model.
+    Following nnUNet v2 / TaWald approach: All parameters are automatically extracted
+    from the checkpoint's 'nnssl_adaptation_plan'. Function arguments are only used
+    as fallbacks if not present in the checkpoint.
 
-    :return: The network with loaded weights.
+    Per default we only load the encoder and the stem weights. The stem weights are
+    adapted to the number of input channels through repeats. The decoder is initialized from scratch.
+
+    Args:
+        network: The neural network to load weights into.
+        pretrained_weights_path: Path to the pretrained weights file (.pth).
+        downstream_input_channels: Number of input channels for downstream task.
+        downstream_input_patchsize: Patch size for downstream task (int or list).
+        pt_input_channels: Pretrained input channels (optional, extracted from checkpoint if available).
+        pt_input_patchsize: Pretrained patch size (optional, extracted from checkpoint if available).
+        pt_key_to_encoder: Key to encoder in pretrained model (optional, extracted from checkpoint if available).
+        pt_key_to_stem: Key to stem in pretrained model (optional, extracted from checkpoint if available).
+        pt_keys_to_in_proj: Keys to input projection layers (optional, extracted from checkpoint if available).
+        pt_key_to_lpe: Key to learnable positional embedding (optional, extracted from checkpoint if available).
+
+    Returns:
+        Tuple of (network with loaded weights, boolean indicating if channel mismatch occurred).
     """
+    # Validate checkpoint file exists
+    if not os.path.exists(pretrained_weights_path):
+        raise FileNotFoundError(f'Pretrained checkpoint not found: {pretrained_weights_path}')
 
-    # --------------------------- Technical Description -------------------------- #
-    # In this function we want to load the weights in a reliable manner.
-    #   Hence we want to load the weights with `strict=False` to guarantee everything is loaded as expected.
-    #   To do so, we grab the respective submodules and load the fitting weights into them.
-    #   We can do this through `get_submodule` which is a nn.Module function.
-    #   However we need to cut-away the prefix of the matching keys to correctly assign weights from both `state_dicts`!
-    # Difficulties:
-    # 1) Different stem dimensions: When pre-training had only a single input channel, we need to make the shapes fit!
-    #    To do so, we utilize repeating the weights N times (N = number of input channels).
-    #    Limitation currently we only support this for a single input channel used during pre-training.
-    # 2) Different patch sizes: The learned positional embeddings LPe of `Transformer` (Primus) architectures are
-    #    patch size dependent. To adapt the weights, we do trilinear interpolation of these weights back to shape.
-    # 3) Stem and Encoder merging: Most architectures (Primus, ResidualEncoderUNet derivatives) have
-    #    separate `stem` and `encoder` objects. Hence we can separate stem and encoder weight loading easily.
-    #    However in the `PlainConvUNet` architecture the encoder contains the stem, so we must make sure
-    #    to skip the stem weight loading in the encoder, and then separately load the (repeated) stem weights
+    logger.info(f'Loading checkpoint: {pretrained_weights_path}')
 
-    # The following code does this.
-    key_to_encoder = network.key_to_encoder  # Key to the encoder in the current network
-    key_to_stem = network.key_to_stem  # Key to the stem (beginning) in the current network
+    # Load checkpoint
+    try:
+        ckp = torch.load(pretrained_weights_path, weights_only=True, map_location='cpu')
+    except Exception as e:
+        raise RuntimeError(f'Failed to load checkpoint: {e}') from e
 
-    random_init_statedict = network.state_dict()
-    ckp = torch.load(pretrained_weights_path, weights_only=True)
-    pre_train_statedict: dict[str, torch.Tensor] = ckp["network_weights"]  # Get pre-trained state dict
+    # Validate checkpoint structure
+    if 'network_weights' not in ckp:
+        raise ValueError(f'Checkpoint missing "network_weights" key: {pretrained_weights_path}')
+    if 'nnssl_adaptation_plan' not in ckp:
+        raise ValueError(
+            f'Checkpoint missing "nnssl_adaptation_plan" key (not an nnssl checkpoint): {pretrained_weights_path}'
+        )
 
-    # take info from ckpt path (allows to overwrite plan specifications)
-    if 'key_to_stem' in ckp['nnssl_adaptation_plan'].keys():
-        pt_key_to_stem = ckp['nnssl_adaptation_plan']['key_to_stem']
-    if 'key_to_encoder' in ckp['nnssl_adaptation_plan'].keys():
-        pt_key_to_encoder = ckp['nnssl_adaptation_plan']['key_to_encoder']
-    if 'keys_to_in_proj' in ckp['nnssl_adaptation_plan'].keys():
-        pt_keys_to_in_proj = ckp['nnssl_adaptation_plan']['keys_to_in_proj']
-    if 'key_to_lpe' in ckp['nnssl_adaptation_plan'].keys():
-        pt_key_to_lpe = ckp['nnssl_adaptation_plan']['key_to_lpe']
+    pre_train_statedict: dict[str, torch.Tensor] = ckp['network_weights']
+    adaptation_plan = ckp['nnssl_adaptation_plan']
 
-    ####allows overwrites (e.g for voco needed)
-    if 'nnssl_adaptation_plan' in ckp.keys():
-        if 'pretrain_patch_size' in ckp['nnssl_adaptation_plan'].keys():
-            pt_input_patchsize = ckp['nnssl_adaptation_plan']['pretrain_patch_size']
+    logger.debug(f'Checkpoint adaptation plan keys: {list(adaptation_plan.keys())}')
+
+    # Extract parameters from nnssl_adaptation_plan (priority over function arguments)
+    # Following TaWald/nnUNet v2 approach: checkpoint is source of truth
+    pt_key_to_stem = adaptation_plan.get('key_to_stem', pt_key_to_stem)
+    pt_key_to_encoder = adaptation_plan.get('key_to_encoder', pt_key_to_encoder)
+    pt_keys_to_in_proj = adaptation_plan.get('keys_to_in_proj', pt_keys_to_in_proj)
+    pt_key_to_lpe = adaptation_plan.get('key_to_lpe', pt_key_to_lpe)
+    pt_input_patchsize = adaptation_plan.get('pretrain_patch_size', pt_input_patchsize)
+    pt_input_channels = adaptation_plan.get('pretrain_input_channels', pt_input_channels)
+
+    # Validate required parameters are available
+    if pt_key_to_stem is None:
+        raise ValueError('key_to_stem not found in checkpoint and not provided')
+    if pt_key_to_encoder is None:
+        raise ValueError('key_to_encoder not found in checkpoint and not provided')
+    if pt_keys_to_in_proj is None:
+        raise ValueError('keys_to_in_proj not found in checkpoint and not provided')
+    if pt_input_channels is None:
+        raise ValueError('pretrain_input_channels not found in checkpoint and not provided')
+    if pt_input_patchsize is None:
+        raise ValueError('pretrain_patch_size not found in checkpoint and not provided')
+
+    # Convert patch sizes to lists if needed
+    if isinstance(downstream_input_patchsize, int):
+        downstream_input_patchsize = [downstream_input_patchsize] * 3
+    if isinstance(pt_input_patchsize, int):
+        pt_input_patchsize = [pt_input_patchsize] * 3
+
+    logger.info(f'Pretrained model: {pt_input_channels} channels, patch_size={pt_input_patchsize}')
+    logger.info(f'Downstream model: {downstream_input_channels} channels, patch_size={downstream_input_patchsize}')
+    logger.debug(f'Encoder key: {pt_key_to_encoder}, Stem key: {pt_key_to_stem}')
+
+    # Get network architecture keys
+    key_to_encoder = network.key_to_encoder
+    key_to_stem = network.key_to_stem
 
     stem_in_encoder = pt_key_to_stem in pre_train_statedict
-
-    # Currently we don't have the logic for interpolating the positional embedding yet.
     pt_weight_in_ch_mismatch = False
-    need_to_adapt_lpe = False  # I.e. Learnable positional embedding
-    key_to_lpe = getattr(network, "key_to_lpe", None)
+    need_to_adapt_lpe = False
+    key_to_lpe = getattr(network, 'key_to_lpe', None)
     lpe_in_stem = False
+    lpe_in_encoder = False
 
-    # # Check if the current module even uses a learnable positional embedding. If not ignore LPE logic.
-    try:
-        network.get_submodule(key_to_lpe)
-    except AttributeError:
-        key_to_lpe = None
+    # Check if network uses learnable positional embedding
+    if key_to_lpe is not None:
+        try:
+            network.get_submodule(key_to_lpe)
+        except AttributeError:
+            key_to_lpe = None
 
     if key_to_lpe is not None:
         lpe_in_encoder = key_to_lpe.startswith(key_to_encoder)
         lpe_in_stem = key_to_lpe.startswith(key_to_stem)
-    if pt_input_patchsize != downstream_input_patchsize:
-        need_to_adapt_lpe = True  # LPE shape won't fit -> resize it
 
-    def strip_dot_prefix(s) -> str:
-        """Mini func to strip the dot prefix from the keys"""
-        if s.startswith("."):
+    # Check if patch size adaptation is needed for LPE
+    if pt_input_patchsize != downstream_input_patchsize:
+        need_to_adapt_lpe = True
+        logger.debug('Patch size mismatch detected, LPE adaptation needed')
+
+    def strip_dot_prefix(s: str) -> str:
+        """Strip dot prefix from module keys."""
+        if s.startswith('.'):
             return s[1:]
         return s
 
@@ -198,7 +233,8 @@ def load_pretrained_weights(
         encoder_weights = {k: v for k, v in pre_train_statedict.items() if k.startswith(pt_key_to_encoder)}
         if downstream_input_channels > pt_input_channels:
             pt_weight_in_ch_mismatch = True
-            k_proj = pt_keys_to_in_proj[0] + ".weight"  # Get the projection weights
+            logger.info(f'Adapting stem weights: {pt_input_channels} -> {downstream_input_channels} channels')
+            k_proj = pt_keys_to_in_proj[0] + '.weight'
             vals = (encoder_weights[k_proj].repeat(1, downstream_input_channels, 1, 1)) / downstream_input_channels
             for k in pt_keys_to_in_proj:
                 encoder_weights[k] = vals
@@ -217,23 +253,25 @@ def load_pretrained_weights(
                     pt_input_patchsize,
                     new_encoder_weights['down_projection.proj.weight'].shape[2:],
                 )
-                new_encoder_weights["pos_embed"].to(next(network.parameters()).device)
-            if "cls_token" in encoder_weights.keys():
-                skip_strings_in_pretrained = ["cls_token"]
-                new_encoder_weights, found_cls_token = filter_state_dict(encoder_weights, skip_strings_in_pretrained)
+                new_encoder_weights['pos_embed'].to(next(network.parameters()).device)
+            if 'cls_token' in encoder_weights.keys():
+                skip_strings_in_pretrained = ['cls_token']
+                new_encoder_weights, _ = filter_state_dict(encoder_weights, skip_strings_in_pretrained)
 
-        # ------------------------------- Load weights ------------------------------- #
+        # Load encoder weights
         encoder_module = network.get_submodule(key_to_encoder)
-        encoder_module.load_state_dict(new_encoder_weights)
+        encoder_module.load_state_dict(new_encoder_weights, strict=False)
+        logger.success('Encoder weights loaded successfully')
     else:
         encoder_weights = {k: v for k, v in pre_train_statedict.items() if k.startswith(pt_key_to_encoder)}
         stem_weights = {k: v for k, v in pre_train_statedict.items() if k.startswith(pt_key_to_stem)}
         if downstream_input_channels > pt_input_channels:
             pt_weight_in_ch_mismatch = True
-            k_proj = pt_keys_to_in_proj[0] + ".weight"  # Get the projection weights
+            logger.info(f'Adapting stem weights: {pt_input_channels} -> {downstream_input_channels} channels')
+            k_proj = pt_keys_to_in_proj[0] + '.weight'
             vals = (stem_weights[k_proj].repeat(1, downstream_input_channels, 1, 1, 1)) / downstream_input_channels
             for k in pt_keys_to_in_proj:
-                stem_weights[k + ".weight"] = vals
+                stem_weights[k + '.weight'] = vals
         new_encoder_weights = {
             strip_dot_prefix(k.replace(pt_key_to_encoder, "")): v for k, v in encoder_weights.items()
         }
@@ -249,7 +287,7 @@ def load_pretrained_weights(
                     pt_input_patchsize,
                     new_stem_weights['proj.weight'].shape[2:],
                 )
-                new_stem_weights["pos_embed"].to(next(network.parameters()).device)
+                new_stem_weights['pos_embed'].to(next(network.parameters()).device)
             elif lpe_in_encoder:
                 handle_pos_embed_resize(
                     new_encoder_weights,
@@ -259,30 +297,37 @@ def load_pretrained_weights(
                     pt_input_patchsize,
                     new_stem_weights['proj.weight'].shape[2:],
                 )
-                new_encoder_weights["pos_embed"].to(next(network.parameters()).device)
-            else:
-                pass
-        if "cls_token" in encoder_weights.keys():
-            skip_strings_in_pretrained = ["cls_token"]
-            new_encoder_weights, found_cls_token = filter_state_dict(encoder_weights, skip_strings_in_pretrained)
+                new_encoder_weights['pos_embed'].to(next(network.parameters()).device)
 
-        # ------------------------------- Load weights ------------------------------- #
+        if 'cls_token' in encoder_weights.keys():
+            skip_strings_in_pretrained = ['cls_token']
+            new_encoder_weights, _ = filter_state_dict(encoder_weights, skip_strings_in_pretrained)
+
+        # Load encoder and stem weights
         encoder_module = network.get_submodule(key_to_encoder)
-        encoder_module.load_state_dict(new_encoder_weights)
+        encoder_module.load_state_dict(new_encoder_weights, strict=False)
         stem_module = network.get_submodule(key_to_stem)
-        stem_module.load_state_dict(new_stem_weights)
+        stem_module.load_state_dict(new_stem_weights, strict=False)
+        logger.success('Encoder and stem weights loaded successfully')
 
     if not need_to_adapt_lpe and key_to_lpe is not None:
         # Load the positional embedding weights
         lpe_weights = {k: v for k, v in pre_train_statedict.items() if k.startswith(pt_key_to_lpe)}
-        assert (
-            len(lpe_weights) == 1
-        ), f"Found multiple lpe weights, but expect only a single tensor. Got {list(lpe_weights.keys())}"
+        if len(lpe_weights) != 1:
+            raise ValueError(
+                f'Found multiple lpe weights, but expect only a single tensor. Got {list(lpe_weights.keys())}'
+            )
         network.get_parameter(key_to_lpe).data = list(lpe_weights.values())[0].to(next(network.parameters()).device)
-        # ------------------------------- Load weights ------------------------------- #
+        logger.debug('Learnable positional embedding loaded')
 
-    # Theoretically we don't need to return the network, but we do it anyway.
-    del pre_train_statedict, encoder_weights, new_encoder_weights
+    logger.success('Pretrained weights loaded successfully')
+
+    # Cleanup
+    if 'encoder_weights' in locals():
+        del pre_train_statedict, encoder_weights
+    if 'new_encoder_weights' in locals():
+        del new_encoder_weights
+
     return network, pt_weight_in_ch_mismatch
 
 
@@ -323,38 +368,37 @@ def interpolate_patch_embed_3d(patch_embed, in_shape, out_shape):
 def handle_pos_embed_resize(
     pretrained_dict, model_dict, mode, input_shape=None, pretrained_input_patch_size=None, patch_embed_size=None
 ):
-    pretrained_pos_embed = pretrained_dict["pos_embed"]
-    model_pos_embed = model_dict["pos_embed"]
+    pretrained_pos_embed = pretrained_dict['pos_embed']
+    model_pos_embed = model_dict['pos_embed']
     model_pos_embed_shape = model_pos_embed.shape
 
-    # for key, value in pretrained_dict.items():
-    #     print(f"{key}: {value.shape}")
-
-    has_cls_token = "cls_token" in pretrained_dict
+    has_cls_token = 'cls_token' in pretrained_dict
+    cls_pos_embed = None
 
     if has_cls_token:
         cls_pos_embed = pretrained_pos_embed[:, :1, :]
         patch_pos_embed = pretrained_pos_embed[:, 1:, :]
     else:
-        if "cls_token" in model_dict.keys():
+        if 'cls_token' in model_dict.keys():
             cls_pos_embed = model_pos_embed[:, :1, :]
         patch_pos_embed = pretrained_pos_embed
 
-    if mode == "interpolate":
+    if mode == 'interpolate':
         resized_patch_pos_embed = interpolate_patch_embed_1d(
             patch_pos_embed, target_len=model_pos_embed_shape[1] - int(has_cls_token)
         )
 
-    elif mode == "interpolate_trilinear":
+    elif mode == 'interpolate_trilinear':
         # Calculate input/output 3D shapes
-        in_shape = dict(zip("xyz", [int(d / p) for d, p in zip(pretrained_input_patch_size, patch_embed_size)]))
-        out_shape = dict(zip("xyz", [int(d / p) for d, p in zip(input_shape, patch_embed_size)]))
+        in_shape = dict(zip('xyz', [int(d / p) for d, p in zip(pretrained_input_patch_size, patch_embed_size)]))
+        out_shape = dict(zip('xyz', [int(d / p) for d, p in zip(input_shape, patch_embed_size)]))
         resized_patch_pos_embed = interpolate_patch_embed_3d(patch_pos_embed, in_shape, out_shape)
 
     else:
-        raise NotImplementedError(f"Unknown resize mode: {mode}")
-    if "cls_token" in model_dict.keys():
+        raise NotImplementedError(f'Unknown resize mode: {mode}')
+
+    if cls_pos_embed is not None:
         resized_pos_embed = torch.cat([cls_pos_embed, resized_patch_pos_embed], dim=1)
     else:
         resized_pos_embed = resized_patch_pos_embed
-    pretrained_dict["pos_embed"] = resized_pos_embed
+    pretrained_dict['pos_embed'] = resized_pos_embed

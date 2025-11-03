@@ -78,11 +78,7 @@ class Model(pl.LightningModule):
             normalize_factor = sum(1.0 / (2**i) for i in range(len(preds)))
 
             for idx, (pred, scale) in enumerate(zip(preds, [1, 0.5, 0.25])):
-                scaled_target = F.interpolate(
-                    label,
-                    scale_factor=scale,
-                    mode='nearest'
-                )
+                scaled_target = F.interpolate(label, scale_factor=scale, mode='nearest')
                 loss += (1.0 / (2**idx)) * self.criterion(pred, scaled_target)
 
             loss = loss / normalize_factor

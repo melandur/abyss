@@ -9,6 +9,9 @@ class ConfigFile:
         self.project_path = os.path.join(os.path.expanduser('~'), 'code', 'abyss', 'data')
         self.train_dataset_path = os.path.join(os.path.expanduser('~'), 'code', 'abyss', 'data', 'training', 'gbm')
         self.test_dataset_path = os.path.join(os.path.expanduser('~'), 'code', 'abyss', 'data', 'training', 'raw')
+        self.pretrained_checkpoint_path = os.path.join(
+            os.path.expanduser('~'), 'code', 'abyss', 'transfer', 'checkpoint_final_ResEncL_MAE.pth'
+        )  # Path to checkpoint, None to disable
 
     def get_config(self) -> dict:
         """Returns config dict"""
@@ -54,5 +57,6 @@ class ConfigFile:
                 'warmup_epochs': 50,
                 'lr': 1e-3,
                 'seed': 42,  # find the truth in randomness
+                'pretrained_checkpoint_path': self.pretrained_checkpoint_path,
             },
         }

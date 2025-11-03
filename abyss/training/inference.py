@@ -9,8 +9,8 @@ from monai.transforms import AsDiscrete
 from sliding_window import sliding_window_inference
 from transforms import get_transforms
 
-from config import ConfigFile
 from abyss.training.create_network import get_network
+from config import ConfigFile
 
 dataset_path = '/home/melandur/Downloads/final_mets_test'
 dst = '/home/melandur/Downloads/test'
