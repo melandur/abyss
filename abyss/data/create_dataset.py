@@ -85,5 +85,3 @@ if __name__ == '__main__':
 
     config = ConfigFile().get_config()
     get_loader(config, 'train')
-
-

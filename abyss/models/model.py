@@ -10,9 +10,9 @@ from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete
 
 from abyss.data.create_dataset import get_loader
-from abyss.models.create_network import get_network
-from abyss.losses.loss import CrossEntropyLoss, DiceCELoss, DiceCELossTopK
 from abyss.engine.scheduler import WarmupPolyLRScheduler
+from abyss.losses.loss import CrossEntropyLoss, DiceCELoss, DiceCELossTopK
+from abyss.models.create_network import get_network
 
 torch.set_float32_matmul_precision('medium')
 
@@ -193,4 +193,3 @@ class Model(pl.LightningModule):
     def test_dataloader(self):
         """Test dataloader"""
         return get_loader(self.config, 'test')
-

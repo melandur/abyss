@@ -13,6 +13,7 @@ class ConfigFile:
             os.path.expanduser('~'), 'code', 'abyss', 'transfer', 'checkpoint_final_ResEncL_MAE.pth'
         )  # Path to checkpoint, None to disable
         self.pretrained_checkpoint_path = None
+
     def get_config(self) -> dict:
         """Returns config dict"""
         experiment_path = os.path.join(self.project_path, self.project_name, self.experiment_name)
