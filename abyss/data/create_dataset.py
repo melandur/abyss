@@ -4,7 +4,7 @@ import os
 import torch.distributed as dist
 from monai.data import CacheDataset, DataLoader, partition_dataset
 
-from abyss.training.transforms import get_segmentation_transforms
+from abyss.transforms.transforms import get_segmentation_transforms
 
 
 def get_loader(config: dict, mode: str) -> DataLoader:
@@ -81,7 +81,9 @@ def get_loader(config: dict, mode: str) -> DataLoader:
 
 
 if __name__ == '__main__':
-    from config import ConfigFile
+    from abyss.config import ConfigFile
 
     config = ConfigFile().get_config()
     get_loader(config, 'train')
+
+

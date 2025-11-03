@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
-from create_dataset import get_loader
 
-from config import ConfigFile
+from abyss.data.create_dataset import get_loader
+from abyss.config import ConfigFile
 
 config_file = ConfigFile()
 config = config_file.get_config()

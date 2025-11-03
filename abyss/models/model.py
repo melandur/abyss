@@ -4,14 +4,15 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from loguru import logger
 from monai.data import decollate_batch
-from monai.losses import DiceCELoss
 from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete
 
-from .create_dataset import get_loader
-from .create_network import get_network
-from .scheduler import WarmupPolyLRScheduler
+from abyss.data.create_dataset import get_loader
+from abyss.models.create_network import get_network
+from abyss.losses.loss import CrossEntropyLoss, DiceCELoss, DiceCELossTopK
+from abyss.engine.scheduler import WarmupPolyLRScheduler
 
 torch.set_float32_matmul_precision('medium')
 
@@ -25,10 +26,22 @@ class Model(pl.LightningModule):
         self.net = get_network(config)
         task = config['trainer']['task']
 
+        # Select loss by name only; use built-in defaults
+        loss_name = (config['training'].get('loss') or 'dice_ce').lower()
+
         if task == 'classification':
-            self.criterion = nn.CrossEntropyLoss()
+            self.criterion = CrossEntropyLoss()
+            logger.info('Using loss: ce (classification)')
         elif task == 'segmentation':
-            self.criterion = DiceCELoss(sigmoid=True, batch=True, squared_pred=True)
+            if loss_name == 'ce':
+                self.criterion = CrossEntropyLoss()
+                logger.info('Using loss: ce')
+            elif loss_name == 'dice_ce_topk':
+                self.criterion = DiceCELossTopK()
+                logger.info('Using loss: dice_ce_topk')
+            else:
+                self.criterion = DiceCELoss()
+                logger.info('Using loss: dice_ce')
         elif task == 'detection':
             raise NotImplementedError('Detection task is not implemented yet.')
         else:
@@ -180,3 +193,4 @@ class Model(pl.LightningModule):
     def test_dataloader(self):
         """Test dataloader"""
         return get_loader(self.config, 'test')
+

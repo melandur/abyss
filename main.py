@@ -22,11 +22,11 @@ warnings.filterwarnings(
     module='pytorch_lightning',
 )
 
-from abyss.training.create_datalist import create_datalist, create_train_dataset_file
-from abyss.training.dataset_fingerprint import fingerprint_dataset
-from abyss.training.model import Model
-from abyss.training.trainer import get_trainer
-from config import ConfigFile
+from abyss.config import ConfigFile
+from abyss.data.create_datalist import create_datalist, create_train_dataset_file
+from abyss.engine.trainer import get_trainer
+from abyss.models.model import Model
+from abyss.utils.dataset_fingerprint import fingerprint_dataset
 
 # Increase the number of file descriptors to the maximum allowed
 rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)

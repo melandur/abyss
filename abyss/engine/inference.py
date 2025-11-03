@@ -6,11 +6,10 @@ import SimpleITK as sitk
 import torch
 from monai.data import CacheDataset, DataLoader, decollate_batch
 from monai.transforms import AsDiscrete
-from sliding_window import sliding_window_inference
-from transforms import get_transforms
-
-from abyss.training.create_network import get_network
-from config import ConfigFile
+from abyss.engine.sliding_window import sliding_window_inference
+from abyss.transforms.transforms import get_segmentation_transforms
+from abyss.models.create_network import get_network
+from abyss.config import ConfigFile
 
 dataset_path = '/home/melandur/Downloads/final_mets_test'
 dst = '/home/melandur/Downloads/test'
@@ -49,7 +48,7 @@ def get_net(net, fold):
     return net
 
 
-transform = get_transforms(config, 'inference')
+transform = get_segmentation_transforms(config, 'inference')
 dataset = CacheDataset(
     data=datalist,
     transform=transform,

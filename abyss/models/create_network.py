@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Union
 
@@ -154,24 +155,72 @@ def load_pretrained_weights(
     # Validate checkpoint structure
     if 'network_weights' not in ckp:
         raise ValueError(f'Checkpoint missing "network_weights" key: {pretrained_weights_path}')
-    if 'nnssl_adaptation_plan' not in ckp:
-        raise ValueError(
-            f'Checkpoint missing "nnssl_adaptation_plan" key (not an nnssl checkpoint): {pretrained_weights_path}'
-        )
 
     pre_train_statedict: dict[str, torch.Tensor] = ckp['network_weights']
-    adaptation_plan = ckp['nnssl_adaptation_plan']
 
-    logger.debug(f'Checkpoint adaptation plan keys: {list(adaptation_plan.keys())}')
+    # Try to load adaptation plan from checkpoint (backward compatible)
+    adaptation_plan = ckp.get('nnssl_adaptation_plan', {})
+
+    # Check for external adaptation plan JSON file (takes priority)
+    checkpoint_dir = os.path.dirname(pretrained_weights_path)
+    adaptation_plan_json_path = os.path.join(checkpoint_dir, 'adaptation_plan.json')
+
+    if os.path.exists(adaptation_plan_json_path):
+        logger.info(f'Loading adaptation plan from external file: {adaptation_plan_json_path}')
+        try:
+            with open(adaptation_plan_json_path, 'r', encoding='utf-8') as f:
+                external_adaptation_plan = json.load(f)
+            # Merge: external file takes priority, checkpoint plan provides defaults
+            adaptation_plan = {**adaptation_plan, **external_adaptation_plan}
+            logger.debug('External adaptation plan loaded and merged with checkpoint plan')
+        except Exception as e:
+            logger.warning(f'Failed to load external adaptation plan: {e}')
+            logger.info('Falling back to checkpoint adaptation plan')
+    elif adaptation_plan:
+        logger.debug('Using adaptation plan from checkpoint')
+    else:
+        logger.warning('No adaptation plan found in checkpoint or external file')
+        logger.info('Will use provided function arguments as fallback')
+
+    logger.debug(f'Adaptation plan keys: {list(adaptation_plan.keys())}')
 
     # Extract parameters from nnssl_adaptation_plan (priority over function arguments)
     # Following TaWald/nnUNet v2 approach: checkpoint is source of truth
-    pt_key_to_stem = adaptation_plan.get('key_to_stem', pt_key_to_stem)
-    pt_key_to_encoder = adaptation_plan.get('key_to_encoder', pt_key_to_encoder)
-    pt_keys_to_in_proj = adaptation_plan.get('keys_to_in_proj', pt_keys_to_in_proj)
-    pt_key_to_lpe = adaptation_plan.get('key_to_lpe', pt_key_to_lpe)
-    pt_input_patchsize = adaptation_plan.get('pretrain_patch_size', pt_input_patchsize)
-    pt_input_channels = adaptation_plan.get('pretrain_input_channels', pt_input_channels)
+    # Use same pattern as original: check if key exists, then use it
+    if 'key_to_stem' in adaptation_plan.keys():
+        pt_key_to_stem = adaptation_plan['key_to_stem']
+    if 'key_to_encoder' in adaptation_plan.keys():
+        pt_key_to_encoder = adaptation_plan['key_to_encoder']
+    if 'keys_to_in_proj' in adaptation_plan.keys():
+        pt_keys_to_in_proj = adaptation_plan['keys_to_in_proj']
+    if 'key_to_lpe' in adaptation_plan.keys():
+        pt_key_to_lpe = adaptation_plan['key_to_lpe']
+
+    # Handle different key naming conventions for patch size (original checks pretrain_patch_size)
+    if 'pretrain_patch_size' in adaptation_plan.keys():
+        pt_input_patchsize = adaptation_plan['pretrain_patch_size']
+    # Also check alternative names (enhancement for compatibility)
+    elif 'recommended_downstream_patchsize' in adaptation_plan.keys():
+        pt_input_patchsize = adaptation_plan['recommended_downstream_patchsize']
+    # Try to get from pretrain_plan if it's a dict with patch_size
+    elif 'pretrain_plan' in adaptation_plan:
+        pretrain_plan = adaptation_plan['pretrain_plan']
+        if isinstance(pretrain_plan, dict) and 'patch_size' in pretrain_plan:
+            pt_input_patchsize = pretrain_plan['patch_size']
+
+    # Handle different key naming conventions for input channels (check both naming conventions)
+    if 'pretrain_num_input_channels' in adaptation_plan.keys():
+        pt_input_channels = adaptation_plan['pretrain_num_input_channels']
+    elif 'pretrain_input_channels' in adaptation_plan.keys():
+        pt_input_channels = adaptation_plan['pretrain_input_channels']
+    # Try to get from pretrain_plan if it's a dict
+    elif 'pretrain_plan' in adaptation_plan:
+        pretrain_plan = adaptation_plan['pretrain_plan']
+        if isinstance(pretrain_plan, dict):
+            if 'num_input_channels' in pretrain_plan:
+                pt_input_channels = pretrain_plan['num_input_channels']
+            elif 'input_channels' in pretrain_plan:
+                pt_input_channels = pretrain_plan['input_channels']
 
     # Validate required parameters are available
     if pt_key_to_stem is None:
@@ -260,7 +309,7 @@ def load_pretrained_weights(
 
         # Load encoder weights
         encoder_module = network.get_submodule(key_to_encoder)
-        encoder_module.load_state_dict(new_encoder_weights, strict=False)
+        encoder_module.load_state_dict(new_encoder_weights)
         logger.success('Encoder weights loaded successfully')
     else:
         encoder_weights = {k: v for k, v in pre_train_statedict.items() if k.startswith(pt_key_to_encoder)}
@@ -305,9 +354,9 @@ def load_pretrained_weights(
 
         # Load encoder and stem weights
         encoder_module = network.get_submodule(key_to_encoder)
-        encoder_module.load_state_dict(new_encoder_weights, strict=False)
+        encoder_module.load_state_dict(new_encoder_weights)
         stem_module = network.get_submodule(key_to_stem)
-        stem_module.load_state_dict(new_stem_weights, strict=False)
+        stem_module.load_state_dict(new_stem_weights)
         logger.success('Encoder and stem weights loaded successfully')
 
     if not need_to_adapt_lpe and key_to_lpe is not None:
@@ -322,11 +371,8 @@ def load_pretrained_weights(
 
     logger.success('Pretrained weights loaded successfully')
 
-    # Cleanup
-    if 'encoder_weights' in locals():
-        del pre_train_statedict, encoder_weights
-    if 'new_encoder_weights' in locals():
-        del new_encoder_weights
+    # Cleanup (matching original implementation)
+    del pre_train_statedict, encoder_weights, new_encoder_weights
 
     return network, pt_weight_in_ch_mismatch
 

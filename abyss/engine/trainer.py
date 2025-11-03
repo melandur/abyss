@@ -1,7 +1,7 @@
 import os
-from calendar import c
 
 import torch
+from loguru import logger
 from pytorch_lightning import Trainer as LightningTrainer
 from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks import Callback, ModelCheckpoint, RichProgressBar
@@ -24,7 +24,7 @@ class Improvement(Callback):
             self.best = current
         elif current < self.best:
             diff = self.best - current
-            print(f'Improved by {diff:.5f}')
+            logger.info(f'Improved by {diff:.5f}')
             self.best = current
 
 
@@ -32,10 +32,10 @@ def get_trainer(config: dict) -> LightningTrainer:
     """Get the PyTorch Lightning trainer"""
 
     results_path = config['project']['results_path']
-    logger = TensorBoardLogger(save_dir=results_path, name='logs')  # TBoard, MLflow, Comet, Neptune, WandB
+    logger_instance = TensorBoardLogger(save_dir=results_path, name='logs')
     log_path = os.path.join(results_path, 'logs')
-    print(f'tensorboard --logdir={log_path}')
-    print(f'Task: {config["trainer"]["task"]}')
+    logger.info(f'tensorboard --logdir={log_path}')
+    logger.info(f'Task: {config["trainer"]["task"]}')
 
     improvement_cb = Improvement(monitor='loss_val')
 
@@ -76,7 +76,7 @@ def get_trainer(config: dict) -> LightningTrainer:
         devices=[0],
         num_nodes=1,
         precision='16-mixed',
-        logger=logger,
+        logger=logger_instance,
         callbacks=[
             improvement_cb,
             progress_bar_cb,

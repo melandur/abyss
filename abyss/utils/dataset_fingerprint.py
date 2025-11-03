@@ -165,7 +165,7 @@ def fingerprint_dataset(config: dict) -> dict:
 
 
 if __name__ == '__main__':
-    from config import ConfigFile
+    from abyss.config import ConfigFile
 
     config_dict = ConfigFile().get_config()
     config_dict = fingerprint_dataset(config_dict)
